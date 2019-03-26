@@ -259,7 +259,7 @@ exception Skip
 let (@@) (ass1,zero1) (ass2,zero2) =
  assert(zero1 || zero2) ;
  (ass1 @ ass2, false), zero1 && zero2
-    
+
 
 let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) sp tp =
  try
@@ -416,522 +416,506 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
  let sp,tp = move_state ~sub:[] au1 au2 id i1 i2 [s] [] in
  a1 @ a2,id,sp,tp
 
-(*** Garbage Collection Example ***)
-module Bin = struct
- let (states : state list) =
-  [ [1], [EVar "p",Expr (Const (Numeric 0)) ; EVar "d", Expr (Const (Symbolic "D"))]
-  ; [2], [EVar "p",Expr(Const (Numeric 0)) ; EVar "d", Expr (Const (Symbolic "D")) ; EVar "cur_q",Expr (Var "q")
-       ;AVar "ID",Address(DVar "id")]
-  ; [3], [EVar "p",Expr(Const (Numeric 1)) ;
-        EVar "d", Expr(Plus (Var "D", Minus (Const (Symbolic "R"))))]
-  ; [4], [EVar "p",Expr(Const (Numeric 1))
-       ; EVar "d", Expr(Plus (Var "D", Minus (Const (Symbolic "R"))))
-       ; EVar "cur_q",Expr(Var "q'") ;AVar "ID",Address(DVar "id'")]
-  ; [5], [EVar "p",Expr(Const (Numeric 2)) ;
-        EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))]
-  ; [6], [EVar "p",Expr(Const (Numeric 2))
-       ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-       ; EVar "of",Expr(Var "e") ;AVar "ID",Address(DVar "gt_id")]
-  ; [7], [EVar "p",Expr(Const (Numeric 2))
-       ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-       ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-       ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")]
-  ; [8], [EVar "p",Expr(Const (Numeric 2))
-       ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-       ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-       ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")]
-  ; [9], [EVar "p",Expr(Const (Numeric 2))
-       ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-       ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-       ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'") ]
-  ;[10], [EVar "p",Expr(Const (Numeric 0))
-       ; EVar "d",
-         Expr(Plus
-          (Plus (Var "d", Minus (Mult (Numeric 2, Const (Symbolic "R")))),
-           Max (Var "of", Var "of'")))
-       ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-       ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'") 
-       ; AVar "emptyID",Address(DVar "gt_empty_id")]
-  ;[11], [EVar "p",Expr(Const (Numeric 0))
-       ; EVar "d",
-         Expr(Plus
-          (Plus (Var "d", Minus (Mult (Numeric 2, Const (Symbolic "R")))),
-           Max (Var "of", Var "of'")))
-       ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-       ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")
-  ]
- 
-  ;[12], [EVar "p",Expr(Const (Numeric 0))
-       ; EVar "d",
-         Expr(Plus
-          (Plus (Var "d", Minus (Mult (Numeric 2, Const (Symbolic "R")))),
-           Max (Var "of", Var "of'")))
-       ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-       ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")]
-  ]
-
- let (transitions : transition list) =
-  [ [1],[2],True,Input (None, "dep", [EVar "q";AVar "id"])
-  ; [2],[1],Gt(Var "cur_q",Const(Numeric 2)),Output (DVar "ID","NOK",[])
-  ; [2],[3],Eq(Expr (Var "cur_q"),Expr (Const(Numeric 1))),
-     Output (DVar "ID","OK",[Expr(Const (Symbolic "R"))])
-  ; [2],[5],Eq(Expr(Var "cur_q"),Expr(Const(Numeric 2))),
-     Output (DVar "ID","OK",[Expr(Mult(Numeric 2, Const (Symbolic "R")))])
-  ; [3],[4],True,Input (None, "dep", [EVar "q'";AVar "id'"])
-  ; [4],[3],Gt(Var "cur_q",Const(Numeric 2)),Output (DVar "ID","NOK",[])
-  ; [4],[5],Eq(Expr(Var "cur_q"),Expr(Const(Numeric 1))),
-     Output (DVar "ID","OK",[Expr(Const (Symbolic "R"))])
-  ; [5],[6],True,Input (None, "bid", [EVar "e";AVar "gt_id"])
-  ; [6],[5],Gt(Mult(Numeric 2, Const (Symbolic "R")), Var "of"),
-     Output (DVar "ID","lost",[Expr(Var "of")])
-  ; [6],[7],Geq(Var "of",Mult(Numeric 2, Const (Symbolic "R"))),Input (None, "bid", [EVar "e'";AVar "gt_id'"])
-  ; [7],[8],Geq(Var "of", Var "of'"), Output (DVar "ID'","LOST",[Expr(Var "of'")])
-  ; [7],[8],Gt(Var "of'", Var "of"),  Output (DVar "ID", "LOST",[Expr(Var "of")])
-  ; [8],[9],Geq(Var "of", Var "of'"), Output (DVar "ID","WIN",[])
-  ; [8],[9],Geq(Var "of'", Var "of"), Output (DVar "ID'","WIN",[])
-  ; [9],[10],True,Input (None, "empty", [AVar "gt_empty_id"])
-  ; [10],[9],Or(And (Geq(Var "of",Var "of'"), Not (Eq(Address (DVar "id"), Address (DVar "ID")))),
-            And (Gt(Var "of'",Var "of"), Not (Eq(Address (DVar "id"), Address (DVar "ID'"))))),Output (DVar "emptyID","NOK",[])
-  ; [10],[11],Or(And (Geq(Var "of",Var "of'"), Eq(Address (DVar "emptyID"), Address (DVar "ID"))),
-            And (Gt(Var "of'",Var "of"), Eq(Address (DVar "emptyID"), Address (DVar "ID'")))),Output (DVar "emptyID","OK",[])
- ; [11],[12],Geq(Var "of", Var "of'"),
-      Output (DAddress "incinerator'","notify",
-       [Expr(Var "ID");Expr(Const(Numeric 2))])
-  ; [11],[12],Geq(Var "of'", Var "of"),
-      Output (DAddress "incinerator'","notify",
-       [Expr(Var "ID'");Expr(Const(Numeric 2))])
-  ; [12],[1],True,
-      Output (DAddress "CH","save",
-       [Expr(Plus(Max(Var "of", Var "of'"),
-                  Minus (Mult(Numeric 2, Const (Symbolic "R")))))])
-  ]
-
- let automaton : automaton = ("garbage_bin",[1],states,transitions)
-
-  let _ =
-   let ch = open_out "garbage_bin.dot" in
-   output_string ch (pp_automaton automaton);
-   close_out ch
-
-end
-
-
-(*
-module Citizen = struct
+ (*** Garbage Collection Example ***)
+ module Bin = struct
   let (states : state list) =
-    [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
-    ; [2], ["p",Const (Numeric 2) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ; [3], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ; [4], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ; [5], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ; [6], ["p",Const (Numeric 1) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-    ; [7], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-    ; [8], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-    ; [9], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Minus (Const (Symbolic "D")), Mult (Numeric 2, Var "a")))]
-    ;[10], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ;[11], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ;[12], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-    ]
-
-  let address0 = "citizen"
-  let address = DAddress "citizen"
+    [ [1], ([EVar "p",Expr (Const (Numeric 0)) ; EVar "d", Expr (Const (Symbolic "D"))], true)
+    ; [2], ([EVar "p",Expr(Const (Numeric 0)) ; EVar "d", Expr (Const (Symbolic "D")) ; EVar "cur_q",Expr (Var "q")
+            ;AVar "ID",Address(DVar "id")],true)
+    ; [3], ([EVar "p",Expr(Const (Numeric 1)) ;
+             EVar "d", Expr(Plus (Var "D", Minus (Const (Symbolic "R"))))], true)
+    ; [4], ([EVar "p",Expr(Const (Numeric 1))
+            ; EVar "d", Expr(Plus (Var "D", Minus (Const (Symbolic "R"))))
+            ; EVar "cur_q",Expr(Var "q'") ;AVar "ID",Address(DVar "id'")], true)
+    ; [5], ([EVar "p",Expr(Const (Numeric 2)) ;
+             EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))],true)
+    ; [6], ([EVar "p",Expr(Const (Numeric 2))
+        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
+            ; EVar "of",Expr(Var "e") ;AVar "ID",Address(DVar "gt_id")],true)
+    ; [7], ([EVar "p",Expr(Const (Numeric 2))
+        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
+        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
+            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")],true)
+    ; [8], ([EVar "p",Expr(Const (Numeric 2))
+        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
+        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
+            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")],true)
+    ; [9], ([EVar "p",Expr(Const (Numeric 2))
+        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
+        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
+            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'") ],true)
+    ;[10], ([EVar "p",Expr(Const (Numeric 0))
+        ; EVar "d",
+          Expr(Plus
+           (Plus (Var "d", Minus (Mult (Numeric 2, Const (Symbolic "R")))),
+            Max (Var "of", Var "of'")))
+        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
+            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'") ],true)
+    ;[11], ([EVar "p",Expr(Const (Numeric 0))
+        ; EVar "d",
+          Expr(Plus
+           (Plus (Var "d", Minus (Mult (Numeric 2, Const (Symbolic "R")))),
+            Max (Var "of", Var "of'")))
+        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
+            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")],true)
+   ]
 
   let (transitions : transition list) =
-    [ [1],[2],True,Output (DAddress "incinerator","fee",[Expr(Const (Symbolic "D"))])
-    ; [2],[1],Eq(Var "p",Const(Numeric 0)),Tau
-    ; [2],[3],True,Tau
-    ; [2],[5],True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-    ; [5],[2],True,Input ("NOK", [])
-    ; [2],[10],True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 2))])
-    ; [10],[2],True,Input ("NOK", [])
-    ; [3],[4],True,Tau
-    ; [3],[11],True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-    ; [11],[3],True,Input ("NOK", [])
-    ; [4],[1],True,Tau
-    ; [11],[12], True, Input ("OK", ["a"])
-    ; [12],[1],True,Tau
-    ; [5],[6], True, Input ("OK", ["a"])
-    ; [6],[8], True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-    ; [8],[6],True ,Input ("NOK", [])
-    ; [6],[7], True, Tau
-    ; [8],[9], True, Input ("OK", ["a"])
-    ; [10],[9], True, Input ("OK", ["2*a"])
-    ; [9],[1], True, Tau
-    ; [7],[1], True, Tau
-    ]
+   [ [1],[2],True,Input (Contract "garbage_bin",None, "dep", [EVar "q";AVar "id"])
+   ; [2],[1],Gt(Var "cur_q",Const(Numeric 2)),Output (Contract "garbage_bin",DVar "ID","NOK",[])
+   ; [2],[3],Eq(Expr (Var "cur_q"),Expr (Const(Numeric 1))),
+      Output (Contract "garbage_bin",DVar "ID","OK",[Expr(Const (Symbolic "R"))])
+   ; [2],[5],Eq(Expr(Var "cur_q"),Expr(Const(Numeric 2))),
+      Output (Contract "garbage_bin",DVar "ID","OK",[Expr(Mult(Numeric 2, Const (Symbolic "R")))])
+   ; [3],[4],True,Input (Contract "garbage_bin",None, "dep", [EVar "q'";AVar "id'"])
+   ; [4],[3],Gt(Var "cur_q",Const(Numeric 2)),Output (Contract "garbage_bin",DVar "ID","NOK",[])
+   ; [4],[5],Eq(Expr(Var "cur_q"),Expr(Const(Numeric 1))),
+      Output (Contract "garbage_bin",DVar "ID","OK",[Expr(Const (Symbolic "R"))])
+   ; [5],[6],True,Input (Contract "garbage_bin",None, "bid", [EVar "e";AVar "gt_id"])
+   ; [6],[5],Gt(Mult(Numeric 2, Const (Symbolic "R")), Var "of"),
+      Output (Contract "garbage_bin",DVar "ID","lost",[Expr(Var "of")])
+   ; [6],[7],Geq(Var "of",Mult(Numeric 2, Const (Symbolic "R"))),Input (Contract "garbage_bin",None, "bid", [EVar "e'";AVar "gt_id'"])
+   ; [7],[8],Geq(Var "of", Var "of'"), Output (Contract "garbage_bin",DVar "ID'","LOST",[Expr(Var "of'")])
+   ; [7],[8],Gt(Var "of'", Var "of"),  Output (Contract "garbage_bin",DVar "ID", "LOST",[Expr(Var "of")])
+   ; [8],[9],Geq(Var "of", Var "of'"), Output (Contract "garbage_bin",DVar "ID","WIN",[])
+   ; [8],[9],Geq(Var "of'", Var "of"), Output (Contract "garbage_bin",DVar "ID'","WIN",[])
+   ; [9],[10],True,Input (Contract "garbage_bin",None, "empty", [AVar "id"])
+   ; [10],[9],Or(And (Geq(Var "of",Var "of'"), Not (Eq(Address (DVar "id"), Address (DVar "ID")))),
+             And (Gt(Var "of'",Var "of"), Not (Eq(Address (DVar "id"), Address (DVar "ID'"))))),Tau
+   ; [10],[11],Geq(Var "of", Var "of'"),
+     Output (Contract "garbage_bin",DAddress (Contract "incinerator"),"notify",
+        [Expr(Var "ID");Expr(Const(Numeric 2))])
+   ; [10],[11],Geq(Var "of'", Var "of"),
+     Output (Contract "garbage_bin",DAddress (Contract "incinerator'"),"notify",
+        [Expr(Var "ID'");Expr(Const(Numeric 2))])
+   ; [11],[1],True,
+     Output (Contract "garbage_bin",DAddress (Contract "incinerator"),"save",
+        [Expr(Plus(Max(Var "of", Var "of'"),
+                   Minus (Mult(Numeric 2, Const (Symbolic "R")))))])
+   ]
 
-  let automaton : automaton = (address0,[1],states,transitions)
+  let automaton : automaton = ([Contract "garbage_bin"],[1],states,transitions)
 
-  let _ =
-   let ch = open_out "citizen.dot" in
-   output_string ch (pp_automaton automaton);
-   close_out ch
-
-end
-
-module MinCitizen = struct
-  let (states : state list) =
-    [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
-    ; [2], ["p",Const (Numeric 2) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ; [3], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ; [5], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ; [6], ["p",Const (Numeric 1) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-    ; [8], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-    ;[10], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ;[11], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-    ]
-
-  let address0 = "mincitizen"
-  let address = DAddress address0
-
-  let (transitions : transition list) =
-    [ [1],[2],True,Output (DAddress "incinerator","fee",[Expr(Const (Symbolic "D"))])
-    ; [2],[5],True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-    ; [5],[2],True,Input ("NOK", [])
-    ; [2],[10],True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 2))])
-    ; [10],[2],True,Input ("NOK", [])
-    ; [3],[11],True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-    ; [2],[11],True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-    ; [11],[1],True,Input ("NOK", [])
-    ; [11],[3],True,Input ("NOK", [])
-    ; [11],[1], True, Input ("OK", ["a"])
-    ; [5],[1], True, Input ("OK", ["a"])
-    ; [5],[6], True, Input ("OK", ["a"])
-    ; [6],[8], True,
-      Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-    ; [8],[1],True ,Input ("NOK", [])
-    ; [8],[6],True ,Input ("NOK", [])
-    ; [8],[1], True, Input ("OK", ["a"])
-    ; [10],[1], True, Input ("OK", ["2*a"])
-    ]
-
-  let automaton : automaton = (address0,[1],states,transitions)
-
-  let _ =
-   let ch = open_out "mincitizen.dot" in
-   output_string ch (pp_automaton automaton);
-   close_out ch
-
-end
-*)
-
-module BasicCitizen = struct
-  let (states : state list) =
-    [ [1], [EVar "cp",Expr(Const (Numeric 2)) ; EVar "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-    ; [2], [EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-    ; [3], [EVar "cp",Expr(Const (Numeric 1)) ;
-            EVar "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-    ; [4], [EVar "cp",Expr(Const (Numeric 0)) ;
-            EVar "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-    ]
-
-  let address0 = "basiccitizen"
-  let address = DAddress address0
-  let gb = "garbage_bin"
-
-  let (transitions : transition list) =
-    [ [1],[2],True,
-      Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    (*; [2],[1],True,Input ("NOK", [])*)
-    (*; [2],[1], True, Input ("OK", ["a"])*)
-    ; [2],[3], True, Input (Some (DAddress gb), "OK", [EVar "a"])
-    ; [3],[4], True,
-      Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    (*; [4],[3],True ,Input ("NOK", [])*)
-    ; [4],[1], True, Input (Some (DAddress gb), "OK", [EVar "a"])
-    ]
-
-  let automaton : automaton = (address0,[1],states,transitions)
-
-  let _ =
-    let ch = open_out "basiccitizen.dot" in
+   let _ =
+    let ch = open_out "garbage_bin.dot" in
     output_string ch (pp_automaton automaton);
     close_out ch
 
-end 
-
-module SampleTruck = struct
-  let (states : state list) =
-    [ [1], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))]
-    ; [2], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
-    ; [3], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-    ; [4], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-    ; [5], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-    ; [6], [EVar "tp",Expr(Const (Numeric 2)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-
-]
-
-  let address0 = "basictruck"
-  let address = DAddress address0
-  let gb = "garbage_bin"
-
-  let (transitions : transition list) =
-    [ [1],[2],True,
-      Output (DAddress gb,"bid",[Expr( Mult (Numeric 2,Const(Symbolic("R")))) ;Address address])
-    ; [2],[3],True,
-      Output (DAddress gb,"bid",[ Expr(Plus( Mult(Numeric 2, Const(Symbolic "R")),Const( Numeric 1))) ; Address address])
-(*; [2],[1],True,Input ("NOK", [])*)
-    (*; [2],[1], True, Input ("OK", ["a"])*)
-    ; [3],[4], True, Input (Some (DAddress gb), "LOST", [EVar "e"])
-    ; [4],[5], True, Input (Some (DAddress gb), "WIN", [])
-    ; [5],[6], True,
-      Output (DAddress gb,"empty",[Address address])
+ end
 
 
-    (*; [4],[3],True ,Input ("NOK", [])*)
-    ; [6],[1], True, Input (Some (DAddress gb), "OK", [])
+ (*
+ module Citizen = struct
+   let (states : state list) =
+     [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
+     ; [2], ["p",Const (Numeric 2) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ; [3], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ; [4], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ; [5], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ; [6], ["p",Const (Numeric 1) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
+     ; [7], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
+     ; [8], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
+     ; [9], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Minus (Const (Symbolic "D")), Mult (Numeric 2, Var "a")))]
+     ;[10], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ;[11], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ;[12], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
+     ]
 
-    ]
+   let address0 = "citizen"
+   let address = DAddress "citizen"
 
-  let automaton : automaton = (address0,[1],states,transitions)
+   let (transitions : transition list) =
+     [ [1],[2],True,Output (DAddress "incinerator","fee",[Expr(Const (Symbolic "D"))])
+     ; [2],[1],Eq(Var "p",Const(Numeric 0)),Tau
+     ; [2],[3],True,Tau
+     ; [2],[5],True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
+     ; [5],[2],True,Input ("NOK", [])
+     ; [2],[10],True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 2))])
+     ; [10],[2],True,Input ("NOK", [])
+     ; [3],[4],True,Tau
+     ; [3],[11],True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
+     ; [11],[3],True,Input ("NOK", [])
+     ; [4],[1],True,Tau
+     ; [11],[12], True, Input ("OK", ["a"])
+     ; [12],[1],True,Tau
+     ; [5],[6], True, Input ("OK", ["a"])
+     ; [6],[8], True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
+     ; [8],[6],True ,Input ("NOK", [])
+     ; [6],[7], True, Tau
+     ; [8],[9], True, Input ("OK", ["a"])
+     ; [10],[9], True, Input ("OK", ["2*a"])
+     ; [9],[1], True, Tau
+     ; [7],[1], True, Tau
+     ]
 
-  let _ =
-    let ch = open_out "sampletruck.dot" in
+   let automaton : automaton = (address0,[1],states,transitions)
+
+   let _ =
+    let ch = open_out "citizen.dot" in
     output_string ch (pp_automaton automaton);
     close_out ch
-end
 
+ end
 
-module BasicTruck = struct
-  let (states : state list) =
-    [ [1], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))]
-    ; [2], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
-   
-    ; [3], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
- 
-            ; [4], [EVar "tp",Expr(Const (Numeric 1)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
-    ]
+ module MinCitizen = struct
+   let (states : state list) =
+     [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
+     ; [2], ["p",Const (Numeric 2) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ; [3], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ; [5], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ; [6], ["p",Const (Numeric 1) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
+     ; [8], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
+     ;[10], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ;[11], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
+     ]
 
+   let address0 = "mincitizen"
+   let address = DAddress address0
 
-  let address0 = "basictruck"
-  let address = DAddress address0
-  let gb = "garbage_bin"
+   let (transitions : transition list) =
+     [ [1],[2],True,Output (DAddress "incinerator","fee",[Expr(Const (Symbolic "D"))])
+     ; [2],[5],True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
+     ; [5],[2],True,Input ("NOK", [])
+     ; [2],[10],True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 2))])
+     ; [10],[2],True,Input ("NOK", [])
+     ; [3],[11],True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
+     ; [2],[11],True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
+     ; [11],[1],True,Input ("NOK", [])
+     ; [11],[3],True,Input ("NOK", [])
+     ; [11],[1], True, Input ("OK", ["a"])
+     ; [5],[1], True, Input ("OK", ["a"])
+     ; [5],[6], True, Input ("OK", ["a"])
+     ; [6],[8], True,
+       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
+     ; [8],[1],True ,Input ("NOK", [])
+     ; [8],[6],True ,Input ("NOK", [])
+     ; [8],[1], True, Input ("OK", ["a"])
+     ; [10],[1], True, Input ("OK", ["2*a"])
+     ]
 
-  let (transitions : transition list) =
-    [ [1],[2],True,
-      Output (DAddress gb,"bid",[Expr( Const( Symbolic "e")) ;Address address])
-    ; [2],[1], True, Input (Some (DAddress gb), "LOST", [EVar "e"])
-    ; [2],[3], True, Input (Some (DAddress gb), "WIN", [])
-    ; [3],[4], True,
-      Output (DAddress gb,"empty",[Address address])
-    ; [4],[1], True, Input (Some (DAddress gb), "OK", [])
-      ]
+   let automaton : automaton = (address0,[1],states,transitions)
 
-
-  let automaton : automaton = (address0,[1],states,transitions)
-
-  let _ =
-    let ch = open_out "basictruck.dot" in
+   let _ =
+    let ch = open_out "mincitizen.dot" in
     output_string ch (pp_automaton automaton);
     close_out ch
-end
+
+ end
+ *)
+
+ module BasicCitizen = struct
+   let (states : state list) =
+     [ [1], ([EVar "cp",Expr(Const (Numeric 2)) ; EVar "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))],true)
+     ; [2], ([EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))],true)
+     ; [3], ([EVar "cp",Expr(Const (Numeric 1)) ;
+             EVar "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))],true)
+     ; [4], ([EVar "cp",Expr(Const (Numeric 0)) ;
+             EVar "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))],true)
+     ]
+
+   let address0 = "basiccitizen"
+   let address = DAddress address0
+   let gb = "garbage_bin"
+
+   let (transitions : transition list) =
+     [ [1],[2],True,
+       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+     (*; [2],[1],True,Input ("NOK", [])*)
+     (*; [2],[1], True, Input ("OK", ["a"])*)
+     ; [2],[3], True, Input (Some (DAddress gb), "OK", [EVar "a"])
+     ; [3],[4], True,
+       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+     (*; [4],[3],True ,Input ("NOK", [])*)
+     ; [4],[1], True, Input (Some (DAddress gb), "OK", [EVar "a"])
+     ]
+
+   let automaton : automaton = (address0,[1],states,transitions)
+
+   let _ =
+     let ch = open_out "basiccitizen.dot" in
+     output_string ch (pp_automaton automaton);
+     close_out ch
+
+ end
+
+ (* module SampleTruck = struct
+   let (states : state list) =
+     [ [1], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))]
+     ; [2], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
+     ; [3], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
+     ; [4], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
+     ; [5], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
+     ; [6], [EVar "tp",Expr(Const (Numeric 2)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
+
+ ]
+
+   let address0 = "basictruck"
+   let address = DAddress address0
+   let gb = "garbage_bin"
+
+   let (transitions : transition list) =
+     [ [1],[2],True,
+       Output (DAddress gb,"bid",[Expr( Mult (Numeric 2,Const(Symbolic("R")))) ;Address address])
+     ; [2],[3],True,
+       Output (DAddress gb,"bid",[ Expr(Plus( Mult(Numeric 2, Const(Symbolic "R")),Const( Numeric 1))) ; Address address])
+ (*; [2],[1],True,Input ("NOK", [])*)
+     (*; [2],[1], True, Input ("OK", ["a"])*)
+     ; [3],[4], True, Input (Some (DAddress gb), "LOST", [EVar "e"])
+     ; [4],[5], True, Input (Some (DAddress gb), "WIN", [])
+     ; [5],[6], True,
+       Output (DAddress gb,"empty",[Address address])
 
 
-(* module SimpleCitizen = struct
-  let (states : state list) =
-    [ [2], ["p",Expr(Const (Numeric 2)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-    ; [5], ["p",Expr(Const (Numeric 1)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-    ; [6], ["p",Expr(Const (Numeric 1)) ;
-          "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-    ; [8], ["p",Expr(Const (Numeric 0)) ;
-          "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
+     (*; [4],[3],True ,Input ("NOK", [])*)
+     ; [6],[1], True, Input (Some (DAddress gb), "OK", [])
+
+     ]
+
+   let automaton : automaton = (address0,[1],states,transitions)
+
+   let _ =
+     let ch = open_out "sampletruck.dot" in
+     output_string ch (pp_automaton automaton);
+     close_out ch
+ end
+
+
+ module BasicTruck = struct
+   let (states : state list) =
+     [ [1], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))]
+     ; [2], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
+
+     ; [3], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
     ]
 
-  let address0 = "simplecitizen"
-  let address = DAddress address0
-  let gb = "garbage_bin"
 
-  let (transitions : transition list) =
-    [ [2],[5],True,
-      Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    ; [5],[2],True,Input ("NOK", [])
-    ; [5],[2], True, Input ("OK", ["a"])
-    ; [5],[6], True, Input ("OK", ["a"])
-    ; [6],[8], True,
-      Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    ; [8],[6],True ,Input ("NOK", [])
-    ; [8],[2], True, Input ("OK", ["a"])
-    ]
+   let address0 = "basictruck"
+   let address = DAddress address0
+   let gb = "garbage_bin"
 
-  let automaton : automaton = (address0,[2],states,transitions)
+   let (transitions : transition list) =
+     [ [1],[2],True,
+       Output (DAddress gb,"bid",[Expr( Const( Symbolic "e")) ;Address address])
+     ; [2],[1], True, Input (Some (DAddress gb), "LOST", [EVar "e"])
+     ; [2],[3], True, Input (Some (DAddress gb), "WIN", [])
+     ; [3],[1], True,
+       Output (DAddress gb,"empty",[Address address])
+       ]
 
-  let _ =
-   let ch = open_out "simplecitizen.dot" in
-   output_string ch (pp_automaton automaton);
-   close_out ch
+   let automaton : automaton = (address0,[1],states,transitions)
 
-end
+   let _ =
+     let ch = open_out "basictruck.dot" in
+     output_string ch (pp_automaton automaton);
+     close_out ch
+ end *)
 
-module SimpleCitizen = struct
-  let (states : state list) =
-    [ [2], ["p",Expr(Const (Numeric 2)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-    ; [5], ["p",Expr(Const (Numeric 1)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-    ; [6], ["p",Expr(Const (Numeric 1)) ;
-            "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-    ; [8], ["p",Expr(Const (Numeric 0)) ;
-            "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-    ]
 
-  let address0 = "simplecitizen"
-  let address = DAddress address0
-  let gb = "garbage_bin"
+ (* module SimpleCitizen = struct
+   let (states : state list) =
+     [ [2], ["p",Expr(Const (Numeric 2)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
+     ; [5], ["p",Expr(Const (Numeric 1)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
+     ; [6], ["p",Expr(Const (Numeric 1)) ;
+           "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
+     ; [8], ["p",Expr(Const (Numeric 0)) ;
+           "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
+     ]
 
-  let (transitions : transition list) =
-    [ [2],[5],True,
-      Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    ; [5],[2],True,Input ("NOK", [])
-    ; [5],[2], True, Input ("OK", ["a"])
-    ; [5],[6], True, Input ("OK", ["a"])
-    ; [6],[8], True,
-      Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    ; [8],[6],True ,Input ("NOK", [])
-    ; [8],[2], True, Input ("OK", ["a"])
-    ]
+   let address0 = "simplecitizen"
+   let address = DAddress address0
+   let gb = "garbage_bin"
 
-  let automaton : automaton = (address0,[2],states,transitions)
+   let (transitions : transition list) =
+     [ [2],[5],True,
+       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+     ; [5],[2],True,Input ("NOK", [])
+     ; [5],[2], True, Input ("OK", ["a"])
+     ; [5],[6], True, Input ("OK", ["a"])
+     ; [6],[8], True,
+       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+     ; [8],[6],True ,Input ("NOK", [])
+     ; [8],[2], True, Input ("OK", ["a"])
+     ]
 
-  let _ =
+   let automaton : automaton = (address0,[2],states,transitions)
+
+   let _ =
     let ch = open_out "simplecitizen.dot" in
     output_string ch (pp_automaton automaton);
     close_out ch
 
-end *)
+ end
+
+ module SimpleCitizen = struct
+   let (states : state list) =
+     [ [2], ["p",Expr(Const (Numeric 2)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
+     ; [5], ["p",Expr(Const (Numeric 1)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
+     ; [6], ["p",Expr(Const (Numeric 1)) ;
+             "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
+     ; [8], ["p",Expr(Const (Numeric 0)) ;
+             "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
+     ]
+
+   let address0 = "simplecitizen"
+   let address = DAddress address0
+   let gb = "garbage_bin"
+
+   let (transitions : transition list) =
+     [ [2],[5],True,
+       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+     ; [5],[2],True,Input ("NOK", [])
+     ; [5],[2], True, Input ("OK", ["a"])
+     ; [5],[6], True, Input ("OK", ["a"])
+     ; [6],[8], True,
+       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+     ; [8],[6],True ,Input ("NOK", [])
+     ; [8],[2], True, Input ("OK", ["a"])
+     ]
+
+   let automaton : automaton = (address0,[2],states,transitions)
+
+   let _ =
+     let ch = open_out "simplecitizen.dot" in
+     output_string ch (pp_automaton automaton);
+     close_out ch
+
+ end *)
 
 
-(*
-module Truck = struct
-  let (states : state list) =
-    [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
-    ; [2], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-    ; [3], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-    ; [4], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-    ; [10], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-    ; [5], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [6], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
-    ; [7], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
-    ; [8], ["p",Const (Numeric 0) ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
-    ; [9], ["p",Const (Symbolic "h") ;
-          "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
-    ; [11], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-    ; [12], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-    ; [13], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-
-    ; [14], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
-    ; [15], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
-    ; [16], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
-    ; [17], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
-    ; [18], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
-    ; [19], ["p",Const (Symbolic "h") ;
+ (*
+ module Truck = struct
+   let (states : state list) =
+     [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
+     ; [2], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
+     ; [3], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
+     ; [4], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
+     ; [10], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
+     ; [5], ["p",Const (Numeric 0) ;
            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [20], ["p",Const (Symbolic "h") ;
+     ; [6], ["p",Const (Numeric 0) ;
            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
-    ; [21], ["p",Const (Symbolic "h") ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [23], ["p",Const (Symbolic "h") ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [24], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
-                   "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [22], ["p",Const (Symbolic "h") ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-    ; [25], ["p",Const (Symbolic "h");
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [26], ["p",Const (Symbolic "h") ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [27], ["p",Const (Symbolic "h") ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [28], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [37], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [38], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Plus ( Mult (Numeric 2,Const (Symbolic "e")), Const (Symbolic "a")))))]
-    ; [39], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const (Symbolic("eps"))) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [40], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const (Symbolic("eps"))) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [29], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
-    ; [32], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Plus(Minus (Mult (Numeric 2,Const (Symbolic "e"))),Const(Symbolic("a"))))]
-    ; [30], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
-    ; [31], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
-    ; [33], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [34], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Plus (Minus (Mult (Numeric 2,Const (Symbolic "e"))),Const(Symbolic("a")))))]
-    ; [35], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ; [36], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
-    ]
+     ; [7], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
+     ; [8], ["p",Const (Numeric 0) ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
+     ; [9], ["p",Const (Symbolic "h") ;
+           "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
+     ; [11], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
+     ; [12], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
+     ; [13], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
 
-  let address0 = "truck"
-  let address = DAddress address0
+     ; [14], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e")))]
+     ; [15], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
+     ; [16], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
+     ; [17], ["p",Const (Symbolic "h") ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
+     ; [18], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
+     ; [19], ["p",Const (Symbolic "h") ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [20], ["p",Const (Symbolic "h") ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Const (Symbolic "e"))))]
+     ; [21], ["p",Const (Symbolic "h") ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [23], ["p",Const (Symbolic "h") ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [24], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
+                    "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [22], ["p",Const (Symbolic "h") ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
+     ; [25], ["p",Const (Symbolic "h");
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [26], ["p",Const (Symbolic "h") ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [27], ["p",Const (Symbolic "h") ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [28], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [37], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [38], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Plus ( Mult (Numeric 2,Const (Symbolic "e")), Const (Symbolic "a")))))]
+     ; [39], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const (Symbolic("eps"))) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [40], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const (Symbolic("eps"))) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [29], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
+     ; [32], ["p",Mult(Numeric 2,Const (Symbolic "h")) ; "balance", Plus (Const (Symbolic "A"), Plus(Minus (Mult (Numeric 2,Const (Symbolic "e"))),Const(Symbolic("a"))))]
+     ; [30], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
+     ; [31], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ; "balance", Plus (Const (Symbolic "A"), Minus (Mult (Numeric 2,Const (Symbolic "e"))))]
+     ; [33], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [34], ["p",Mult(Numeric 2,Const (Symbolic "h")) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Plus (Minus (Mult (Numeric 2,Const (Symbolic "e"))),Const(Symbolic("a")))))]
+     ; [35], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ; [36], ["p",Plus (Mult(Numeric 2,Const (Symbolic "h")),Const(Symbolic("eps"))) ;
+            "balance", Plus (Const (Symbolic "A"), Plus (Minus(Var "d"), Minus (Mult (Numeric 2,Const (Symbolic "e")))))]
+     ]
 
-  let (transitions : transition list) =
-    [ [1],[2],True,
-        Output (DAddress "gb","bid",[Address address; Expr( Const (Symbolic "e"))])
-    ; [2],[1], True, Input ("LOST", ["e"])
-    ; [2],[3],True,Input ("WIN", [])
-    ; [2],[4],True,Output (DAddress "gb","empty",[Address address])
-    ; [4],[2],True,Input ("NOK", [])
-    ; [3],[10],True,Output (DAddress "gb","empty",[Address address])
-    ; [10],[11],True,Input ("OK", [])
-    ; [11],[12],True,Tau
-    ; [12],[13],True,
-      Output (DAddress "incinerator","empty",[Address address; Expr( Const (Symbolic "p"))])
-    ; [12],[1],True,Tau
-    ; [11],[14],True,
-      Output (DAddress "gb","bid",[Address address; Expr( Const (Symbolic "e"))])
-    ; [14],[15],True,Output (DAddress "gb","empty",[Address address])
-    ; [15],[14],True,Input ("NOK", [])
-    ; [14],[16],True,Input ("WIN", [])
-    ; [16],[17],True,Output (DAddress "gb","empty",[Address address])
-    ; [17],[18],True,Input ("OK", [])
-    ; [2],[5],True,
-      Output (DAddress "gb","bid",[Address address; Expr(Plus (Const (Symbolic "e"),Const(Symbolic "d")))])
-    ; [5],[6], True, Input ("LOST", ["e"])
-    ; [6],[7],True,Input ("WIN", [])
-    ; [7],[8],True,Output (DAddress "gb","empty",[Address address])
-    ; [8],[9],True,Input ("OK", [])
-    ]
+   let address0 = "truck"
+   let address = DAddress address0
 
-  let automaton : automaton = (address0,[1],states,transitions)
+   let (transitions : transition list) =
+     [ [1],[2],True,
+         Output (DAddress "gb","bid",[Address address; Expr( Const (Symbolic "e"))])
+     ; [2],[1], True, Input ("LOST", ["e"])
+     ; [2],[3],True,Input ("WIN", [])
+     ; [2],[4],True,Output (DAddress "gb","empty",[Address address])
+     ; [4],[2],True,Input ("NOK", [])
+     ; [3],[10],True,Output (DAddress "gb","empty",[Address address])
+     ; [10],[11],True,Input ("OK", [])
+     ; [11],[12],True,Tau
+     ; [12],[13],True,
+       Output (DAddress "incinerator","empty",[Address address; Expr( Const (Symbolic "p"))])
+     ; [12],[1],True,Tau
+     ; [11],[14],True,
+       Output (DAddress "gb","bid",[Address address; Expr( Const (Symbolic "e"))])
+     ; [14],[15],True,Output (DAddress "gb","empty",[Address address])
+     ; [15],[14],True,Input ("NOK", [])
+     ; [14],[16],True,Input ("WIN", [])
+     ; [16],[17],True,Output (DAddress "gb","empty",[Address address])
+     ; [17],[18],True,Input ("OK", [])
+     ; [2],[5],True,
+       Output (DAddress "gb","bid",[Address address; Expr(Plus (Const (Symbolic "e"),Const(Symbolic "d")))])
+     ; [5],[6], True, Input ("LOST", ["e"])
+     ; [6],[7],True,Input ("WIN", [])
+     ; [7],[8],True,Output (DAddress "gb","empty",[Address address])
+     ; [8],[9],True,Input ("OK", [])
+     ]
 
-  let _ =
-   let ch = open_out "truck.dot" in
-   output_string ch (pp_automaton automaton);
-   close_out ch
-end
-*)
+   let automaton : automaton = (address0,[1],states,transitions)
 
-(*let _ =
- let citizen_bin = compose BasicCitizen.automaton Bin.automaton in
- let ch = open_out "basiccitizen_bin.dot" in
- output_string ch (pp_automaton citizen_bin);*)
+   let _ =
+    let ch = open_out "truck.dot" in
+    output_string ch (pp_automaton automaton);
+    close_out ch
+ end
+ *)
 
-let _ =
- let citizen_bin = compose BasicTruck.automaton Bin.automaton in
- let ch = open_out "basictruck_bin.dot" in
- output_string ch (pp_automaton citizen_bin);
+ (*let _ =
+  let citizen_bin = compose BasicCitizen.automaton Bin.automaton in
+  let ch = open_out "basiccitizen_bin.dot" in
+  output_string ch (pp_automaton citizen_bin);*)
+
+ let _ =
+  let citizen_bin = compose BasicTruck.automaton Bin.automaton in
+  let ch = open_out "basictruck_bin.dot" in
+  output_string ch (pp_automaton citizen_bin);
