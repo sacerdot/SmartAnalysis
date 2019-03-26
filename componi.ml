@@ -3,7 +3,8 @@
 type id = int list
 type label = string
 type var = string
-type address = string
+type address = Contract of string | Human of string
+let is_contract = function Contract _ -> true | Human _ -> false
 type aexpr = DVar of var | DAddress of address
 type const = Symbolic of string | Numeric of int
 type expr =
@@ -33,20 +34,20 @@ let smart_and c1 c2 =
   | _,_ -> And(c1,c2)
 
 type action =
- | Input of (*sender:*)aexpr option * label * typed_var list
- | Output of (*dest:*)aexpr * label * actual list
+ | Input of (*receiver:*)address * (*sender:*)aexpr option * label * typed_var list
+ | Output of (*sender:*)address * (*receiver:*)aexpr * label * actual list
  | Tau
 
-type state = id * assignment list
+type state = id * (assignment list * bool(*= no actor running*))
 type transition = id * id * cond * action
-type automaton = address * id * state list * transition list
+type automaton = address list * id(*=initial state*) * state list * transition list
 
 (*** Serialization ***)
 let pp_id l = String.concat "*" (List.map string_of_int l)
 let pp_label l = l
 let pp_var v = v
 let pp_typed_var = function EVar v | AVar v -> pp_var v
-let pp_address a = a
+let pp_address = function Contract a -> "C("^a^")" | Human a -> "H("^a^")"
 let pp_aexpr = function DVar v -> pp_var v | DAddress a -> pp_address a
 let pp_const = function Symbolic s -> s | Numeric n -> string_of_int n
 let rec pp_expr =
@@ -75,10 +76,13 @@ let rec pp_cond =
 let pp_cond = function True -> "" | g -> pp_cond g
 let pp_action =
  function
-  | Input (s,l,vl) ->
-     (match s with None -> "" | Some a -> pp_aexpr a ^ ".") ^
-     pp_label l ^ "(" ^ String.concat "," (List.map pp_typed_var vl) ^ ")"
-  | Output (aexpr,l,al) ->
+  | Input (r,s,l,vl) ->
+     pp_address r ^ "." ^
+     pp_label l ^
+     "[" ^ (match s with None -> "" | Some a -> pp_aexpr a ^ ".") ^ "]" ^
+     "(" ^ String.concat "," (List.map pp_typed_var vl) ^ ")"
+  | Output (r,aexpr,l,al) ->
+     pp_address r ^ ":" ^
      pp_aexpr aexpr ^ "." ^ pp_label l ^
       "(" ^ String.concat "," (List.map pp_actual al) ^ ")"
   | Tau -> "tau"
@@ -93,8 +97,8 @@ let pp_transition (s,d,c,a) =
  "\"" ^ pp_id s ^ "\" -> \"" ^ pp_id d ^ "\" [label=\"" ^
   pp_action a ^ "\n" ^ pp_cond c ^ "\" color=\"" ^
   color_of_action a ^ "\"]"
-let pp_automaton (a, i, sl, tl) =
- "digraph \"" ^  pp_address a ^ "\" {\n" ^
+let pp_automaton (al, i, sl, tl) =
+ "digraph \"" ^  String.concat "*" (List.map pp_address al) ^ "\" {\n" ^
  String.concat "\n" (List.map (pp_state i) sl) ^ "\n" ^
  String.concat "\n" (List.map pp_transition tl) ^ "\n" ^
 "}"
@@ -237,10 +241,10 @@ let rec apply_subst_cond subst =
   | True -> True
 let apply_subst_action subst =
  function
-  | Output (aexpr,l,al) ->
-     Output (apply_subst_aexpr subst aexpr,l,List.map (apply_subst_actual subst) al)
-  | Input (aexpr, l, vl) ->
-     Input (map_option (apply_subst_aexpr subst) aexpr, l, vl)
+  | Output (r, aexpr,l,al) ->
+     Output (r, apply_subst_aexpr subst aexpr,l,List.map (apply_subst_actual subst) al)
+  | Input (r, aexpr, l, vl) ->
+     Input (r, map_option (apply_subst_aexpr subst) aexpr, l, vl)
   | Tau as a -> a
 
 (*** Composition ***)
@@ -252,18 +256,23 @@ let rec same_but_last l1 l2 =
 
 exception Skip
 
+let (@@) (ass1,zero1) (ass2,zero2) =
+ assert(zero1 || zero2) ;
+ (ass1 @ ass2, false), zero1 && zero2
+    
+
 let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) sp tp =
  try
   let id' = id1' @ id2' in
   let cond = apply_subst_cond sub cond in
   let cond =
    let ground_cond =
-    apply_subst_cond sub (apply_subst_cond assign cond) in
+    apply_subst_cond sub (apply_subst_cond (fst assign) cond) in
    match eval_cond ground_cond with T -> True | M -> cond | F -> raise Skip in
   let action = apply_subst_action sub action in
-  let s1' = apply_subst_assignment_list sub (List.assoc id1' sl1) in
-  let s2' = apply_subst_assignment_list sub (List.assoc id2' sl2) in
-  let s12' = s1' @ s2' in
+  let s1' = apply_subst_assignment_list sub (fst (List.assoc id1' sl1)) in
+  let s2' = apply_subst_assignment_list sub (fst (List.assoc id2' sl2)) in
+  let s12' = s1' @ s2',snd assign in
   let id' = id' @ [mk_fresh ()] in
   let (id',_) as s',is_new =
    try
@@ -278,44 +287,48 @@ let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as a
    sp,tp
  with Skip -> sp,tp
 
-and move_state ~sub au1 au2 id id1 id2 sp tp =
+and move_state ~sub (au1 : automaton) (au2 : automaton) id id1 id2 sp tp =
  let sp,tp = move1 ~sub au1 au2 id id1 id2 sp tp in
  let sp,tp = move2 ~sub au1 au2 id id1 id2 sp tp in
  let sp,tp = interact1in_2out ~sub au1 au2 id id1 id2 sp tp in
  let sp,tp = interact2in_1out ~sub au1 au2 id id1 id2 sp tp in
  sp,tp
 
-and move1 ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1 id2 sp tp =
+and move1 ~sub ((_,_,sl1,tl1) as au1 : automaton) ((a2,_,sl2,tl2) as au2 : automaton) id id1 id2 sp tp =
  let moves = List.filter (fun (s,_,_,_) -> s = id1) tl1 in
  let id1' x = x in
  let id2' _ = id2 in
  let your_ass = List.assoc id1 sl1 in
  let other_ass = List.assoc id2 sl2 in
- let the_other = a2 in
- movex your_ass other_ass the_other moves id1' id2' ~sub au1 au2 id sp tp
+ let the_others = a2 in
+ movex your_ass other_ass the_others moves id1' id2' ~sub au1 au2 id sp tp
 
-and move2 ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1 id2 sp tp =
+and move2 ~sub ((a1,_,sl1,tl1) as au1) ((_,_,sl2,tl2) as au2) id id1 id2 sp tp =
  let moves = List.filter (fun (s,_,_,_) -> s = id2) tl2 in
  let id1' _ = id1 in
  let id2' x = x in
  let your_ass = List.assoc id2 sl2 in
  let other_ass = List.assoc id1 sl1 in
- let the_other = a1 in
- movex your_ass other_ass the_other moves id1' id2' ~sub au1 au2 id sp tp
+ let the_others = a1 in
+ movex your_ass other_ass the_others moves id1' id2' ~sub au1 au2 id sp tp
 
-and movex your_ass other_ass the_other moves id1' id2' ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
+and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
+ let assign,zero = your_ass @@ other_ass in
  let can_fire =
   function
-   | Tau | Input (None,_,_) -> true
-   | Input (Some d,_,_)
-   | Output(d,_,_) ->
-      apply_subst_aexpr sub
-       (apply_subst_aexpr your_ass d) <> DAddress the_other in
+   | Tau | Input (_,None,_,_) -> true
+   | Input (_,Some d,_,_) ->
+      let d = apply_subst_aexpr sub (apply_subst_aexpr (fst your_ass) d) in
+      List.for_all (fun a -> d <> DAddress a) the_others
+   | Output(r,d,_,_) ->
+      (is_contract r || zero) &&
+      let d = apply_subst_aexpr sub (apply_subst_aexpr (fst your_ass) d) in
+      List.for_all (fun a -> d <> DAddress a) the_others in
  let change_sub sub =
   function
      Tau
    | Output _ -> sub
-   | Input(_,_,vl) ->
+   | Input(_,_,_,vl) ->
       List.map
        (function
            (EVar v) as x -> x, Expr (Var v)
@@ -326,75 +339,82 @@ and movex your_ass other_ass the_other moves id1' id2' ~sub ((a1,_,sl1,tl1) as a
      let id1' = id1' aexpr in
      let id2' = id2' aexpr in
      let sub = change_sub sub action in
-     let assign = your_ass @ other_ass in
      add_transition id1' id2' ~sub cond assign action id au1 au2 sp tp
     end else
      sp,tp
   ) (sp,tp) moves
 
-and interact1in_2out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1 id2 sp tp =
+and interact1in_2out ~sub ((a1,_,sl1,tl1) as au1 : automaton) ((a2,_,sl2,tl2) as au2 : automaton) id id1 id2 sp tp =
+ let ass_in = List.assoc id1 sl1 in
+ let ass_out = List.assoc id2 sl2 in
+ let zero = snd ass_in && snd ass_out in
  let moves1 =
   List.filter (function (s,_,_,Input _) -> s = id1 | _ -> false) tl1 in
  let moves2 =
   List.filter
    (function
-       (s,_,_,Output (d,_,_)) ->
-         s = id2 &&
-         apply_subst_aexpr sub
-          (apply_subst_aexpr (List.assoc id2 sl2) d) = DAddress a1
+       (s,_,_,Output (r,d,_,_)) ->
+         (is_contract r || zero) &&
+         let d =
+          apply_subst_aexpr sub (apply_subst_aexpr (fst (List.assoc id2 sl2)) d) in
+         s = id2 && List.exists (fun a -> d = DAddress a) a1
      | _ -> false) tl2 in
  let id1' din _ = din in
  let id2' _ don = don in
- let ass_in = List.assoc id1 sl1 in
- let ass_out = List.assoc id2 sl2 in
- interact_in_out id1' id2' moves1 moves2 ass_in ass_out a2 ~sub au1 au2 id sp tp
+ interact_in_out id1' id2' moves1 moves2 ass_in ass_out ~sub au1 au2 id sp tp
 
 and interact2in_1out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1 id2 sp tp =
+ let ass_in = List.assoc id2 sl2 in
+ let ass_out = List.assoc id1 sl1 in
+ let zero = snd ass_in && snd ass_out in
  let moves2 =
   List.filter (function (s,_,_,Input _) -> s = id2 | _ -> false) tl2 in
  let moves1 =
   List.filter
    (function
-       (s,_,_,Output (d,_,_)) ->
-         s = id1 &&
-         apply_subst_aexpr sub
-          (apply_subst_aexpr (List.assoc id1 sl1) d) = DAddress a2
+       (s,_,_,Output (r,d,_,_)) ->
+         (is_contract r || zero) &&
+         let d =
+          apply_subst_aexpr sub (apply_subst_aexpr (fst (List.assoc id1 sl1)) d) in
+         s = id1 && List.exists (fun a -> d = DAddress a) a2
      | _ -> false) tl1 in
  let id1' _ don = don in
  let id2' din _ = din in
- let ass_in = List.assoc id2 sl2 in
- let ass_out = List.assoc id1 sl1 in
- interact_in_out id1' id2' moves2 moves1 ass_in ass_out a1 ~sub au1 au2 id sp tp
+ interact_in_out id1' id2' moves2 moves1 ass_in ass_out ~sub au1 au2 id sp tp
 
-and interact_in_out id1' id2' moves_in moves_out ass_in ass_out addr_out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
+and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
  List.fold_left
   (fun (sp,tp) t_in ->
     List.fold_left
      (fun (sp,tp) t_out ->
        match t_in,t_out with
-        | (_,din,condi,Input(sender,li,vl)), (_,don,condo,Output(_,lo,al))
+        | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(addr_out,_,lo,al))
            when
+            receiver = addr_out &&
             (match sender with
                 None -> true
               | Some aexpr ->
-                 apply_subst_aexpr sub (apply_subst_aexpr ass_in aexpr)
+                 apply_subst_aexpr sub (apply_subst_aexpr (fst ass_in) aexpr)
                  = DAddress addr_out)
              && li=lo && List.length vl = List.length al ->
-            let sub= List.combine vl (List.map (apply_subst_actual sub) al) @ sub in
+            let sub =
+             List.combine vl (List.map (apply_subst_actual sub) al) @ sub in
             let cond = smart_and condi condo in
             add_transition (id1' din don) (id2' din don) ~sub cond
-             (ass_in @ ass_out) Tau id au1 au2 sp tp
+             (fst (ass_in @@ ass_out)) Tau id au1 au2 sp tp
         | _ -> sp,tp
      ) (sp,tp) moves_out
   ) (sp,tp) moves_in
 
-let compose ((a1,i1,sl1,tl1) as au1) ((a2,i2,sl2,tl2) as au2) =
+let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : automaton) =
  let id = i1 @ i2 @ [mk_fresh ()] in
  let s1 = List.assoc i1 sl1 in
  let s2 = List.assoc i2 sl2 in
- let s = id, s1 @ s2 in
+ let s,zero = s1 @@ s2 in
+ assert(zero) ;
+ let s = id, fst (s1 @@ s2) in
  let sp,tp = move_state ~sub:[] au1 au2 id i1 i2 [s] [] in
- a1 ^ "*" ^ a2,id,sp,tp
+ a1 @ a2,id,sp,tp
 
 (*** Garbage Collection Example ***)
 module Bin = struct
