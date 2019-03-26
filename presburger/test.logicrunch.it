@@ -1,0 +1,17 @@
+/**
+ *  http://logicrunch.it.uu.se:4096/~wv/princess/?ex=Princess%2Fmodulo
+ *  scegliere +model oppure +mostGeneralConstraint
+ */
+
+\universalConstants {
+  int k, r;
+}
+
+\existentialConstants {
+  int x, y;
+}
+
+\problem {
+  r + 3 < k -> (\max (x,y) < k & r < \max (x,y)) 
+}
+
