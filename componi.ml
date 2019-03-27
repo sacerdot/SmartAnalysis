@@ -258,7 +258,7 @@ exception Skip
 
 let (@@) (ass1,zero1) (ass2,zero2) =
  assert(zero1 || zero2) ;
- (ass1 @ ass2, false), zero1 && zero2
+ ass1 @ ass2, zero1 && zero2
 
 
 let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) sp tp =
@@ -270,9 +270,8 @@ let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as a
     apply_subst_cond sub (apply_subst_cond (fst assign) cond) in
    match eval_cond ground_cond with T -> True | M -> cond | F -> raise Skip in
   let action = apply_subst_action sub action in
-  let s1' = apply_subst_assignment_list sub (fst (List.assoc id1' sl1)) in
-  let s2' = apply_subst_assignment_list sub (fst (List.assoc id2' sl2)) in
-  let s12' = s1' @ s2',snd assign in
+  let s12' = List.assoc id1' sl1 @@ List.assoc id2' sl2 in
+  let s12' = apply_subst_assignment_list sub (fst s12'),snd s12' in
   let id' = id' @ [mk_fresh ()] in
   let (id',_) as s',is_new =
    try
@@ -313,7 +312,7 @@ and move2 ~sub ((a1,_,sl1,tl1) as au1) ((_,_,sl2,tl2) as au2) id id1 id2 sp tp =
  movex your_ass other_ass the_others moves id1' id2' ~sub au1 au2 id sp tp
 
 and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
- let assign,zero = your_ass @@ other_ass in
+ let assign = your_ass @@ other_ass in
  let can_fire =
   function
    | Tau | Input (_,None,_,_) -> true
@@ -321,7 +320,7 @@ and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as 
       let d = apply_subst_aexpr sub (apply_subst_aexpr (fst your_ass) d) in
       List.for_all (fun a -> d <> DAddress a) the_others
    | Output(r,d,_,_) ->
-      (is_contract r || zero) &&
+      (is_contract r || snd assign) &&
       let d = apply_subst_aexpr sub (apply_subst_aexpr (fst your_ass) d) in
       List.for_all (fun a -> d <> DAddress a) the_others in
  let change_sub sub =
@@ -339,6 +338,9 @@ and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as 
      let id1' = id1' aexpr in
      let id2' = id2' aexpr in
      let sub = change_sub sub action in
+prerr_endline ("#1 " ^ pp_id id1' ^ " " ^ string_of_bool (snd your_ass));
+prerr_endline ("#2 " ^ pp_id id2' ^ " " ^ string_of_bool (snd other_ass));
+prerr_endline ("## " ^ string_of_bool (snd assign));
      add_transition id1' id2' ~sub cond assign action id au1 au2 sp tp
     end else
      sp,tp
@@ -401,7 +403,7 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
              List.combine vl (List.map (apply_subst_actual sub) al) @ sub in
             let cond = smart_and condi condo in
             add_transition (id1' din don) (id2' din don) ~sub cond
-             (fst (ass_in @@ ass_out)) Tau id au1 au2 sp tp
+             (ass_in @@ ass_out) Tau id au1 au2 sp tp
         | _ -> sp,tp
      ) (sp,tp) moves_out
   ) (sp,tp) moves_in
@@ -410,9 +412,7 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
  let id = i1 @ i2 @ [mk_fresh ()] in
  let s1 = List.assoc i1 sl1 in
  let s2 = List.assoc i2 sl2 in
- let s,zero = s1 @@ s2 in
- assert(zero) ;
- let s = id, fst (s1 @@ s2) in
+ let s = id, s1 @@ s2 in
  let sp,tp = move_state ~sub:[] au1 au2 id i1 i2 [s] [] in
  a1 @ a2,id,sp,tp
 
