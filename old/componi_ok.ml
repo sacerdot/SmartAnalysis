@@ -372,8 +372,12 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out addr_out ~sub ((
     List.fold_left
      (fun (sp,tp) t_out ->
        match t_in,t_out with
-        | (_,din,condi,Input(sender,li,vl)), (_,don,condo,Output(_,lo,al))
-           when
+       | (_,din,condi,Input(sender,li,vl)), (_,don,condo,Output(_,lo,al))
+         when
+          prerr_endline ("#sender " ^ (match sender with None -> "" | Some a -> pp_aexpr a));
+          prerr_endline ("#addr_out " ^ pp_address addr_out);
+          prerr_endline ("#label input " ^ pp_label li);
+          prerr_endline ("#label output " ^ pp_label lo);
             (match sender with
                 None -> true
               | Some aexpr ->
@@ -635,7 +639,7 @@ module BasicCitizen = struct
     output_string ch (pp_automaton automaton);
     close_out ch
 
-end 
+end
 
 module SampleTruck = struct
   let (states : state list) =
@@ -683,7 +687,7 @@ module BasicTruck = struct
   let (states : state list) =
     [ [1], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))]
     ; [2], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
-   
+
     ; [3], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
    ]
 

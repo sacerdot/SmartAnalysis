@@ -338,17 +338,17 @@ and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as 
      let id1' = id1' aexpr in
      let id2' = id2' aexpr in
      let sub = change_sub sub action in
-prerr_endline ("#1 " ^ pp_id id1' ^ " " ^ string_of_bool (snd your_ass));
+(* prerr_endline ("#1 " ^ pp_id id1' ^ " " ^ string_of_bool (snd your_ass));
 prerr_endline ("#2 " ^ pp_id id2' ^ " " ^ string_of_bool (snd other_ass));
-prerr_endline ("## " ^ string_of_bool (snd assign));
+prerr_endline ("## " ^ string_of_bool (snd assign)); *)
      add_transition id1' id2' ~sub cond assign action id au1 au2 sp tp
     end else
      sp,tp
   ) (sp,tp) moves
 
 and interact1in_2out ~sub ((a1,_,sl1,tl1) as au1 : automaton) ((a2,_,sl2,tl2) as au2 : automaton) id id1 id2 sp tp =
- let ass_in = List.assoc id1 sl1 in
- let ass_out = List.assoc id2 sl2 in
+let ass_in = List.assoc id1 sl1 in
+let ass_out = List.assoc id2 sl2 in
  let zero = snd ass_in && snd ass_out in
  let moves1 =
   List.filter (function (s,_,_,Input _) -> s = id1 | _ -> false) tl1 in
@@ -391,8 +391,8 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
      (fun (sp,tp) t_out ->
        match t_in,t_out with
         | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(addr_out,_,lo,al))
-           when
-            receiver = addr_out &&
+          when
+            (* receiver = addr_out && *)
             (match sender with
                 None -> true
               | Some aexpr ->
@@ -407,6 +407,36 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
         | _ -> sp,tp
      ) (sp,tp) moves_out
   ) (sp,tp) moves_in
+
+  (* and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
+   List.fold_left
+    (fun (sp,tp) t_in ->
+      List.fold_left
+       (fun (sp,tp) t_out ->
+         match t_in,t_out with
+          | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(_,addr_out,lo,al))
+            when
+              prerr_endline ("#receiver " ^ pp_address receiver);
+              prerr_endline ("#sender " ^ (match sender with None -> "" | Some a -> pp_aexpr a));
+              prerr_endline ("#addr_out " ^ pp_aexpr addr_out);
+              prerr_endline ("#label input " ^ pp_label li);
+              prerr_endline ("#label output " ^ pp_label lo);
+
+              DAddress receiver = addr_out &&
+              (match sender with
+                  None -> true
+                | Some aexpr ->
+                   apply_subst_aexpr sub (apply_subst_aexpr (fst ass_in) aexpr)
+                   =  addr_out)
+               && li=lo && List.length vl = List.length al ->
+              let sub =
+               List.combine vl (List.map (apply_subst_actual sub) al) @ sub in
+              let cond = smart_and condi condo in
+              add_transition (id1' din don) (id2' din don) ~sub cond
+               (ass_in @@ ass_out) Tau id au1 au2 sp tp
+          | _ -> sp,tp
+       ) (sp,tp) moves_out
+    ) (sp,tp) moves_in *)
 
 let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : automaton) =
  let id = i1 @ i2 @ [mk_fresh ()] in
