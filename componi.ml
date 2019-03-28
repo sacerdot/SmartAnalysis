@@ -204,8 +204,8 @@ let rec apply_subst_expr subst =
          | Expr e -> e
          | Address _
          | String _ ->
-            prerr_endline ("### " ^ v);
-            assert false) (* dynamic typing error.. *)
+           prerr_endline ("### " ^ v);
+           assert false) (* dynamic typing error.. *)
       with Not_found -> e)
   | Const _ as e -> e
   | Plus (e1,e2) -> Plus (apply_subst_expr subst e1,apply_subst_expr subst e2)
@@ -390,9 +390,9 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
     List.fold_left
      (fun (sp,tp) t_out ->
        match t_in,t_out with
-        | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(addr_out,_,lo,al))
+        | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(addr_out,rec_out,lo,al))
           when
-            (* receiver = addr_out && *)
+            DAddress receiver = apply_subst_aexpr sub (apply_subst_aexpr (fst ass_out) rec_out) &&
             (match sender with
                 None -> true
               | Some aexpr ->
@@ -407,36 +407,6 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
         | _ -> sp,tp
      ) (sp,tp) moves_out
   ) (sp,tp) moves_in
-
-  (* and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
-   List.fold_left
-    (fun (sp,tp) t_in ->
-      List.fold_left
-       (fun (sp,tp) t_out ->
-         match t_in,t_out with
-          | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(_,addr_out,lo,al))
-            when
-              prerr_endline ("#receiver " ^ pp_address receiver);
-              prerr_endline ("#sender " ^ (match sender with None -> "" | Some a -> pp_aexpr a));
-              prerr_endline ("#addr_out " ^ pp_aexpr addr_out);
-              prerr_endline ("#label input " ^ pp_label li);
-              prerr_endline ("#label output " ^ pp_label lo);
-
-              DAddress receiver = addr_out &&
-              (match sender with
-                  None -> true
-                | Some aexpr ->
-                   apply_subst_aexpr sub (apply_subst_aexpr (fst ass_in) aexpr)
-                   =  addr_out)
-               && li=lo && List.length vl = List.length al ->
-              let sub =
-               List.combine vl (List.map (apply_subst_actual sub) al) @ sub in
-              let cond = smart_and condi condo in
-              add_transition (id1' din don) (id2' din don) ~sub cond
-               (ass_in @@ ass_out) Tau id au1 au2 sp tp
-          | _ -> sp,tp
-       ) (sp,tp) moves_out
-    ) (sp,tp) moves_in *)
 
 let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : automaton) =
  let id = i1 @ i2 @ [mk_fresh ()] in
@@ -598,59 +568,79 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
 
  end
 
- module MinCitizen = struct
-   let (states : state list) =
-     [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
-     ; [2], ["p",Const (Numeric 2) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ; [3], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ; [5], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ; [6], ["p",Const (Numeric 1) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-     ; [8], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-     ;[10], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ;[11], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ]
 
-   let address0 = "mincitizen"
-   let address = DAddress address0
+ *)
 
-   let (transitions : transition list) =
-     [ [1],[2],True,Output (DAddress "incinerator","fee",[Expr(Const (Symbolic "D"))])
-     ; [2],[5],True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-     ; [5],[2],True,Input ("NOK", [])
-     ; [2],[10],True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 2))])
-     ; [10],[2],True,Input ("NOK", [])
-     ; [3],[11],True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-     ; [2],[11],True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-     ; [11],[1],True,Input ("NOK", [])
-     ; [11],[3],True,Input ("NOK", [])
-     ; [11],[1], True, Input ("OK", ["a"])
-     ; [5],[1], True, Input ("OK", ["a"])
-     ; [5],[6], True, Input ("OK", ["a"])
-     ; [6],[8], True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-     ; [8],[1],True ,Input ("NOK", [])
-     ; [8],[6],True ,Input ("NOK", [])
-     ; [8],[1], True, Input ("OK", ["a"])
-     ; [10],[1], True, Input ("OK", ["2*a"])
-     ]
+module Citizen = struct
+  let (states : state list) =
+    [ [1], ([EVar "cp",Expr(Const (Numeric 0)) ; EVar "balance", Expr(Const (Symbolic "D"))],true)
+    ; [2], ([EVar "cp",Expr(Const (Numeric 2)) ; EVar "balance", Expr(Const (Numeric 0))],true)
+    ; [3], ([EVar "cp",Expr(Const (Numeric 0)) ; EVar "balance", Expr(Const (Numeric 0))],true)
+    ; [5], ([EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Const (Numeric 0))],true)
+    ; [6], ([EVar "cp",Expr(Const (Numeric 1)) ;
+             EVar "balance", Expr(Const (Numeric 0))],true)
+    ; [7], ([EVar "cp",Expr(Const (Numeric 0))  ;
+             EVar "balance", Expr(Const (Symbolic "2*a"))],true)
+    ; [8], ([EVar "cp",Expr(Const (Numeric 1))  ;
+             EVar "balance", Expr(Const (Symbolic "a"))],true)
+    ; [9], ([EVar "cp",Expr(Const (Numeric 0))  ;
+             EVar "balance", Expr(Const (Numeric 0))],true)
+    ;[10], ([EVar "cp",Expr(Const (Numeric 0)) ;
+             EVar "balance", Expr(Const (Numeric 0))],true)
+    ;[11], ([EVar "cp",Expr(Const (Numeric 0)) ;
+             EVar "balance", Expr(Const (Symbolic "a"))],true)
+    ;[12], ([EVar "cp",Expr(Const (Numeric 0)) ;
+             EVar "balance", Expr(Const (Symbolic "a"))],true)
+    ;[13], ([EVar "cp",Expr(Const (Numeric 0)) ;
+             EVar "balance", Expr(Const (Symbolic "a"))],true)
+    ;[14], ([EVar "cp",Expr(Const (Numeric 0))  ;
+             EVar "balance", Expr(Const (Symbolic "2*a"))],true)
+    ]
 
-   let automaton : automaton = (address0,[1],states,transitions)
+    let address0 = Human "citizen"
+    let address = DAddress address0
+    let gb = Contract "garbage_bin"
+    let incinerator = Contract "incinerator"
 
-   let _ =
-    let ch = open_out "mincitizen.dot" in
+  let (transitions : transition list) =
+    [ [1],[2],True,Output (address0, DAddress incinerator,"fee",[Expr(Const (Symbolic "D"))])
+    ; [2],[3],True,
+      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 2)); Address address])
+    ; [3],[2],True,Input (address0,Some (DAddress gb),"NOK", [])
+    ; [2],[4],True,
+      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+    ; [4],[2],True,Input (address0,Some (DAddress gb),"NOK", [])
+    ; [2],[5],True, Tau
+    ; [2],[6],True, Tau
+    ; [3],[7], True,Input (address0,Some (DAddress gb),"OK", [EVar "2*a"])
+    ; [4],[8], True,Input (address0,Some (DAddress gb),"OK", [EVar "a"])
+    ; [8],[12],True,
+      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+    ; [12],[8],True,Input (address0,Some (DAddress gb),"NOK", [])
+    ; [8],[13],True, Tau
+    ; [12],[14], True,Input (address0,Some (DAddress gb),"OK", [EVar "a"])
+    ; [5],[9],True,
+      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
+    ; [9],[5],True,Input (address0,Some (DAddress gb),"NOK", [])
+    ; [5],[10],True, Tau
+    ; [9],[11], True,Input (address0,Some (DAddress gb),"OK", [EVar "a"])
+    ; [7],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
+    ; [14],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
+    ; [13],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
+    ; [11],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
+    ; [10],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
+    ; [6],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
+
+    ]
+
+  let automaton : automaton = ([address0],[1],states,transitions)
+
+  let _ =
+    let ch = open_out "citizen.dot" in
     output_string ch (pp_automaton automaton);
     close_out ch
 
- end
- *)
+end
 
  module BasicCitizen = struct
    let (states : state list) =
@@ -736,8 +726,7 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
      ; [2], ([EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))], true)
 
      ; [3], ([EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))], true)
-    ]
-
+     ]
 
    let address0 = Human "basictruck"
    let address = DAddress address0
@@ -947,6 +936,6 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
   output_string ch (pp_automaton citizen_bin);*)
 
  let _ =
-  let citizen_bin = compose BasicTruck.automaton Bin.automaton in
+  let citizen_bin = compose Citizen.automaton Bin.automaton in
   let ch = open_out "basictruck_bin.dot" in
   output_string ch (pp_automaton citizen_bin);

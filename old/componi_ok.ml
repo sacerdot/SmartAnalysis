@@ -198,7 +198,7 @@ let rec apply_subst_expr subst =
      (try
        (match List.assoc (EVar v) subst with
          | Expr e -> e
-         | Address _
+         | Address _ ->
          | String _ ->
             prerr_endline ("### " ^ v);
             assert false) (* dynamic typing error.. *)
