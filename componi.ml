@@ -1,4 +1,6 @@
 (*** Presburger Automata ***)
+module Presburger =
+struct
 
 type id = int list
 type label = string
@@ -415,6 +417,97 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
  let s = id, s1 @@ s2 in
  let sp,tp = move_state ~sub:[] au1 au2 id i1 i2 [s] [] in
  a1 @ a2,id,sp,tp
+
+end
+
+(*** Smart Calculus ***)
+
+module SmartCalculus =
+struct
+ type contract
+ type human
+ type _ address =
+  | Contract : string -> contract address
+  | Human : string -> human address
+ type 'a tag =
+  | Int : int tag
+  | Bool : bool tag
+  | String : string tag
+  | ContractAddress : (contract address) tag
+  | HumanAddress : (human address) tag
+ type 'a ident = 'a tag * string
+ type 'a meth = 'a ident
+ type 'a field = 'a ident
+ type 'a var = 'a ident
+ type const = Symbolic of string | Numeric of int
+ type _ value =
+  | Const : 'a -> 'a value
+  | Addr : 'a address -> 'a value
+ type _ expr =
+  | Var : 'a var -> 'a expr
+  | Fail : 'a expr
+  | This : (contract address) expr
+  | Field : 'a field -> 'a expr
+  | Plus : int expr * int expr -> int expr
+  | Mult : const * int expr -> int expr
+  | Minus : int expr
+  | Max : int expr * int expr -> int expr
+  | Value : 'a value -> 'a expr
+ type any_expr = AnyExpr : 'a expr -> any_expr
+ type _ rhs =
+  | Expr : 'a expr -> 'a rhs
+  | Call : (contract address) expr * 'a meth * any_expr list -> 'a rhs
+ type stm =
+  | Assign : 'a field * 'a rhs -> stm
+  | IfThenElse : bool expr * stm * stm -> stm
+  | Comp : stm * stm -> stm
+  | Choice : stm * stm -> stm
+ type 'a program = stm * 'a expr (* statement + return *)
+ type assign =
+  | Assign : 'a field * 'a value -> assign
+ type store = assign list
+ type any_method_decl =
+  | AnyMethodDecl : 'a meth * 'a program -> any_method_decl
+ type methods = any_method_decl list
+ type configuration =
+  { contracts : (contract address * methods * store) list
+  ; humans : (human address * store * stm) list
+  }
+
+ let lookup (type a) (f : a field) (s : store) : a value =
+  let rec aux : store -> a value =
+   function
+     [] -> assert false
+   | Assign(g,v)::tl ->
+      match f,g with
+         (Int,sf),(Int,sg) when sf=sg -> v
+       | (Bool,sf),(Bool,sg) when sf=sg -> v
+       | (String,sf),(String,sg) when sf=sg -> v
+       | (HumanAddress,sf),(HumanAddress,sg) when sf=sg -> v
+       | (ContractAddress,sf),(ContractAddress,sg) when sf=sg -> v
+       | _ -> aux tl
+  in
+   aux s
+end
+
+module PresburgerOfSmartCalculus =
+struct
+ let state_of_configuration c : Presburger.state =
+  let id = [0] in (* FIXME *)
+  let stores =
+   List.map (fun (_,_,s) -> s) c.SmartCalculus.contracts @
+   List.map (fun (_,s,_) -> s) c.humans in
+  let stores =
+   List.map
+    (fun store ->
+      assert false (* FIXME usare codice tipo lookup *)
+    ) stores in
+  let store = List.concat stores in
+  id,(store,true)
+
+end
+
+open Presburger
 
  (*** Garbage Collection Example ***)
  module Bin = struct
