@@ -503,79 +503,12 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
 
  end
 
-
- (*
- module Citizen = struct
-   let (states : state list) =
-     [ [1], ["p",Const (Numeric 0) ; "balance", Const (Symbolic "A")]
-     ; [2], ["p",Const (Numeric 2) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ; [3], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ; [4], ["p",Const (Numeric 0) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ; [5], ["p",Const (Numeric 1) ; "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ; [6], ["p",Const (Numeric 1) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-     ; [7], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-     ; [8], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-     ; [9], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Minus (Const (Symbolic "D")), Mult (Numeric 2, Var "a")))]
-     ;[10], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ;[11], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D")))]
-     ;[12], ["p",Const (Numeric 0) ;
-           "balance", Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D"))))]
-     ]
-
-   let address0 = "citizen"
-   let address = DAddress "citizen"
-
-   let (transitions : transition list) =
-     [ [1],[2],True,Output (DAddress "incinerator","fee",[Expr(Const (Symbolic "D"))])
-     ; [2],[1],Eq(Var "p",Const(Numeric 0)),Tau
-     ; [2],[3],True,Tau
-     ; [2],[5],True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-     ; [5],[2],True,Input ("NOK", [])
-     ; [2],[10],True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 2))])
-     ; [10],[2],True,Input ("NOK", [])
-     ; [3],[4],True,Tau
-     ; [3],[11],True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-     ; [11],[3],True,Input ("NOK", [])
-     ; [4],[1],True,Tau
-     ; [11],[12], True, Input ("OK", ["a"])
-     ; [12],[1],True,Tau
-     ; [5],[6], True, Input ("OK", ["a"])
-     ; [6],[8], True,
-       Output (DAddress "gb","dep",[Address address; Expr( Const (Numeric 1))])
-     ; [8],[6],True ,Input ("NOK", [])
-     ; [6],[7], True, Tau
-     ; [8],[9], True, Input ("OK", ["a"])
-     ; [10],[9], True, Input ("OK", ["2*a"])
-     ; [9],[1], True, Tau
-     ; [7],[1], True, Tau
-     ]
-
-   let automaton : automaton = (address0,[1],states,transitions)
-
-   let _ =
-    let ch = open_out "citizen.dot" in
-    output_string ch (pp_automaton automaton);
-    close_out ch
-
- end
-
-
- *)
-
 module Citizen = struct
   let (states : state list) =
     [ [1], ([EVar "cp",Expr(Const (Numeric 0)) ; EVar "balance", Expr(Const (Symbolic "D"))],true)
     ; [2], ([EVar "cp",Expr(Const (Numeric 2)) ; EVar "balance", Expr(Const (Numeric 0))],true)
     ; [3], ([EVar "cp",Expr(Const (Numeric 0)) ; EVar "balance", Expr(Const (Numeric 0))],true)
+    ; [4], ([EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Const (Numeric 0))],true)
     ; [5], ([EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Const (Numeric 0))],true)
     ; [6], ([EVar "cp",Expr(Const (Numeric 1)) ;
              EVar "balance", Expr(Const (Numeric 0))],true)
@@ -677,49 +610,6 @@ end
 
  end
 
- (* module SampleTruck = struct
-   let (states : state list) =
-     [ [1], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))]
-     ; [2], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))]
-     ; [3], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Mult (Numeric 2,Const (Symbolic "d"))), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-     ; [4], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-     ; [5], [EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-     ; [6], [EVar "tp",Expr(Const (Numeric 2)) ; EVar "truck_balance", Expr(Plus (Minus(Const (Symbolic "d")), Minus (Mult (Numeric 3,Const (Symbolic "e")))))]
-
- ]
-
-   let address0 = "basictruck"
-   let address = DAddress address0
-   let gb = "garbage_bin"
-
-   let (transitions : transition list) =
-     [ [1],[2],True,
-       Output (DAddress gb,"bid",[Expr( Mult (Numeric 2,Const(Symbolic("R")))) ;Address address])
-     ; [2],[3],True,
-       Output (DAddress gb,"bid",[ Expr(Plus( Mult(Numeric 2, Const(Symbolic "R")),Const( Numeric 1))) ; Address address])
- (*; [2],[1],True,Input ("NOK", [])*)
-     (*; [2],[1], True, Input ("OK", ["a"])*)
-     ; [3],[4], True, Input (Some (DAddress gb), "LOST", [EVar "e"])
-     ; [4],[5], True, Input (Some (DAddress gb), "WIN", [])
-     ; [5],[6], True,
-       Output (DAddress gb,"empty",[Address address])
-
-
-     (*; [4],[3],True ,Input ("NOK", [])*)
-     ; [6],[1], True, Input (Some (DAddress gb), "OK", [])
-
-     ]
-
-   let automaton : automaton = (address0,[1],states,transitions)
-
-   let _ =
-     let ch = open_out "sampletruck.dot" in
-     output_string ch (pp_automaton automaton);
-     close_out ch
- end
-*)
-
-
  module BasicTruck = struct
    let (states : state list) =
      [ [1], ([EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))], true)
@@ -748,77 +638,6 @@ end
      output_string ch (pp_automaton automaton);
      close_out ch
  end
-
-
- (* module SimpleCitizen = struct
-   let (states : state list) =
-     [ [2], ["p",Expr(Const (Numeric 2)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-     ; [5], ["p",Expr(Const (Numeric 1)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-     ; [6], ["p",Expr(Const (Numeric 1)) ;
-           "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-     ; [8], ["p",Expr(Const (Numeric 0)) ;
-           "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-     ]
-
-   let address0 = "simplecitizen"
-   let address = DAddress address0
-   let gb = "garbage_bin"
-
-   let (transitions : transition list) =
-     [ [2],[5],True,
-       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-     ; [5],[2],True,Input ("NOK", [])
-     ; [5],[2], True, Input ("OK", ["a"])
-     ; [5],[6], True, Input ("OK", ["a"])
-     ; [6],[8], True,
-       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-     ; [8],[6],True ,Input ("NOK", [])
-     ; [8],[2], True, Input ("OK", ["a"])
-     ]
-
-   let automaton : automaton = (address0,[2],states,transitions)
-
-   let _ =
-    let ch = open_out "simplecitizen.dot" in
-    output_string ch (pp_automaton automaton);
-    close_out ch
-
- end
-
- module SimpleCitizen = struct
-   let (states : state list) =
-     [ [2], ["p",Expr(Const (Numeric 2)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-     ; [5], ["p",Expr(Const (Numeric 1)) ; "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))]
-     ; [6], ["p",Expr(Const (Numeric 1)) ;
-             "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-     ; [8], ["p",Expr(Const (Numeric 0)) ;
-             "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))]
-     ]
-
-   let address0 = "simplecitizen"
-   let address = DAddress address0
-   let gb = "garbage_bin"
-
-   let (transitions : transition list) =
-     [ [2],[5],True,
-       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-     ; [5],[2],True,Input ("NOK", [])
-     ; [5],[2], True, Input ("OK", ["a"])
-     ; [5],[6], True, Input ("OK", ["a"])
-     ; [6],[8], True,
-       Output (DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-     ; [8],[6],True ,Input ("NOK", [])
-     ; [8],[2], True, Input ("OK", ["a"])
-     ]
-
-   let automaton : automaton = (address0,[2],states,transitions)
-
-   let _ =
-     let ch = open_out "simplecitizen.dot" in
-     output_string ch (pp_automaton automaton);
-     close_out ch
-
- end *)
 
 
  (*
@@ -930,12 +749,21 @@ end
  end
  *)
 
- (*let _ =
-  let citizen_bin = compose BasicCitizen.automaton Bin.automaton in
-  let ch = open_out "basiccitizen_bin.dot" in
-  output_string ch (pp_automaton citizen_bin);*)
+
+ let basiccitizen_bin = compose BasicCitizen.automaton Bin.automaton
+ let basictruck_bin = compose BasicTruck.automaton Bin.automaton
+ let basiccitizen_basictruck_bin = compose BasicCitizen.automaton basictruck_bin
+ let automata =
+  [ "basiccitizen_bin",basiccitizen_bin
+  ; "basictruck_bin",basictruck_bin
+  ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
+  ]
 
  let _ =
-  let citizen_bin = compose Citizen.automaton Bin.automaton in
-  let ch = open_out "basictruck_bin.dot" in
-  output_string ch (pp_automaton citizen_bin);
+  List.iter
+   (fun (fn,au) ->
+     let ch = open_out (fn ^ ".dot") in
+     output_string ch (pp_automaton au) ;
+     close_out ch ;
+     ignore (Unix.system ("dot -Tpdf " ^ fn ^ ".dot -o " ^ fn ^ ".pdf"))
+   ) automata
