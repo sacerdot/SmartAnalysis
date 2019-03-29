@@ -1,111 +1,119 @@
-(*** Presburger Automata ***)
-module Presburger =
+(*** Smart Calculus ***)
+
+module SmartCalculus =
 struct
+ type contract
+ type human
+ type _ address =
+  | Contract : string -> contract address
+  | Human : string -> human address
+ type any_address = AnyAddress : _ address -> any_address
+ type 'a tag =
+  | Int : int tag
+  | Bool : bool tag
+  | String : string tag
+  | ContractAddress : (contract address) tag
+  | HumanAddress : (human address) tag
+ type 'a ident = 'a tag * string
+ type 'a meth = 'a ident
+ type 'a field = 'a ident
+ type 'a var = 'a ident
+ type const = Symbolic of string | Numeric of int
+ type _ expr =
+  | Var : 'a var -> 'a expr
+  | Fail : 'a expr
+  | This : (contract address) expr
+  | Field : 'a field -> 'a expr
+  | Plus : int expr * int expr -> int expr
+  | Mult : const * int expr -> int expr
+  | Minus : int expr -> int expr
+  | Max : int expr * int expr -> int expr
+  | Geq : int expr * int expr -> bool expr
+  | Gt : int expr * int expr -> bool expr
+  | Eq : 'a expr * 'a expr -> bool expr
+  | And : bool expr * bool expr -> bool expr
+  | Or : bool expr * bool expr -> bool expr
+  | Not : bool expr -> bool expr
+  | Value : 'a -> 'a expr
+ type any_expr = AnyExpr : 'a expr -> any_expr
+ type _ rhs =
+  | Expr : 'a expr -> 'a rhs
+  | Call : (contract address) expr * 'a meth * any_expr list -> 'a rhs
+ type stm =
+  | Assign : 'a field * 'a rhs -> stm
+  | IfThenElse : bool expr * stm * stm -> stm
+  | Comp : stm * stm -> stm
+  | Choice : stm * stm -> stm
+ type 'a program = stm * 'a expr (* statement + return *)
+ type assign =
+  | Assign : 'a field * 'a -> assign
+ type store = assign list
+ type any_method_decl =
+  | AnyMethodDecl : 'a meth * 'a program -> any_method_decl
+ type methods = any_method_decl list
+ type configuration =
+  { contracts : (contract address * methods * store) list
+  ; humans : (human address * store * stm) list
+  }
 
-type id = int list
-type label = string
-type var = string
-type address = Contract of string | Human of string
-let is_contract = function Contract _ -> true | Human _ -> false
-type aexpr = DVar of var | DAddress of address
-type const = Symbolic of string | Numeric of int
-type expr =
- | Var of var
- | Const of const
- | Plus of expr * expr
- | Mult of const * expr
- | Minus of expr
- | Max of expr * expr
-type actual = Expr of expr | String of string | Address of aexpr
-type typed_var = EVar of var | AVar of var
-
-type assignment = typed_var * actual
-type cond =
- | Geq of expr * expr
- | Gt of expr * expr
- | Eq of actual * actual
- | And of cond * cond
- | Or of cond * cond
- | Not of cond
- | True
-
-let smart_and c1 c2 =
- match c1,c2 with
-  | True, c
-  | c, True -> c
-  | _,_ -> And(c1,c2)
-
-type action =
- | Input of (*receiver:*)address * (*sender:*)aexpr option * label * typed_var list
- | Output of (*sender:*)address * (*receiver:*)aexpr * label * actual list
- | Tau
-
-type state = id * (assignment list * bool(*= no actor running*))
-type transition = id * id * cond * action
-type automaton = address list * id(*=initial state*) * state list * transition list
+ let lookup (type a) (f : a field) (s : store) : a =
+  let rec aux : store -> a =
+   function
+     [] -> assert false
+   | Assign(g,v)::tl ->
+      match f,g with
+         (Int,sf),(Int,sg) when sf=sg -> v
+       | (Bool,sf),(Bool,sg) when sf=sg -> v
+       | (String,sf),(String,sg) when sf=sg -> v
+       | (HumanAddress,sf),(HumanAddress,sg) when sf=sg -> v
+       | (ContractAddress,sf),(ContractAddress,sg) when sf=sg -> v
+       | _ -> aux tl
+  in
+   aux s
 
 (*** Serialization ***)
-let pp_id l = String.concat "*" (List.map string_of_int l)
-let pp_label l = l
-let pp_var v = v
-let pp_typed_var = function EVar v | AVar v -> pp_var v
-let pp_address = function Contract a -> "C("^a^")" | Human a -> "H("^a^")"
-let pp_aexpr = function DVar v -> pp_var v | DAddress a -> pp_address a
-let pp_const = function Symbolic s -> s | Numeric n -> string_of_int n
-let rec pp_expr =
+let pp_tag : type a. a tag -> string =
+ function
+  | Int -> "int"
+  | Bool -> "bool"
+  | String -> "string"
+  | ContractAddress -> "contract_address"
+  | HumanAddress -> "human_address"
+let pp_ident (t,s) = s ^ ":" ^ pp_tag t
+let pp_var = pp_ident
+let pp_value _ = assert false
+let pp_field = pp_ident
+let pp_const =
+ function
+    Symbolic s -> s
+  | Numeric n -> string_of_int n
+
+let pp_address : type a. a address -> string =
+ function Contract a -> "C("^a^")" | Human a -> "H("^a^")"
+
+let pp_any_address (AnyAddress a) = pp_address a
+
+let rec pp_expr : type a. a expr -> string =
  function
   | Var v -> pp_var v
-  | Const c -> pp_const c
+  | Fail -> "fail"
+  | This -> "this"
+  | Field f -> pp_field f
   | Plus (e1,e2) -> "(" ^ pp_expr e1 ^ " + " ^ pp_expr e2 ^ ")"
   | Mult (c,e) -> "(" ^ pp_const c ^ " * " ^ pp_expr e ^ ")"
   | Minus e -> "-" ^ pp_expr e
   | Max (e1,e2) -> "(max " ^ pp_expr e1 ^ " " ^ pp_expr e2 ^ ")"
-let pp_actual =
- function
-    Expr e -> pp_expr e
-  | String s -> s
-  | Address d -> pp_aexpr d
-let pp_assignment (v,e) = pp_typed_var v ^ "=" ^ pp_actual e
-let rec pp_cond =
- function
   | Geq (e1,e2) -> "(" ^ pp_expr e1 ^ " >= " ^ pp_expr e2 ^ ")"
   | Gt (e1,e2) -> "(" ^ pp_expr e1 ^ " > " ^ pp_expr e2 ^ ")"
-  | Eq (e1,e2) -> "(" ^ pp_actual e1 ^ " = " ^ pp_actual e2 ^ ")"
-  | And (g1,g2) -> "(" ^ pp_cond g1 ^ " /\\\\ " ^ pp_cond g2 ^ ")"
-  | Or (g1,g2) -> "(" ^ pp_cond g1 ^ " \\\\/ " ^ pp_cond g2 ^ ")"
-  | Not g -> "~" ^ pp_cond g
-  | True -> "T"
-let pp_cond = function True -> "" | g -> pp_cond g
-let pp_action =
- function
-  | Input (r,s,l,vl) ->
-     pp_address r ^ "." ^
-     pp_label l ^
-     "[" ^ (match s with None -> "" | Some a -> pp_aexpr a ^ ".") ^ "]" ^
-     "(" ^ String.concat "," (List.map pp_typed_var vl) ^ ")"
-  | Output (r,aexpr,l,al) ->
-     pp_address r ^ ":" ^
-     pp_aexpr aexpr ^ "." ^ pp_label l ^
-      "(" ^ String.concat "," (List.map pp_actual al) ^ ")"
-  | Tau -> "tau"
-let pp_state i (id,(al,zero)) =
- "\"" ^ pp_id id ^ "\" [label=\"" ^
-  pp_id id ^ "[" ^ string_of_bool zero ^ "]: " ^ String.concat ", " (List.map pp_assignment al) ^
-  "\"" ^
-  (if i = id then " shape=\"rectangle\"" else "") ^
-  "]"
-let color_of_action = function Input _ -> "red" | Output _ -> "blue" | Tau -> "black"
-let pp_transition (s,d,c,a) =
- "\"" ^ pp_id s ^ "\" -> \"" ^ pp_id d ^ "\" [label=\"" ^
-  pp_action a ^ "\n" ^ pp_cond c ^ "\" color=\"" ^
-  color_of_action a ^ "\"]"
-let pp_automaton ((al, i, sl, tl) : automaton) =
- "digraph \"" ^  String.concat "*" (List.map pp_address al) ^ "\" {\n" ^
- String.concat "\n" (List.map (pp_state i) sl) ^ "\n" ^
- String.concat "\n" (List.map pp_transition tl) ^ "\n" ^
-"}"
+  | Eq (e1,e2) -> "(" ^ pp_expr e1 ^ " = " ^ pp_expr e2 ^ ")"
+  | And (g1,g2) -> "(" ^ pp_expr g1 ^ " /\\\\ " ^ pp_expr g2 ^ ")"
+  | Or (g1,g2) -> "(" ^ pp_expr g1 ^ " \\\\/ " ^ pp_expr g2 ^ ")"
+  | Not g -> "~" ^ pp_expr g
+  | Value v -> pp_value v
 
-(*** Approximate evaluation ***)
+let pp_any_expr (AnyExpr e) = pp_expr e
+
+(*** Evaluation ***)
 type truth_values = F | T | M (* false, true, maybe *)
 let tv_not = function F -> T | T -> F | M -> M
 let tv_and v1 v2 =
@@ -123,72 +131,160 @@ let tv_or v1 v2 =
   | _,T -> T
   | M,M -> M
 
+let smart_and c1 c2 =
+ match c1,c2 with
+  | Value(true), c
+  | c, Value(true) -> c
+  | _,_ -> And(c1,c2)
+
 let smart_minus =
  function
-    Const (Numeric c) -> Const (Numeric (-c))
+    Value (c) -> Value (-c)
   | x -> Minus x
 
 let smart_plus e1 e2 =
  match e1,e2 with
-    Const (Numeric c1), Const (Numeric c2) -> Const (Numeric (c1 + c2))
+    Value (c1), Value (c2) -> Value (c1 + c2)
   | _,_ -> Plus(e1,e2)
 
 let smart_mult c e =
  match c,e with
-    Numeric c1, Const (Numeric c2) -> Const (Numeric (c1 + c2))
+    Numeric c1, Value (c2) -> Value (c1 + c2)
   | _,_ -> Mult(c,e)
 
 let smart_max e1 e2 =
  match e1,e2 with
-    Const (Numeric c1), Const (Numeric c2) -> Const (Numeric (max c1 c2))
+    Value (c1), Value (c2) -> Value (max c1 c2)
   | _,_ -> Max(e1,e2)
 
 let geq e1 e2 =
  match e1,e2 with
-    Const (Numeric c1), Const (Numeric c2) ->
+    Value (c1), Value (c2) ->
      if c1 >= c2 then T else F
   | _,_ -> if e1 = e2 then T else M
 
 let gt e1 e2 =
  match e1,e2 with
-    Const (Numeric c1), Const (Numeric c2) ->
+    Value (c1), Value (c2) ->
      if c1 > c2 then T else F
   | _,_ -> if e1 = e2 then F else M
 
-let rec eval_expr =
+let rec eval_expr : type a. a expr -> a expr =
  function
   | Var _
-  | Const _ as x -> x
+  | Field _
+  | Value _ as x -> x
+  | Fail -> Fail
+  | This -> This
   | Plus (e1,e2) -> smart_plus (eval_expr e1) (eval_expr e2)
   | Mult (c,e) -> smart_mult c (eval_expr e)
   | Minus e -> smart_minus (eval_expr e)
   | Max (e1,e2) -> smart_max (eval_expr e1) (eval_expr e2)
+  | Geq _ -> assert false
+  | Gt _ -> assert false
+  | Eq _ -> assert false
+  | And _ -> assert false
+  | Or _ -> assert false
+  | Not _ -> assert false
 
-let eq e1 e2 =
- match e1,e2 with
-    String s1, String s2 -> if s1 = s2 then T else F
-  | Address s1, Address s2 -> if s1 = s2 then T else M
-  | Expr e1, Expr e2 ->
-     (match eval_expr e1, eval_expr e2 with
-        Const (Numeric c1), Const (Numeric c2) -> if c1 = c2 then T else F
-      | x,y -> if x = y then T else M)
-  | _,_ -> assert false (* Dynamic type error *)
+let eq (type a) (e1 : a expr) (e2 : a expr) =
+ match eval_expr e1, eval_expr e2 with
+  | x,y when x=y -> T
+  | Var (ContractAddress,_), _ -> M
+  | _, Var (ContractAddress,_) -> M
+  | Var (HumanAddress,_), _ -> M
+  | _, Var (HumanAddress,_) -> M
+  | _, _ -> F 
 
 
-let eval_actual =
+let rec eval_cond : bool expr -> truth_values =
  function
-    Expr e -> Expr (eval_expr e)
-  | String _ | Address _ as x -> x
-
-let rec eval_cond =
- function
+  | Fail -> M
+  | Var _ -> M
+  | Field _ -> M
+  | Value true -> T
+  | Value false -> F
   | Geq (e1,e2) -> geq (eval_expr e1) (eval_expr e2)
   | Gt (e1,e2) -> gt (eval_expr e1) (eval_expr e2)
-  | Eq (e1,e2) -> eq (eval_actual e1) (eval_actual e2)
+  | Eq (e1,e2) -> eq (eval_expr e1) (eval_expr e2)
   | And (g1,g2) -> tv_and (eval_cond g1) (eval_cond g2)
   | Or (g1,g2) -> tv_or (eval_cond g1) (eval_cond g2)
   | Not g -> tv_not (eval_cond g)
-  | True -> T
+
+end
+
+
+(*** Presburger Automata ***)
+module Presburger =
+struct
+
+type id = int list
+type label = string
+let is_contract : type a. a SmartCalculus.address -> bool = function SmartCalculus.Contract _ -> true | Human _ -> false
+type assignment =
+ Assignment : 'a SmartCalculus.var * 'a SmartCalculus.expr -> assignment
+type subst = assignment list
+type cond = bool SmartCalculus.expr
+type any_var = AnyVar : 'a SmartCalculus.var -> any_var
+
+type action =
+ | Input : (*receiver:*)('a SmartCalculus.address) * (*sender:*)(('a SmartCalculus.address) SmartCalculus.expr) option * label * any_var list -> action
+ | Output : (*sender:*)('a SmartCalculus.address) * (*receiver:*)('a SmartCalculus.address) SmartCalculus.expr * label * SmartCalculus.any_expr list -> action
+ | Tau : action
+
+type state = id * (subst * bool(*= no actor running*))
+type transition = id * id * cond * action
+type automaton = SmartCalculus.any_address list * id(*=initial state*) * state list * transition list
+
+let lookup (type a) (f : a SmartCalculus.var) (s : subst) : a SmartCalculus.expr =
+ let rec aux : subst -> a SmartCalculus.expr =
+  function
+    [] -> assert false
+  | Assignment(g,v)::tl ->
+     match f,g with
+        (Int,sf),(Int,sg) when sf=sg -> v
+      | (Bool,sf),(Bool,sg) when sf=sg -> v
+      | (String,sf),(String,sg) when sf=sg -> v
+      | (HumanAddress,sf),(HumanAddress,sg) when sf=sg -> v
+      | (ContractAddress,sf),(ContractAddress,sg) when sf=sg -> v
+      | _ -> aux tl
+ in
+  aux s
+
+(*** Serialization ***)
+let pp_id l = String.concat "*" (List.map string_of_int l)
+let pp_label l = l
+let pp_assignment (Assignment (v,e)) = SmartCalculus.pp_var v ^ "=" ^ SmartCalculus.pp_expr e
+let pp_cond : bool SmartCalculus.expr -> string = function Value true -> "" | g -> SmartCalculus.pp_expr g
+let pp_any_var (AnyVar v) = SmartCalculus.pp_var v
+let pp_action =
+ function
+  | Input (r,s,l,vl) ->
+     SmartCalculus.pp_address r ^ "." ^
+     pp_label l ^
+     "[" ^ (match s with None -> "" | Some a -> SmartCalculus.pp_expr a ^ ".") ^ "]" ^
+     "(" ^ String.concat "," (List.map pp_any_var vl) ^ ")"
+  | Output (r,aexpr,l,al) ->
+     SmartCalculus.pp_address r ^ ":" ^
+     SmartCalculus.pp_expr aexpr ^ "." ^ pp_label l ^
+      "(" ^ String.concat "," (List.map SmartCalculus.pp_any_expr al) ^ ")"
+  | Tau -> "tau"
+let pp_state i (id,(al,zero)) =
+ "\"" ^ pp_id id ^ "\" [label=\"" ^
+  pp_id id ^ "[" ^ string_of_bool zero ^ "]: " ^ String.concat ", " (List.map pp_assignment al) ^
+  "\"" ^
+  (if i = id then " shape=\"rectangle\"" else "") ^
+  "]"
+let color_of_action = function Input _ -> "red" | Output _ -> "blue" | Tau -> "black"
+let pp_transition (s,d,c,a) =
+ "\"" ^ pp_id s ^ "\" -> \"" ^ pp_id d ^ "\" [label=\"" ^
+  pp_action a ^ "\n" ^ pp_cond c ^ "\" color=\"" ^
+  color_of_action a ^ "\"]"
+let pp_automaton ((al, i, sl, tl) : automaton) =
+ "digraph \"" ^  String.concat "*" (List.map SmartCalculus.pp_any_address al) ^ "\" {\n" ^
+ String.concat "\n" (List.map (pp_state i) sl) ^ "\n" ^
+ String.concat "\n" (List.map pp_transition tl) ^ "\n" ^
+"}"
 
 (*** Fresh int generator ***)
 let mk_fresh =
@@ -198,55 +294,35 @@ let mk_fresh =
 (*** Substitution ***)
 let map_option f = function None -> None | Some x -> Some (f x)
 
-let rec apply_subst_expr subst =
- function
-  | Var v as e ->
-     (try
-       (match List.assoc (EVar v) subst with
-         | Expr e -> e
-         | Address _
-         | String _ ->
-           prerr_endline ("### " ^ v);
-           assert false) (* dynamic typing error.. *)
-      with Not_found -> e)
-  | Const _ as e -> e
+let rec apply_subst_expr : type a. subst -> a SmartCalculus.expr -> a SmartCalculus.expr =
+ fun subst expr -> match expr with
+  | Fail -> Fail
+  | This -> This
+  | Field _ as e -> e
+  | Var v as e -> (try lookup v subst with Not_found -> e)
+  | Value _ as e -> e
   | Plus (e1,e2) -> Plus (apply_subst_expr subst e1,apply_subst_expr subst e2)
   | Mult (c,e2) -> Mult (c,apply_subst_expr subst e2)
   | Minus e -> Minus (apply_subst_expr subst e)
   | Max (e1,e2) -> Max (apply_subst_expr subst e1,apply_subst_expr subst e2)
-let apply_subst_aexpr subst =
- function
-  | DAddress _ as d -> d
-  | DVar v as d ->
-     try
-      (match List.assoc (AVar v) subst with
-       | Expr _ | String _ -> assert false (* Dynamic type error... *)
-       | Address d -> d)
-     with Not_found -> d
-let apply_subst_actual subst =
- function
-  | Expr e -> Expr (apply_subst_expr subst e)
-  | Address d -> Address (apply_subst_aexpr subst d)
-  | String _ as a -> a
-let apply_subst_assignment subst (v,e) =
- v, apply_subst_actual subst e
-let apply_subst_assignment_list subst al =
- List.map (apply_subst_assignment subst) al
-let rec apply_subst_cond subst =
- function
   | Geq (e1,e2) -> Geq (apply_subst_expr subst e1,apply_subst_expr subst e2)
   | Gt (e1,e2) -> Gt (apply_subst_expr subst e1,apply_subst_expr subst e2)
-  | Eq (e1,e2) -> Eq (apply_subst_actual subst e1,apply_subst_actual subst e2)
-  | And (g1,g2) -> And (apply_subst_cond subst g1,apply_subst_cond subst g2)
-  | Or (g1,g2) -> Or (apply_subst_cond subst g1,apply_subst_cond subst g2)
-  | Not g -> Not (apply_subst_cond subst g)
-  | True -> True
+  | Eq (e1,e2) -> Eq (apply_subst_expr subst e1,apply_subst_expr subst e2)
+  | And (g1,g2) -> And (apply_subst_expr subst g1,apply_subst_expr subst g2)
+  | Or (g1,g2) -> Or (apply_subst_expr subst g1,apply_subst_expr subst g2)
+  | Not g -> Not (apply_subst_expr subst g)
+let apply_subst_assignment subst (Assignment (v,e)) =
+ Assignment (v, apply_subst_expr subst e)
+let apply_subst_subst subst al =
+ List.map (apply_subst_assignment subst) al
+let apply_subst_any_expr subst (SmartCalculus.AnyExpr e) =
+ SmartCalculus.AnyExpr (apply_subst_expr subst e)
 let apply_subst_action subst =
  function
   | Output (r, aexpr,l,al) ->
-     Output (r, apply_subst_aexpr subst aexpr,l,List.map (apply_subst_actual subst) al)
+     Output (r, apply_subst_expr subst aexpr,l,List.map (apply_subst_any_expr subst) al)
   | Input (r, aexpr, l, vl) ->
-     Input (r, map_option (apply_subst_aexpr subst) aexpr, l, vl)
+     Input (r, map_option (apply_subst_expr subst) aexpr, l, vl)
   | Tau as a -> a
 
 (*** Composition ***)
@@ -262,18 +338,28 @@ let (@@) (ass1,zero1) (ass2,zero2) =
  assert(zero1 || zero2) ;
  ass1 @ ass2, zero1 && zero2
 
+let (===) (e : ('a SmartCalculus.address) SmartCalculus.expr) (a : SmartCalculus.any_address) =
+ match e with
+  | SmartCalculus.Value b -> SmartCalculus.AnyAddress b = a
+  | _ -> false
 
-let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) sp tp =
+let change_sub (sub : subst) : action -> subst =
+ function
+    Tau
+  | Output _ -> sub
+  | Input(_,_,_,vl) -> List.map (function (AnyVar x) -> Assignment (x, SmartCalculus.Var x)) vl @ sub
+
+let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1 : automaton) ((a2,_,sl2,tl2) as au2 : automaton) sp tp =
  try
   let id' = id1' @ id2' in
-  let cond = apply_subst_cond sub cond in
+  let cond = apply_subst_expr sub cond in
   let cond =
    let ground_cond =
-    apply_subst_cond sub (apply_subst_cond (fst assign) cond) in
-   match eval_cond ground_cond with T -> True | M -> cond | F -> raise Skip in
+    apply_subst_expr sub (apply_subst_expr (fst assign) cond) in
+   match SmartCalculus.eval_cond ground_cond with SmartCalculus.T -> SmartCalculus.Value true | M -> cond | F -> raise Skip in
   let action = apply_subst_action sub action in
   let s12' = List.assoc id1' sl1 @@ List.assoc id2' sl2 in
-  let s12' = apply_subst_assignment_list sub (fst s12'),snd s12' in
+  let s12' = apply_subst_subst sub (fst s12'),snd s12' in
   let id' = id' @ [mk_fresh ()] in
   let (id',_) as s',is_new =
    try
@@ -313,27 +399,18 @@ and move2 ~sub ((a1,_,sl1,tl1) as au1) ((_,_,sl2,tl2) as au2) id id1 id2 sp tp =
  let the_others = a1 in
  movex your_ass other_ass the_others moves id1' id2' ~sub au1 au2 id sp tp
 
-and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id sp tp =
+and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as au1 : automaton) ((a2,_,sl2,tl2) as au2 : automaton) id sp tp =
  let assign = your_ass @@ other_ass in
  let can_fire =
   function
    | Tau | Input (_,None,_,_) -> true
    | Input (_,Some d,_,_) ->
-      let d = apply_subst_aexpr sub (apply_subst_aexpr (fst your_ass) d) in
-      List.for_all (fun a -> d <> DAddress a) the_others
+      let d = apply_subst_expr sub (apply_subst_expr (fst your_ass) d) in
+      List.for_all (fun a -> not (d === a)) the_others
    | Output(r,d,_,_) ->
       (is_contract r || snd assign) &&
-      let d = apply_subst_aexpr sub (apply_subst_aexpr (fst your_ass) d) in
-      List.for_all (fun a -> d <> DAddress a) the_others in
- let change_sub sub =
-  function
-     Tau
-   | Output _ -> sub
-   | Input(_,_,_,vl) ->
-      List.map
-       (function
-           (EVar v) as x -> x, Expr (Var v)
-         | (AVar v) as x -> x, Address (DVar v)) vl @ sub in
+      let d = apply_subst_expr sub (apply_subst_expr (fst your_ass) d) in
+      List.for_all (fun a -> not (d === a)) the_others in
  List.fold_left
   (fun (sp,tp) (_,aexpr,cond,action) ->
     if can_fire action then begin
@@ -360,8 +437,8 @@ let ass_out = List.assoc id2 sl2 in
        (s,_,_,Output (r,d,_,_)) ->
          (is_contract r || zero) &&
          let d =
-          apply_subst_aexpr sub (apply_subst_aexpr (fst (List.assoc id2 sl2)) d) in
-         s = id2 && List.exists (fun a -> d = DAddress a) a1
+          apply_subst_expr sub (apply_subst_expr (fst (List.assoc id2 sl2)) d) in
+         s = id2 && List.exists (fun a -> d === a) a1
      | _ -> false) tl2 in
  let id1' din _ = din in
  let id2' _ don = don in
@@ -379,8 +456,8 @@ and interact2in_1out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1
        (s,_,_,Output (r,d,_,_)) ->
          (is_contract r || zero) &&
          let d =
-          apply_subst_aexpr sub (apply_subst_aexpr (fst (List.assoc id1 sl1)) d) in
-         s = id1 && List.exists (fun a -> d = DAddress a) a2
+          apply_subst_expr sub (apply_subst_expr (fst (List.assoc id1 sl1)) d) in
+         s = id1 && List.exists (fun a -> d === a) a2
      | _ -> false) tl1 in
  let id1' _ don = don in
  let id2' din _ = din in
@@ -394,16 +471,17 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
        match t_in,t_out with
         | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(addr_out,rec_out,lo,al))
           when
-            DAddress receiver = apply_subst_aexpr sub (apply_subst_aexpr (fst ass_out) rec_out) &&
+            apply_subst_expr sub (apply_subst_expr (fst ass_out) rec_out) === (SmartCalculus.AnyAddress receiver) &&
             (match sender with
                 None -> true
               | Some aexpr ->
-                 apply_subst_aexpr sub (apply_subst_aexpr (fst ass_in) aexpr)
-                 = DAddress addr_out)
+                 apply_subst_expr sub (apply_subst_expr (fst ass_in) aexpr)
+                 === SmartCalculus.AnyAddress addr_out)
              && li=lo && List.length vl = List.length al ->
             let sub =
-             List.combine vl (List.map (apply_subst_actual sub) al) @ sub in
-            let cond = smart_and condi condo in
+             (* CSC: FIXME remove Obj.magic with more typing *)
+             List.map (fun (AnyVar x, SmartCalculus.AnyExpr y) -> Assignment(x,Obj.magic y)) (List.combine vl (List.map (apply_subst_any_expr sub) al)) @ sub in
+            let cond = SmartCalculus.smart_and condi condo in
             add_transition (id1' din don) (id2' din don) ~sub cond
              (ass_in @@ ass_out) Tau id au1 au2 sp tp
         | _ -> sp,tp
@@ -418,82 +496,6 @@ let compose ((a1,i1,sl1,tl1) as au1 : automaton) ((a2,i2,sl2,tl2) as au2 : autom
  let sp,tp = move_state ~sub:[] au1 au2 id i1 i2 [s] [] in
  a1 @ a2,id,sp,tp
 
-end
-
-(*** Smart Calculus ***)
-
-module SmartCalculus =
-struct
- type contract
- type human
- type _ address =
-  | Contract : string -> contract address
-  | Human : string -> human address
- type 'a tag =
-  | Int : int tag
-  | Bool : bool tag
-  | String : string tag
-  | ContractAddress : (contract address) tag
-  | HumanAddress : (human address) tag
- type 'a ident = 'a tag * string
- type 'a meth = 'a ident
- type 'a field = 'a ident
- type 'a var = 'a ident
- type const = Symbolic of string | Numeric of int
- type _ value =
-  | Const : 'a -> 'a value
-  | Addr : 'a address -> 'a value
- type _ expr =
-  | Var : 'a var -> 'a expr
-  | Fail : 'a expr
-  | This : (contract address) expr
-  | Field : 'a field -> 'a expr
-  | Plus : int expr * int expr -> int expr
-  | Mult : const * int expr -> int expr
-  | Minus : int expr
-  | Max : int expr * int expr -> int expr
-  | Geq : int expr * int expr -> bool expr
-  | Gt : int expr * int expr -> bool expr
-  | Eq : 'a expr * 'a expr -> bool expr
-  | And : bool expr * bool expr -> bool expr
-  | Or : bool expr * bool expr -> bool expr
-  | Not : bool expr -> bool expr
-  | Value : 'a value -> 'a expr
- type any_expr = AnyExpr : 'a expr -> any_expr
- type _ rhs =
-  | Expr : 'a expr -> 'a rhs
-  | Call : (contract address) expr * 'a meth * any_expr list -> 'a rhs
- type stm =
-  | Assign : 'a field * 'a rhs -> stm
-  | IfThenElse : bool expr * stm * stm -> stm
-  | Comp : stm * stm -> stm
-  | Choice : stm * stm -> stm
- type 'a program = stm * 'a expr (* statement + return *)
- type assign =
-  | Assign : 'a field * 'a value -> assign
- type store = assign list
- type any_method_decl =
-  | AnyMethodDecl : 'a meth * 'a program -> any_method_decl
- type methods = any_method_decl list
- type configuration =
-  { contracts : (contract address * methods * store) list
-  ; humans : (human address * store * stm) list
-  }
-
- let lookup (type a) (f : a field) (s : store) : a value =
-  let rec aux : store -> a value =
-   function
-     [] -> assert false
-   | Assign(g,v)::tl ->
-      match f,g with
-         (Int,sf),(Int,sg) when sf=sg -> v
-       | (Bool,sf),(Bool,sg) when sf=sg -> v
-       | (String,sf),(String,sg) when sf=sg -> v
-       | (HumanAddress,sf),(HumanAddress,sg) when sf=sg -> v
-       | (ContractAddress,sf),(ContractAddress,sg) when sf=sg -> v
-       | _ -> aux tl
-  in
-   aux s
 end
 
 module PresburgerOfSmartCalculus =
