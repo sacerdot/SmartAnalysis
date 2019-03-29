@@ -14,8 +14,11 @@ struct
   | String : string tag
   | ContractAddress : (contract address) tag
   | HumanAddress : (human address) tag
+ type _ tag_list =
+    TNil : unit tag_list
+  | TCons : 'a tag * 'b tag_list -> ('a * 'b) tag_list
  type 'a ident = 'a tag * string
- type 'a meth = 'a ident
+ type ('a,'b) meth = 'a tag * 'b tag_list * string
  type 'a field = 'a ident
  type 'a var = 'a ident
  type const = Symbolic of string | Numeric of int
@@ -35,10 +38,15 @@ struct
   | Or : bool expr * bool expr -> bool expr
   | Not : bool expr -> bool expr
   | Value : 'a -> 'a expr
- type any_expr = AnyExpr : 'a expr -> any_expr
+ type _ var_list =
+    VNil : unit var_list
+  | VCons : 'a var * 'b var_list -> ('a * 'b) var_list
+ type _ expr_list =
+    ENil : unit expr_list
+  | ECons : 'a expr * 'b expr_list -> ('a * 'b) expr_list
  type _ rhs =
   | Expr : 'a expr -> 'a rhs
-  | Call : (contract address) expr * 'a meth * any_expr list -> 'a rhs
+  | Call : (contract address) expr * ('a,'b) meth * 'b expr_list -> 'a rhs
  type stm =
   | Assign : 'a field * 'a rhs -> stm
   | IfThenElse : bool expr * stm * stm -> stm
@@ -49,7 +57,7 @@ struct
   | Assign : 'a field * 'a -> assign
  type store = assign list
  type any_method_decl =
-  | AnyMethodDecl : 'a meth * 'a program -> any_method_decl
+  | AnyMethodDecl : ('a,'b) meth * 'a program -> any_method_decl
  type methods = any_method_decl list
  type configuration =
   { contracts : (contract address * methods * store) list
@@ -79,8 +87,16 @@ let pp_tag : type a. a tag -> string =
   | String -> "string"
   | ContractAddress -> "contract_address"
   | HumanAddress -> "human_address"
+let rec pp_tag_list : type a. a tag_list -> string list =
+ function
+    TNil -> []
+  | TCons(x,tl) -> pp_tag x :: pp_tag_list tl
 let pp_ident (t,s) = s ^ ":" ^ pp_tag t
 let pp_var = pp_ident
+let rec pp_var_list : type a. a var_list -> string list =
+ function
+    VNil -> []
+  | VCons(v,tl) -> pp_var v :: pp_var_list tl
 let pp_value _ = assert false
 let pp_field = pp_ident
 let pp_const =
@@ -111,7 +127,10 @@ let rec pp_expr : type a. a expr -> string =
   | Not g -> "~" ^ pp_expr g
   | Value v -> pp_value v
 
-let pp_any_expr (AnyExpr e) = pp_expr e
+let rec pp_expr_list : type a. a expr_list -> string list =
+ function
+    ENil -> []
+  | ECons(v,tl) -> pp_expr v :: pp_expr_list tl
 
 (*** Evaluation ***)
 type truth_values = F | T | M (* false, true, maybe *)
@@ -219,17 +238,16 @@ module Presburger =
 struct
 
 type id = int list
-type label = string
+type 'b label = 'b SmartCalculus.tag_list * string
 let is_contract : type a. a SmartCalculus.address -> bool = function SmartCalculus.Contract _ -> true | Human _ -> false
 type assignment =
  Assignment : 'a SmartCalculus.var * 'a SmartCalculus.expr -> assignment
 type subst = assignment list
 type cond = bool SmartCalculus.expr
-type any_var = AnyVar : 'a SmartCalculus.var -> any_var
 
 type action =
- | Input : (*receiver:*)('a SmartCalculus.address) * (*sender:*)(('a SmartCalculus.address) SmartCalculus.expr) option * label * any_var list -> action
- | Output : (*sender:*)('a SmartCalculus.address) * (*receiver:*)('a SmartCalculus.address) SmartCalculus.expr * label * SmartCalculus.any_expr list -> action
+ | Input : (*receiver:*)(_ SmartCalculus.address) * (*sender:*)((_ SmartCalculus.address) SmartCalculus.expr) option * 'b label * 'b SmartCalculus.var_list -> action
+ | Output : (*sender:*)(_ SmartCalculus.address) * (*receiver:*)(_ SmartCalculus.address) SmartCalculus.expr * 'b label * 'b SmartCalculus.expr_list -> action
  | Tau : action
 
 type state = id * (subst * bool(*= no actor running*))
@@ -253,21 +271,20 @@ let lookup (type a) (f : a SmartCalculus.var) (s : subst) : a SmartCalculus.expr
 
 (*** Serialization ***)
 let pp_id l = String.concat "*" (List.map string_of_int l)
-let pp_label l = l
+let pp_label (tags,s) = s ^ "::" ^ String.concat "*" (SmartCalculus.pp_tag_list tags)
 let pp_assignment (Assignment (v,e)) = SmartCalculus.pp_var v ^ "=" ^ SmartCalculus.pp_expr e
 let pp_cond : bool SmartCalculus.expr -> string = function Value true -> "" | g -> SmartCalculus.pp_expr g
-let pp_any_var (AnyVar v) = SmartCalculus.pp_var v
 let pp_action =
  function
   | Input (r,s,l,vl) ->
      SmartCalculus.pp_address r ^ "." ^
      pp_label l ^
      "[" ^ (match s with None -> "" | Some a -> SmartCalculus.pp_expr a ^ ".") ^ "]" ^
-     "(" ^ String.concat "," (List.map pp_any_var vl) ^ ")"
+     "(" ^ String.concat "," (SmartCalculus.pp_var_list vl) ^ ")"
   | Output (r,aexpr,l,al) ->
      SmartCalculus.pp_address r ^ ":" ^
      SmartCalculus.pp_expr aexpr ^ "." ^ pp_label l ^
-      "(" ^ String.concat "," (List.map SmartCalculus.pp_any_expr al) ^ ")"
+      "(" ^ String.concat "," (SmartCalculus.pp_expr_list al) ^ ")"
   | Tau -> "tau"
 let pp_state i (id,(al,zero)) =
  "\"" ^ pp_id id ^ "\" [label=\"" ^
@@ -315,15 +332,17 @@ let apply_subst_assignment subst (Assignment (v,e)) =
  Assignment (v, apply_subst_expr subst e)
 let apply_subst_subst subst al =
  List.map (apply_subst_assignment subst) al
-let apply_subst_any_expr subst (SmartCalculus.AnyExpr e) =
- SmartCalculus.AnyExpr (apply_subst_expr subst e)
+let rec apply_subst_expr_list : type a. subst -> a SmartCalculus.expr_list -> a SmartCalculus.expr_list =
+ fun subst -> function
+    SmartCalculus.ENil -> SmartCalculus.ENil
+  | ECons(x,tl) -> ECons(apply_subst_expr subst x,apply_subst_expr_list subst tl)
 let apply_subst_action subst =
  function
   | Output (r, aexpr,l,al) ->
-     Output (r, apply_subst_expr subst aexpr,l,List.map (apply_subst_any_expr subst) al)
+     Output (r, apply_subst_expr subst aexpr,l,apply_subst_expr_list subst al)
   | Input (r, aexpr, l, vl) ->
      Input (r, map_option (apply_subst_expr subst) aexpr, l, vl)
-  | Tau as a -> a
+  | Tau -> Tau
 
 (*** Composition ***)
 let rec same_but_last l1 l2 =
@@ -345,9 +364,14 @@ let (===) (e : ('a SmartCalculus.address) SmartCalculus.expr) (a : SmartCalculus
 
 let change_sub (sub : subst) : action -> subst =
  function
-    Tau
+  | Input(_,_,_,vl) ->
+     let rec aux : type a. a SmartCalculus.var_list -> assignment list =
+      function
+         SmartCalculus.VNil -> sub
+       | VCons(x,tl) -> Assignment(x, SmartCalculus.Var x) :: aux tl in
+     aux vl
+  | Tau
   | Output _ -> sub
-  | Input(_,_,_,vl) -> List.map (function (AnyVar x) -> Assignment (x, SmartCalculus.Var x)) vl @ sub
 
 let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1 : automaton) ((a2,_,sl2,tl2) as au2 : automaton) sp tp =
  try
@@ -477,10 +501,23 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
               | Some aexpr ->
                  apply_subst_expr sub (apply_subst_expr (fst ass_in) aexpr)
                  === SmartCalculus.AnyAddress addr_out)
-             && li=lo && List.length vl = List.length al ->
-            let sub =
-             (* CSC: FIXME remove Obj.magic with more typing *)
-             List.map (fun (AnyVar x, SmartCalculus.AnyExpr y) -> Assignment(x,Obj.magic y)) (List.combine vl (List.map (apply_subst_any_expr sub) al)) @ sub in
+             && snd li = snd lo ->
+            let rec aux : type a b. a SmartCalculus.tag_list -> b SmartCalculus.tag_list -> a SmartCalculus.var_list -> b SmartCalculus.expr_list -> subst =
+             fun li lo vl el ->
+              match li, lo, vl, el with
+                 SmartCalculus.TNil, SmartCalculus.TNil, _, _ -> sub
+               | TCons(Int,tl1),TCons(Int,tl2),VCons(x,vtl),ECons(e,etl) ->
+                  Assignment(x,e) :: aux tl1 tl2 vtl etl
+               | TCons(Bool,tl1),TCons(Bool,tl2),VCons(x,vtl),ECons(e,etl) ->
+                  Assignment(x,e) :: aux tl1 tl2 vtl etl
+               | TCons(String,tl1),TCons(String,tl2),VCons(x,vtl),ECons(e,etl) ->
+                  Assignment(x,e) :: aux tl1 tl2 vtl etl
+               | TCons(HumanAddress,tl1),TCons(HumanAddress,tl2),VCons(x,vtl),ECons(e,etl) ->
+                  Assignment(x,e) :: aux tl1 tl2 vtl etl
+               | TCons(ContractAddress,tl1),TCons(ContractAddress,tl2),VCons(x,vtl),ECons(e,etl) ->
+                  Assignment(x,e) :: aux tl1 tl2 vtl etl
+               | _,_,_,_ -> assert false in
+            let sub = aux (fst li) (fst lo) vl (apply_subst_expr_list sub al) in
             let cond = SmartCalculus.smart_and condi condo in
             add_transition (id1' din don) (id2' din don) ~sub cond
              (ass_in @@ ass_out) Tau id au1 au2 sp tp
