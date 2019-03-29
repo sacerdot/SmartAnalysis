@@ -452,6 +452,12 @@ struct
   | Mult : const * int expr -> int expr
   | Minus : int expr
   | Max : int expr * int expr -> int expr
+  | Geq : int expr * int expr -> bool expr
+  | Gt : int expr * int expr -> bool expr
+  | Eq : 'a expr * 'a expr -> bool expr
+  | And : bool expr * bool expr -> bool expr
+  | Or : bool expr * bool expr -> bool expr
+  | Not : bool expr -> bool expr
   | Value : 'a value -> 'a expr
  type any_expr = AnyExpr : 'a expr -> any_expr
  type _ rhs =
