@@ -38,6 +38,7 @@ struct
   | Or : bool expr * bool expr -> bool expr
   | Not : bool expr -> bool expr
   | Value : 'a -> 'a expr
+  | Symbol : string -> int expr
  type _ var_list =
     VNil : unit var_list
   | VCons : 'a var * 'b var_list -> ('a * 'b) var_list
@@ -114,6 +115,7 @@ let rec pp_expr : type a. a expr -> string =
   | Var v -> pp_var v
   | Fail -> "fail"
   | This -> "this"
+  | Symbol s -> s
   | Field f -> pp_field f
   | Plus (e1,e2) -> "(" ^ pp_expr e1 ^ " + " ^ pp_expr e2 ^ ")"
   | Mult (c,e) -> "(" ^ pp_const c ^ " * " ^ pp_expr e ^ ")"
@@ -193,6 +195,7 @@ let rec eval_expr : type a. a expr -> a expr =
   | Var _
   | Field _
   | Value _ as x -> x
+  | Symbol _ as x -> x
   | Fail -> Fail
   | This -> This
   | Plus (e1,e2) -> smart_plus (eval_expr e1) (eval_expr e2)
@@ -313,6 +316,7 @@ let map_option f = function None -> None | Some x -> Some (f x)
 
 let rec apply_subst_expr : type a. subst -> a SmartCalculus.expr -> a SmartCalculus.expr =
  fun subst expr -> match expr with
+  | Symbol _ as e -> e
   | Fail -> Fail
   | This -> This
   | Field _ as e -> e
@@ -552,14 +556,15 @@ struct
 
 end
 
+open SmartCalculus
 open Presburger
 
  (*** Garbage Collection Example ***)
  module Bin = struct
   let (states : state list) =
-    [ [1], ([EVar "p",Expr (Const (Numeric 0)) ; EVar "d", Expr (Const (Symbolic "D"))], true)
-    ; [2], ([EVar "p",Expr(Const (Numeric 0)) ; EVar "d", Expr (Const (Symbolic "D")) ; EVar "cur_q",Expr (Var "q")
-            ;AVar "ID",Address(DVar "id")],false)
+    [ [1], ([Assignment((Int,"p"),Value(0)) ; Assignment((Int,"d"),Symbol("D"))], true)
+    ; [2], ([Assignment((Int,"p"),Value(0)) ; Assignment((Int,"d"),Symbol("D")) ; Assignment((Int,"cur_q"),Var(Int,"q"))
+            ; Assignment((HumanAddress,"ID"),Var(HumanAddress,"id"))],false)
     ; [3], ([EVar "p",Expr(Const (Numeric 1)) ;
              EVar "d", Expr(Plus (Var "D", Minus (Const (Symbolic "R"))))], true)
     ; [4], ([EVar "p",Expr(Const (Numeric 1))
