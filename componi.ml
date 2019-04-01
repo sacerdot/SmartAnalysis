@@ -216,7 +216,7 @@ let eq (type a) (e1 : a expr) (e2 : a expr) =
   | _, Var (ContractAddress,_) -> M
   | Var (HumanAddress,_), _ -> M
   | _, Var (HumanAddress,_) -> M
-  | _, _ -> F 
+  | _, _ -> F
 
 
 let rec eval_cond : bool expr -> truth_values =
@@ -242,7 +242,7 @@ struct
 
 type id = int list
 type 'b label = 'b SmartCalculus.tag_list * string
-let is_contract : type a. a SmartCalculus.address -> bool = function SmartCalculus.Contract _ -> true | Human _ -> false
+let is_contract : type a. a SmartCalculus.address -> bool = function SmartCalculus.Contract _ -> true | SmartCalculus.Human _ -> false
 type assignment =
  Assignment : 'a SmartCalculus.var * 'a SmartCalculus.expr -> assignment
 type subst = assignment list
@@ -263,11 +263,11 @@ let lookup (type a) (f : a SmartCalculus.var) (s : subst) : a SmartCalculus.expr
     [] -> assert false
   | Assignment(g,v)::tl ->
      match f,g with
-        (Int,sf),(Int,sg) when sf=sg -> v
-      | (Bool,sf),(Bool,sg) when sf=sg -> v
-      | (String,sf),(String,sg) when sf=sg -> v
-      | (HumanAddress,sf),(HumanAddress,sg) when sf=sg -> v
-      | (ContractAddress,sf),(ContractAddress,sg) when sf=sg -> v
+        (SmartCalculus.Int,sf),(SmartCalculus.Int,sg) when sf=sg -> v
+      | (SmartCalculus.Bool,sf),(SmartCalculus.Bool,sg) when sf=sg -> v
+      | (SmartCalculus.String,sf),(SmartCalculus.String,sg) when sf=sg -> v
+      | (SmartCalculus.HumanAddress,sf),(SmartCalculus.HumanAddress,sg) when sf=sg -> v
+      | (SmartCalculus.ContractAddress,sf),(SmartCalculus.ContractAddress,sg) when sf=sg -> v
       | _ -> aux tl
  in
   aux s
@@ -276,7 +276,7 @@ let lookup (type a) (f : a SmartCalculus.var) (s : subst) : a SmartCalculus.expr
 let pp_id l = String.concat "*" (List.map string_of_int l)
 let pp_label (tags,s) = s ^ "::" ^ String.concat "*" (SmartCalculus.pp_tag_list tags)
 let pp_assignment (Assignment (v,e)) = SmartCalculus.pp_var v ^ "=" ^ SmartCalculus.pp_expr e
-let pp_cond : bool SmartCalculus.expr -> string = function Value true -> "" | g -> SmartCalculus.pp_expr g
+let pp_cond : bool SmartCalculus.expr -> string = function SmartCalculus.Value true -> "" | g -> SmartCalculus.pp_expr g
 let pp_action =
  function
   | Input (r,s,l,vl) ->
@@ -316,22 +316,22 @@ let map_option f = function None -> None | Some x -> Some (f x)
 
 let rec apply_subst_expr : type a. subst -> a SmartCalculus.expr -> a SmartCalculus.expr =
  fun subst expr -> match expr with
-  | Symbol _ as e -> e
-  | Fail -> Fail
-  | This -> This
-  | Field _ as e -> e
-  | Var v as e -> (try lookup v subst with Not_found -> e)
-  | Value _ as e -> e
-  | Plus (e1,e2) -> Plus (apply_subst_expr subst e1,apply_subst_expr subst e2)
-  | Mult (c,e2) -> Mult (c,apply_subst_expr subst e2)
-  | Minus e -> Minus (apply_subst_expr subst e)
-  | Max (e1,e2) -> Max (apply_subst_expr subst e1,apply_subst_expr subst e2)
-  | Geq (e1,e2) -> Geq (apply_subst_expr subst e1,apply_subst_expr subst e2)
-  | Gt (e1,e2) -> Gt (apply_subst_expr subst e1,apply_subst_expr subst e2)
-  | Eq (e1,e2) -> Eq (apply_subst_expr subst e1,apply_subst_expr subst e2)
-  | And (g1,g2) -> And (apply_subst_expr subst g1,apply_subst_expr subst g2)
-  | Or (g1,g2) -> Or (apply_subst_expr subst g1,apply_subst_expr subst g2)
-  | Not g -> Not (apply_subst_expr subst g)
+  | SmartCalculus.Symbol _ as e -> e
+  | SmartCalculus.Fail -> Fail
+  | SmartCalculus.This -> This
+  | SmartCalculus.Field _ as e -> e
+  | SmartCalculus.Var v as e -> (try lookup v subst with Not_found -> e)
+  | SmartCalculus.Value _ as e -> e
+  | SmartCalculus.Plus (e1,e2) -> Plus (apply_subst_expr subst e1,apply_subst_expr subst e2)
+  | SmartCalculus.Mult (c,e2) -> Mult (c,apply_subst_expr subst e2)
+  | SmartCalculus.Minus e -> Minus (apply_subst_expr subst e)
+  | SmartCalculus.Max (e1,e2) -> Max (apply_subst_expr subst e1,apply_subst_expr subst e2)
+  | SmartCalculus.Geq (e1,e2) -> Geq (apply_subst_expr subst e1,apply_subst_expr subst e2)
+  | SmartCalculus.Gt (e1,e2) -> Gt (apply_subst_expr subst e1,apply_subst_expr subst e2)
+  | SmartCalculus.Eq (e1,e2) -> Eq (apply_subst_expr subst e1,apply_subst_expr subst e2)
+  | SmartCalculus.And (g1,g2) -> And (apply_subst_expr subst g1,apply_subst_expr subst g2)
+  | SmartCalculus.Or (g1,g2) -> Or (apply_subst_expr subst g1,apply_subst_expr subst g2)
+  | SmartCalculus.Not g -> Not (apply_subst_expr subst g)
 let apply_subst_assignment subst (Assignment (v,e)) =
  Assignment (v, apply_subst_expr subst e)
 let apply_subst_subst subst al =
@@ -339,7 +339,7 @@ let apply_subst_subst subst al =
 let rec apply_subst_expr_list : type a. subst -> a SmartCalculus.expr_list -> a SmartCalculus.expr_list =
  fun subst -> function
     SmartCalculus.ENil -> SmartCalculus.ENil
-  | ECons(x,tl) -> ECons(apply_subst_expr subst x,apply_subst_expr_list subst tl)
+  | SmartCalculus.ECons(x,tl) -> ECons(apply_subst_expr subst x,apply_subst_expr_list subst tl)
 let apply_subst_action subst =
  function
   | Output (r, aexpr,l,al) ->
@@ -372,7 +372,7 @@ let change_sub (sub : subst) : action -> subst =
      let rec aux : type a. a SmartCalculus.var_list -> assignment list =
       function
          SmartCalculus.VNil -> sub
-       | VCons(x,tl) -> Assignment(x, SmartCalculus.Var x) :: aux tl in
+       | SmartCalculus.VCons(x,tl) -> Assignment(x, SmartCalculus.Var x) :: aux tl in
      aux vl
   | Tau
   | Output _ -> sub
@@ -510,15 +510,15 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
              fun li lo vl el ->
               match li, lo, vl, el with
                  SmartCalculus.TNil, SmartCalculus.TNil, _, _ -> sub
-               | TCons(Int,tl1),TCons(Int,tl2),VCons(x,vtl),ECons(e,etl) ->
+               | SmartCalculus.TCons(SmartCalculus.Int,tl1),SmartCalculus.TCons(SmartCalculus.Int,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
                   Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | TCons(Bool,tl1),TCons(Bool,tl2),VCons(x,vtl),ECons(e,etl) ->
+               | SmartCalculus.TCons(SmartCalculus.Bool,tl1),SmartCalculus.TCons(SmartCalculus.Bool,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
                   Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | TCons(String,tl1),TCons(String,tl2),VCons(x,vtl),ECons(e,etl) ->
+               | SmartCalculus.TCons(SmartCalculus.String,tl1),SmartCalculus.TCons(SmartCalculus.String,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
                   Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | TCons(HumanAddress,tl1),TCons(HumanAddress,tl2),VCons(x,vtl),ECons(e,etl) ->
+               | SmartCalculus.TCons(SmartCalculus.HumanAddress,tl1),SmartCalculus.TCons(SmartCalculus.HumanAddress,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
                   Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | TCons(ContractAddress,tl1),TCons(ContractAddress,tl2),VCons(x,vtl),ECons(e,etl) ->
+               | SmartCalculus.TCons(SmartCalculus.ContractAddress,tl1),SmartCalculus.TCons(SmartCalculus.ContractAddress,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
                   Assignment(x,e) :: aux tl1 tl2 vtl etl
                | _,_,_,_ -> assert false in
             let sub = aux (fst li) (fst lo) vl (apply_subst_expr_list sub al) in
@@ -563,81 +563,66 @@ open Presburger
  module Bin = struct
   let (states : state list) =
     [ [1], ([Assignment((Int,"p"),Value(0)) ; Assignment((Int,"d"),Symbol("D"))], true)
-    ; [2], ([Assignment((Int,"p"),Value(0)) ; Assignment((Int,"d"),Symbol("D")) ; Assignment((Int,"cur_q"),Var(Int,"q"))
+    ; [2], ([Assignment((Int,"p"),Value(0)) ; Assignment((Int,"d"),Symbol("D")) ; Assignment((Int,"cur_q"),Symbol("q"))
             ; Assignment((HumanAddress,"ID"),Var(HumanAddress,"id"))],false)
-    ; [3], ([EVar "p",Expr(Const (Numeric 1)) ;
-             EVar "d", Expr(Plus (Var "D", Minus (Const (Symbolic "R"))))], true)
-    ; [4], ([EVar "p",Expr(Const (Numeric 1))
-            ; EVar "d", Expr(Plus (Var "D", Minus (Const (Symbolic "R"))))
-            ; EVar "cur_q",Expr(Var "q'") ;AVar "ID",Address(DVar "id'")], false)
-    ; [5], ([EVar "p",Expr(Const (Numeric 2)) ;
-             EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))],true)
-    ; [6], ([EVar "p",Expr(Const (Numeric 2))
-        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-            ; EVar "of",Expr(Var "e") ;AVar "ID",Address(DVar "gt_id")],true)
-    ; [7], ([EVar "p",Expr(Const (Numeric 2))
-        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")],true)
-    ; [8], ([EVar "p",Expr(Const (Numeric 2))
-        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")],true)
-    ; [9], ([EVar "p",Expr(Const (Numeric 2))
-        ; EVar "d", Expr(Plus (Var "D", Minus (Mult (Numeric 2, Const (Symbolic "R")))))
-        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'") ],true)
-    ;[10], ([EVar "p",Expr(Const (Numeric 0))
-        ; EVar "d",
-          Expr(Plus
-           (Plus (Var "d", Minus (Mult (Numeric 2, Const (Symbolic "R")))),
-            Max (Var "of", Var "of'")))
-        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'") ],false)
-    ;[11], ([EVar "p",Expr(Const (Numeric 0))
-        ; EVar "d",
-          Expr(Plus
-           (Plus (Var "d", Minus (Mult (Numeric 2, Const (Symbolic "R")))),
-            Max (Var "of", Var "of'")))
-        ; EVar "of", Expr(Var "e")  ;AVar "ID", Address(DVar "gt_id")
-            ; EVar "of'",Expr(Var "e'") ;AVar "ID'",Address(DVar "gt_id'")],true)
+    ; [3], ([Assignment((Int,"p"),Value(1)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Symbol("R"))))],true)
+    ; [4], ([Assignment((Int,"p"),Value(1)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Symbol("R")))) ; Assignment((Int,"cur_q"),Symbol("q'"))
+            ; Assignment((HumanAddress,"ID"),Var(HumanAddress,"id'"))],false)
+    ; [5], ([Assignment((Int,"p"),Value(2)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))],true)
+    ; [6], ([Assignment((Int,"p"),Value(2)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of"),Symbol("e'")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))],true)
+    ; [7], ([Assignment((Int,"p"),Value(2)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of"),Symbol("e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
+            ; Assignment((Int,"of'"),Symbol("e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
+    ; [8], ([Assignment((Int,"p"),Value(2)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of"),Symbol("e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
+            ; Assignment((Int,"of'"),Symbol("e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
+    ; [9], ([Assignment((Int,"p"),Value(2)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of"),Symbol("e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
+            ; Assignment((Int,"of'"),Symbol("e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
+    ; [10], ([Assignment((Int,"p"),Value(0)) ; Assignment((Int,"d"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of"),Symbol("e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
+            ; Assignment((Int,"of'"),Symbol("e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],false)
+    ; [11], ([Assignment((Int,"p"),Value(0))
+            ; Assignment((Int,"d"),Plus(Symbol("D"),Plus(Minus(Mult(Numeric(2),Symbol("R"))),Max(Symbol("of"), Symbol("of'")))))
+            ; Assignment((Int,"of"),Symbol("e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
+            ; Assignment((Int,"of'"),Symbol("e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
    ]
 
   let (transitions : transition list) =
-   [ [1],[2],True,Input (Contract "garbage_bin",None, "dep", [EVar "q";AVar "id"])
-   ; [2],[1],Gt(Var "cur_q",Const(Numeric 2)),Output (Contract "garbage_bin",DVar "ID","NOK",[])
-   ; [2],[3],Eq(Expr (Var "cur_q"),Expr (Const(Numeric 1))),
-      Output (Contract "garbage_bin",DVar "ID","OK",[Expr(Const (Symbolic "R"))])
-   ; [2],[5],Eq(Expr(Var "cur_q"),Expr(Const(Numeric 2))),
-      Output (Contract "garbage_bin",DVar "ID","OK",[Expr(Mult(Numeric 2, Const (Symbolic "R")))])
-   ; [3],[4],True,Input (Contract "garbage_bin",None, "dep", [EVar "q'";AVar "id'"])
-   ; [4],[3],Gt(Var "cur_q",Const(Numeric 2)),Output (Contract "garbage_bin",DVar "ID","NOK",[])
-   ; [4],[5],Eq(Expr(Var "cur_q"),Expr(Const(Numeric 1))),
-      Output (Contract "garbage_bin",DVar "ID","OK",[Expr(Const (Symbolic "R"))])
-   ; [5],[6],True,Input (Contract "garbage_bin",None, "bid", [EVar "e";AVar "gt_id"])
-   ; [6],[5],Gt(Mult(Numeric 2, Const (Symbolic "R")), Var "of"),
-      Output (Contract "garbage_bin",DVar "ID","lost",[Expr(Var "of")])
-   ; [6],[7],Geq(Var "of",Mult(Numeric 2, Const (Symbolic "R"))),Input (Contract "garbage_bin",None, "bid", [EVar "e'";AVar "gt_id'"])
-   ; [7],[8],Geq(Var "of", Var "of'"), Output (Contract "garbage_bin",DVar "ID'","LOST",[Expr(Var "of'")])
-   ; [7],[8],Gt(Var "of'", Var "of"),  Output (Contract "garbage_bin",DVar "ID", "LOST",[Expr(Var "of")])
-   ; [8],[9],Geq(Var "of", Var "of'"), Output (Contract "garbage_bin",DVar "ID","WIN",[])
-   ; [8],[9],Geq(Var "of'", Var "of"), Output (Contract "garbage_bin",DVar "ID'","WIN",[])
-   ; [9],[10],True,Input (Contract "garbage_bin",None, "empty", [AVar "id"])
-   ; [10],[9],Or(And (Geq(Var "of",Var "of'"), Not (Eq(Address (DVar "id"), Address (DVar "ID")))),
-             And (Gt(Var "of'",Var "of"), Not (Eq(Address (DVar "id"), Address (DVar "ID'"))))),Tau
-   ; [10],[11],Geq(Var "of", Var "of'"),
-     Output (Contract "garbage_bin",DAddress (Contract "incinerator"),"notify",
-        [Expr(Var "ID");Expr(Const(Numeric 2))])
-   ; [10],[11],Geq(Var "of'", Var "of"),
-     Output (Contract "garbage_bin",DAddress (Contract "incinerator'"),"notify",
-        [Expr(Var "ID'");Expr(Const(Numeric 2))])
-   ; [11],[1],True,
-     Output (Contract "garbage_bin",DAddress (Contract "incinerator"),"save",
-        [Expr(Plus(Max(Var "of", Var "of'"),
-                   Minus (Mult(Numeric 2, Const (Symbolic "R")))))])
+    [ [1],[2],Value true, Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"dep"), VCons((Int,"q"),VCons((String,"id"),VNil)))
+    ; [2],[1],Gt(Var (Int,"cur_q"),Value (2)),Output (Contract "garbage_bin", Var(HumanAddress,"ID"),(TNil,"NOK"),ENil)
+    ; [2],[3],Eq(Var(Int, "cur_q"),Value (1)),
+      Output (Contract "garbage_bin",Var (HumanAddress,"ID"),(TCons(Int ,TNil),"OK"), ECons(Var(Int,"R"),ENil))
+    ; [2],[5],Eq(Var(Int, "cur_q"),Value(2)),
+      Output (Contract "garbage_bin",Var( HumanAddress,"ID"),(TCons(Int ,TNil),"OK"),ECons(Mult( Numeric 2, Var(Int, "R")),ENil))
+    ; [3],[4],Value true,Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"dep"), VCons((Int,"q'"),VCons((String,"id'"),VNil)))
+    ; [4],[3],Gt(Var (Int, "cur_q"),Value (2)),Output (Contract "garbage_bin",Var (HumanAddress, "ID"),(TNil,"NOK"),ENil)
+    ; [4],[5],Eq(Var (Int, "cur_q"), Value (1)),
+      Output (Contract "garbage_bin",Var(HumanAddress, "ID"),(TCons(Int ,TNil),"OK"),ECons(Var(Int,"R"),ENil))
+    ; [5],[6],Value true,Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"bid"), VCons((Int,"e"),VCons((String,"gt_id"),VNil)))
+    ; [6],[5],Gt(Mult(Numeric 2, Var(Int, "R")), Var (Int,"of")),
+      Output (Contract "garbage_bin",Var (HumanAddress, "ID"),(TCons(Int ,TNil),"lost"),(*[Expr(Var "of")]*) ECons(Var(Int,"of"),ENil))
+    ; [6],[7],Geq(Var (Int, "of"),Mult( Numeric 2, Var(Int, "R"))),Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"bid"), VCons((Int,"e'"),VCons((String,"gt_id'"),VNil)))
+    ; [7],[8],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin", Var (HumanAddress,"ID'"),(TCons(Int,TNil),"LOST"),ECons(Var(Int,"of'"),ENil))
+    ; [7],[8],Gt(Var (Int,"of"), Var(Int, "of'")),  Output (Contract "garbage_bin",Var (HumanAddress,"ID"), (TCons(Int ,TNil),"LOST"),ECons(Var(Int,"of"),ENil))
+    ; [8],[9],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin",Var (HumanAddress,"ID"),(TNil,"WIN"),ENil)
+    ; [8],[9],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin",Var (HumanAddress,"ID'"),(TNil,"WIN"),ENil)
+    ; [9],[10],Value true,Input (Contract "garbage_bin",None, (TCons(String ,TNil),"empty"), (*[AVar "id"]*)VCons((String,"id"),VNil))
+    ; [10],[9],Or(And (Geq(Var (Int,"of"), Var(Int, "of'")), Not (Eq(Var(HumanAddress, "id"), Var(HumanAddress, "ID")))),
+                  And (Gt(Var (Int,"of'"), Var(Int, "of")), Not (Eq(Var(HumanAddress, "id"), Var(HumanAddress, "ID'"))))),Tau
+    ; [10],[11],Geq(Var (Int,"of"), Var(Int, "of'")),
+      Output (Contract "garbage_bin",  Var (ContractAddress, "incinerator"),(TCons(String,TCons(Int,TNil)),"notify"),
+              ECons(Var(String,"ID"),ECons(Var(Int,"id"),ENil)))
+    ; [10],[11],Geq(Var (Int,"of'"), Var(Int, "of")),
+      Output (Contract "garbage_bin",Var (ContractAddress, "incinerator"),(TCons(String,TCons(Int,TNil)),"notify"),
+              ECons(Var(String,"ID"),ECons(Var(Int,"id"),ENil)))
+    ; [11],[1],Value true,
+      Output (Contract "garbage_bin",Var (ContractAddress, "incinerator"),(TCons(Int ,TNil),"save"),
+            ECons(Plus(Var(Int,"D"),Plus(Minus(Mult(Numeric(2),Symbol("R"))),Max(Symbol("of"), Symbol("of'")))),ENil))
    ]
 
-  let automaton : automaton = ([Contract "garbage_bin"],[1],states,transitions)
+  let automaton : automaton = ([AnyAddress (Contract( "garbage_bin"))],[1],states,transitions)
 
    let _ =
     let ch = open_out "garbage_bin.dot" in
@@ -645,71 +630,59 @@ open Presburger
     close_out ch
 
  end
-
 module Citizen = struct
   let (states : state list) =
-    [ [1], ([EVar "cp",Expr(Const (Numeric 0)) ; EVar "balance", Expr(Const (Symbolic "D"))],true)
-    ; [2], ([EVar "cp",Expr(Const (Numeric 2)) ; EVar "balance", Expr(Const (Numeric 0))],true)
-    ; [3], ([EVar "cp",Expr(Const (Numeric 0)) ; EVar "balance", Expr(Const (Numeric 0))],true)
-    ; [4], ([EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Const (Numeric 0))],true)
-    ; [5], ([EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Const (Numeric 0))],true)
-    ; [6], ([EVar "cp",Expr(Const (Numeric 1)) ;
-             EVar "balance", Expr(Const (Numeric 0))],true)
-    ; [7], ([EVar "cp",Expr(Const (Numeric 0))  ;
-             EVar "balance", Expr(Const (Symbolic "2*a"))],true)
-    ; [8], ([EVar "cp",Expr(Const (Numeric 1))  ;
-             EVar "balance", Expr(Const (Symbolic "a"))],true)
-    ; [9], ([EVar "cp",Expr(Const (Numeric 0))  ;
-             EVar "balance", Expr(Const (Numeric 0))],true)
-    ;[10], ([EVar "cp",Expr(Const (Numeric 0)) ;
-             EVar "balance", Expr(Const (Numeric 0))],true)
-    ;[11], ([EVar "cp",Expr(Const (Numeric 0)) ;
-             EVar "balance", Expr(Const (Symbolic "a"))],true)
-    ;[12], ([EVar "cp",Expr(Const (Numeric 0)) ;
-             EVar "balance", Expr(Const (Symbolic "a"))],true)
-    ;[13], ([EVar "cp",Expr(Const (Numeric 0)) ;
-             EVar "balance", Expr(Const (Symbolic "a"))],true)
-    ;[14], ([EVar "cp",Expr(Const (Numeric 0))  ;
-             EVar "balance", Expr(Const (Symbolic "2*a"))],true)
+    [ [1], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Symbol("D"))],true)
+    ; [2], ([Assignment((Int,"cp"),Value(2)); Assignment((Int,"balance"),Value(0))],true)
+    ; [3], ([Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
+    ; [4], ([Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
+    ; [5], ([Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
+    ; [6], ([Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
+    ; [7], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Mult(Numeric 2,Symbol "a"))],true)
+    ; [8], ([Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Symbol("a"))],true)
+    ; [9], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Value(0))],true)
+    ;[10], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Value(0))],true)
+    ;[11], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Symbol("a"))],true)
+    ;[12], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Symbol("a"))],true)
+    ;[13], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Symbol("a"))],true)
+    ;[14], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Mult(Numeric 2,Symbol "a"))],true)
     ]
 
     let address0 = Human "citizen"
-    let address = DAddress address0
-    let gb = Contract "garbage_bin"
-    let incinerator = Contract "incinerator"
+    let address = AnyAddress address0
+    let gb = Var(ContractAddress, "garbage_bin")
+    let incinerator = Var(ContractAddress, "incinerator")
 
   let (transitions : transition list) =
-    [ [1],[2],True,Output (address0, DAddress incinerator,"fee",[Expr(Const (Symbolic "D"))])
-    ; [2],[3],True,
-      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 2)); Address address])
-    ; [3],[2],True,Input (address0,Some (DAddress gb),"NOK", [])
-    ; [2],[4],True,
-      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    ; [4],[2],True,Input (address0,Some (DAddress gb),"NOK", [])
-    ; [2],[5],True, Tau
-    ; [2],[6],True, Tau
-    ; [3],[7], True,Input (address0,Some (DAddress gb),"OK", [EVar "2*a"])
-    ; [4],[8], True,Input (address0,Some (DAddress gb),"OK", [EVar "a"])
-    ; [8],[12],True,
-      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    ; [12],[8],True,Input (address0,Some (DAddress gb),"NOK", [])
-    ; [8],[13],True, Tau
-    ; [12],[14], True,Input (address0,Some (DAddress gb),"OK", [EVar "a"])
-    ; [5],[9],True,
-      Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-    ; [9],[5],True,Input (address0,Some (DAddress gb),"NOK", [])
-    ; [5],[10],True, Tau
-    ; [9],[11], True,Input (address0,Some (DAddress gb),"OK", [EVar "a"])
-    ; [7],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
-    ; [14],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
-    ; [13],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
-    ; [11],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
-    ; [10],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
-    ; [6],[1], True,Output (address0,DAddress (Contract "banca"),"save", [Expr (Var "balance")])
+    [ [1],[2],Value true,Output (address0, incinerator,(TCons(Int,TNil),"fee"),ECons(Var(Int,"D"),ENil))
+    ; [2],[3],Value true,
+      Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"2"), ECons(Var(HumanAddress,"citizen"),ENil)))
+    ; [3],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [2],[4],Value true,
+      Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"1"), ECons(Var(HumanAddress,"citizen"),ENil)))
+    ; [4],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [2],[5],Value true, Tau
+    ; [2],[6],Value true, Tau
+    ; [3],[7], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"2*a"),VNil))
+    ; [4],[8], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [8],[12], Value true, Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"1"), ECons(Var(HumanAddress,"citizen"),ENil)))
+    ; [12],[8],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [8],[13],Value true, Tau
+    ; [12],[14],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [5],[9],Value true, Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"1"), ECons(Var(HumanAddress,"citizen"),ENil)))
+    ; [9],[5],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [5],[10],Value true, Tau
+    ; [9],[11],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [7],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [14],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [13],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [11],[1],Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [10],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [6],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
 
     ]
 
-  let automaton : automaton = ([address0],[1],states,transitions)
+  let automaton : automaton = ([AnyAddress (address0)],[1],states,transitions)
 
   let _ =
     let ch = open_out "citizen.dot" in
@@ -718,6 +691,7 @@ module Citizen = struct
 
 end
 
+   (* SCOMMENTA
  module BasicCitizen = struct
    let (states : state list) =
      [ [1], ([EVar "cp",Expr(Const (Numeric 2)) ; EVar "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))],true)
@@ -781,7 +755,7 @@ end
      output_string ch (pp_automaton automaton);
      close_out ch
  end
-
+   *)
 
  (*
  module Truck = struct
@@ -893,7 +867,7 @@ end
  *)
 
 
- let basiccitizen_bin = compose BasicCitizen.automaton Bin.automaton
+ (* let basiccitizen_bin = compose BasicCitizen.automaton Bin.automaton
  let basictruck_bin = compose BasicTruck.automaton Bin.automaton
  let basiccitizen_basictruck_bin = compose BasicCitizen.automaton basictruck_bin
  let automata =
@@ -909,4 +883,9 @@ end
      output_string ch (pp_automaton au) ;
      close_out ch ;
      ignore (Unix.system ("dot -Tpdf " ^ fn ^ ".dot -o " ^ fn ^ ".pdf"))
-   ) automata
+    ) automata *)
+
+    let _ =
+     let citizen_bin = compose Citizen.automaton Bin.automaton in
+     let ch = open_out "citizen_bin.dot" in
+     output_string ch (pp_automaton citizen_bin);
