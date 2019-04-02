@@ -33,12 +33,13 @@ struct
   | Max : int expr * int expr -> int expr
   | Geq : int expr * int expr -> bool expr
   | Gt : int expr * int expr -> bool expr
-  | Eq : 'a expr * 'a expr -> bool expr
+  | Eq : 'a tag * 'a expr * 'a expr -> bool expr
   | And : bool expr * bool expr -> bool expr
   | Or : bool expr * bool expr -> bool expr
   | Not : bool expr -> bool expr
   | Value : 'a -> 'a expr
   | Symbol : string -> int expr
+ type 'a tagged_expr = 'a tag * 'a expr
  type _ var_list =
     VNil : unit var_list
   | VCons : 'a var * 'b var_list -> ('a * 'b) var_list
@@ -98,41 +99,49 @@ let rec pp_var_list : type a. a var_list -> string list =
  function
     VNil -> []
   | VCons(v,tl) -> pp_var v :: pp_var_list tl
-let pp_value _ = assert false
+let pp_address : type a. a address -> string =
+ function Contract a -> "C("^a^")" | Human a -> "H("^a^")"
+let pp_value (type a) (tag : a tag) (v : a) =
+ match tag with
+    Int -> string_of_int v
+  | Bool -> string_of_bool v
+  | String -> v
+  | ContractAddress -> pp_address v
+  | HumanAddress -> pp_address v
 let pp_field = pp_ident
 let pp_const =
  function
     Symbolic s -> s
   | Numeric n -> string_of_int n
 
-let pp_address : type a. a address -> string =
- function Contract a -> "C("^a^")" | Human a -> "H("^a^")"
-
 let pp_any_address (AnyAddress a) = pp_address a
 
-let rec pp_expr : type a. a expr -> string =
+let rec pp_expr : type a. a tag -> a expr -> string =
+ fun tag ->
  function
   | Var v -> pp_var v
   | Fail -> "fail"
   | This -> "this"
   | Symbol s -> s
   | Field f -> pp_field f
-  | Plus (e1,e2) -> "(" ^ pp_expr e1 ^ " + " ^ pp_expr e2 ^ ")"
-  | Mult (c,e) -> "(" ^ pp_const c ^ " * " ^ pp_expr e ^ ")"
-  | Minus e -> "-" ^ pp_expr e
-  | Max (e1,e2) -> "(max " ^ pp_expr e1 ^ " " ^ pp_expr e2 ^ ")"
-  | Geq (e1,e2) -> "(" ^ pp_expr e1 ^ " >= " ^ pp_expr e2 ^ ")"
-  | Gt (e1,e2) -> "(" ^ pp_expr e1 ^ " > " ^ pp_expr e2 ^ ")"
-  | Eq (e1,e2) -> "(" ^ pp_expr e1 ^ " = " ^ pp_expr e2 ^ ")"
-  | And (g1,g2) -> "(" ^ pp_expr g1 ^ " /\\\\ " ^ pp_expr g2 ^ ")"
-  | Or (g1,g2) -> "(" ^ pp_expr g1 ^ " \\\\/ " ^ pp_expr g2 ^ ")"
-  | Not g -> "~" ^ pp_expr g
-  | Value v -> pp_value v
+  | Plus (e1,e2) -> "(" ^ pp_expr tag e1 ^ " + " ^ pp_expr tag e2 ^ ")"
+  | Mult (c,e) -> "(" ^ pp_const c ^ " * " ^ pp_expr tag e ^ ")"
+  | Minus e -> "-" ^ pp_expr tag e
+  | Max (e1,e2) -> "(max " ^ pp_expr tag e1 ^ " " ^ pp_expr tag e2 ^ ")"
+  | Geq (e1,e2) -> "(" ^ pp_expr Int e1 ^ " >= " ^ pp_expr Int e2 ^ ")"
+  | Gt (e1,e2) -> "(" ^ pp_expr Int e1 ^ " > " ^ pp_expr Int e2 ^ ")"
+  | Eq (tag,e1,e2) -> "(" ^ pp_expr tag e1 ^ " = " ^ pp_expr tag e2 ^ ")"
+  | And (g1,g2) -> "(" ^ pp_expr tag g1 ^ " /\\\\ " ^ pp_expr tag g2 ^ ")"
+  | Or (g1,g2) -> "(" ^ pp_expr tag g1 ^ " \\\\/ " ^ pp_expr tag g2 ^ ")"
+  | Not g -> "~" ^ pp_expr tag g
+  | Value v -> pp_value tag v
 
-let rec pp_expr_list : type a. a expr_list -> string list =
- function
-    ENil -> []
-  | ECons(v,tl) -> pp_expr v :: pp_expr_list tl
+let pp_tagged_expr e = pp_expr (fst e) (snd e)
+
+let rec pp_expr_list : type a. a tag_list -> a expr_list -> string list = fun tg el ->
+ match tg,el with
+    TNil,ENil -> []
+  | TCons(tag,tagl),ECons(v,tl) -> pp_expr tag v :: pp_expr_list tagl tl
 
 (*** Evaluation ***)
 type truth_values = F | T | M (* false, true, maybe *)
@@ -228,7 +237,7 @@ let rec eval_cond : bool expr -> truth_values =
   | Value false -> F
   | Geq (e1,e2) -> geq (eval_expr e1) (eval_expr e2)
   | Gt (e1,e2) -> gt (eval_expr e1) (eval_expr e2)
-  | Eq (e1,e2) -> eq (eval_expr e1) (eval_expr e2)
+  | Eq (_,e1,e2) -> eq (eval_expr e1) (eval_expr e2)
   | And (g1,g2) -> tv_and (eval_cond g1) (eval_cond g2)
   | Or (g1,g2) -> tv_or (eval_cond g1) (eval_cond g2)
   | Not g -> tv_not (eval_cond g)
@@ -249,8 +258,8 @@ type subst = assignment list
 type cond = bool SmartCalculus.expr
 
 type action =
- | Input : (*receiver:*)(_ SmartCalculus.address) * (*sender:*)((_ SmartCalculus.address) SmartCalculus.expr) option * 'b label * 'b SmartCalculus.var_list -> action
- | Output : (*sender:*)(_ SmartCalculus.address) * (*receiver:*)(_ SmartCalculus.address) SmartCalculus.expr * 'b label * 'b SmartCalculus.expr_list -> action
+ | Input : (*receiver:*)(_ SmartCalculus.address) * (*sender:*)((_ SmartCalculus.address) SmartCalculus.tagged_expr) option * 'b label * 'b SmartCalculus.var_list -> action
+ | Output : (*sender:*)(_ SmartCalculus.address) * (*receiver:*)(_ SmartCalculus.address) SmartCalculus.tagged_expr * 'b label * 'b SmartCalculus.expr_list -> action
  | Tau : action
 
 type state = id * (subst * bool(*= no actor running*))
@@ -260,7 +269,7 @@ type automaton = SmartCalculus.any_address list * id(*=initial state*) * state l
 let lookup (type a) (f : a SmartCalculus.var) (s : subst) : a SmartCalculus.expr =
  let rec aux : subst -> a SmartCalculus.expr =
   function
-    [] -> assert false
+    [] -> raise Not_found
   | Assignment(g,v)::tl ->
      match f,g with
         (SmartCalculus.Int,sf),(SmartCalculus.Int,sg) when sf=sg -> v
@@ -275,19 +284,19 @@ let lookup (type a) (f : a SmartCalculus.var) (s : subst) : a SmartCalculus.expr
 (*** Serialization ***)
 let pp_id l = String.concat "*" (List.map string_of_int l)
 let pp_label (tags,s) = s ^ "::" ^ String.concat "*" (SmartCalculus.pp_tag_list tags)
-let pp_assignment (Assignment (v,e)) = SmartCalculus.pp_var v ^ "=" ^ SmartCalculus.pp_expr e
-let pp_cond : bool SmartCalculus.expr -> string = function SmartCalculus.Value true -> "" | g -> SmartCalculus.pp_expr g
+let pp_assignment (Assignment (v,e)) = SmartCalculus.pp_var v ^ "=" ^ SmartCalculus.pp_expr (fst v) e
+let pp_cond : bool SmartCalculus.expr -> string = function SmartCalculus.Value true -> "" | g -> SmartCalculus.pp_expr Bool g
 let pp_action =
  function
   | Input (r,s,l,vl) ->
      SmartCalculus.pp_address r ^ "." ^
      pp_label l ^
-     "[" ^ (match s with None -> "" | Some a -> SmartCalculus.pp_expr a ^ ".") ^ "]" ^
+     "[" ^ (match s with None -> "" | Some a -> SmartCalculus.pp_tagged_expr a ^ ".") ^ "]" ^
      "(" ^ String.concat "," (SmartCalculus.pp_var_list vl) ^ ")"
   | Output (r,aexpr,l,al) ->
      SmartCalculus.pp_address r ^ ":" ^
-     SmartCalculus.pp_expr aexpr ^ "." ^ pp_label l ^
-      "(" ^ String.concat "," (SmartCalculus.pp_expr_list al) ^ ")"
+     SmartCalculus.pp_tagged_expr aexpr ^ "." ^ pp_label l ^
+      "(" ^ String.concat "," (SmartCalculus.pp_expr_list (fst l) al) ^ ")"
   | Tau -> "tau"
 let pp_state i (id,(al,zero)) =
  "\"" ^ pp_id id ^ "\" [label=\"" ^
@@ -328,10 +337,11 @@ let rec apply_subst_expr : type a. subst -> a SmartCalculus.expr -> a SmartCalcu
   | SmartCalculus.Max (e1,e2) -> Max (apply_subst_expr subst e1,apply_subst_expr subst e2)
   | SmartCalculus.Geq (e1,e2) -> Geq (apply_subst_expr subst e1,apply_subst_expr subst e2)
   | SmartCalculus.Gt (e1,e2) -> Gt (apply_subst_expr subst e1,apply_subst_expr subst e2)
-  | SmartCalculus.Eq (e1,e2) -> Eq (apply_subst_expr subst e1,apply_subst_expr subst e2)
+  | SmartCalculus.Eq (tag,e1,e2) -> Eq (tag,apply_subst_expr subst e1,apply_subst_expr subst e2)
   | SmartCalculus.And (g1,g2) -> And (apply_subst_expr subst g1,apply_subst_expr subst g2)
   | SmartCalculus.Or (g1,g2) -> Or (apply_subst_expr subst g1,apply_subst_expr subst g2)
   | SmartCalculus.Not g -> Not (apply_subst_expr subst g)
+let apply_subst_tagged_expr subst (t,e) = t,apply_subst_expr subst e
 let apply_subst_assignment subst (Assignment (v,e)) =
  Assignment (v, apply_subst_expr subst e)
 let apply_subst_subst subst al =
@@ -343,9 +353,9 @@ let rec apply_subst_expr_list : type a. subst -> a SmartCalculus.expr_list -> a 
 let apply_subst_action subst =
  function
   | Output (r, aexpr,l,al) ->
-     Output (r, apply_subst_expr subst aexpr,l,apply_subst_expr_list subst al)
+     Output (r, apply_subst_tagged_expr subst aexpr,l,apply_subst_expr_list subst al)
   | Input (r, aexpr, l, vl) ->
-     Input (r, map_option (apply_subst_expr subst) aexpr, l, vl)
+     Input (r, map_option (apply_subst_tagged_expr subst) aexpr, l, vl)
   | Tau -> Tau
 
 (*** Composition ***)
@@ -361,8 +371,8 @@ let (@@) (ass1,zero1) (ass2,zero2) =
  assert(zero1 || zero2) ;
  ass1 @ ass2, zero1 && zero2
 
-let (===) (e : ('a SmartCalculus.address) SmartCalculus.expr) (a : SmartCalculus.any_address) =
- match e with
+let (===) (e : ('a SmartCalculus.address) SmartCalculus.tagged_expr) (a : SmartCalculus.any_address) =
+ match snd e with
   | SmartCalculus.Value b -> SmartCalculus.AnyAddress b = a
   | _ -> false
 
@@ -433,11 +443,11 @@ and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as 
   function
    | Tau | Input (_,None,_,_) -> true
    | Input (_,Some d,_,_) ->
-      let d = apply_subst_expr sub (apply_subst_expr (fst your_ass) d) in
+      let d = apply_subst_tagged_expr sub (apply_subst_tagged_expr (fst your_ass) d) in
       List.for_all (fun a -> not (d === a)) the_others
    | Output(r,d,_,_) ->
       (is_contract r || snd assign) &&
-      let d = apply_subst_expr sub (apply_subst_expr (fst your_ass) d) in
+      let d = apply_subst_tagged_expr sub (apply_subst_tagged_expr (fst your_ass) d) in
       List.for_all (fun a -> not (d === a)) the_others in
  List.fold_left
   (fun (sp,tp) (_,aexpr,cond,action) ->
@@ -465,7 +475,7 @@ let ass_out = List.assoc id2 sl2 in
        (s,_,_,Output (r,d,_,_)) ->
          (is_contract r || zero) &&
          let d =
-          apply_subst_expr sub (apply_subst_expr (fst (List.assoc id2 sl2)) d) in
+          apply_subst_tagged_expr sub (apply_subst_tagged_expr (fst (List.assoc id2 sl2)) d) in
          s = id2 && List.exists (fun a -> d === a) a1
      | _ -> false) tl2 in
  let id1' din _ = din in
@@ -484,7 +494,7 @@ and interact2in_1out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1
        (s,_,_,Output (r,d,_,_)) ->
          (is_contract r || zero) &&
          let d =
-          apply_subst_expr sub (apply_subst_expr (fst (List.assoc id1 sl1)) d) in
+          apply_subst_tagged_expr sub (apply_subst_tagged_expr (fst (List.assoc id1 sl1)) d) in
          s = id1 && List.exists (fun a -> d === a) a2
      | _ -> false) tl1 in
  let id1' _ don = don in
@@ -499,11 +509,11 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
        match t_in,t_out with
         | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(addr_out,rec_out,lo,al))
           when
-            apply_subst_expr sub (apply_subst_expr (fst ass_out) rec_out) === (SmartCalculus.AnyAddress receiver) &&
+            apply_subst_tagged_expr sub (apply_subst_tagged_expr (fst ass_out) rec_out) === (SmartCalculus.AnyAddress receiver) &&
             (match sender with
                 None -> true
               | Some aexpr ->
-                 apply_subst_expr sub (apply_subst_expr (fst ass_in) aexpr)
+                 apply_subst_tagged_expr sub (apply_subst_tagged_expr (fst ass_in) aexpr)
                  === SmartCalculus.AnyAddress addr_out)
              && snd li = snd lo ->
             let rec aux : type a b. a SmartCalculus.tag_list -> b SmartCalculus.tag_list -> a SmartCalculus.var_list -> b SmartCalculus.expr_list -> subst =
@@ -591,34 +601,34 @@ open Presburger
 
   let (transitions : transition list) =
     [ [1],[2],Value true, Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"dep"), VCons((Int,"q"),VCons((String,"id"),VNil)))
-    ; [2],[1],Gt(Var (Int,"cur_q"),Value (2)),Output (Contract "garbage_bin", Var(HumanAddress,"ID"),(TNil,"NOK"),ENil)
-    ; [2],[3],Eq(Var(Int, "cur_q"),Value (1)),
-      Output (Contract "garbage_bin",Var (HumanAddress,"ID"),(TCons(Int ,TNil),"OK"), ECons(Var(Int,"R"),ENil))
-    ; [2],[5],Eq(Var(Int, "cur_q"),Value(2)),
-      Output (Contract "garbage_bin",Var( HumanAddress,"ID"),(TCons(Int ,TNil),"OK"),ECons(Mult( Numeric 2, Var(Int, "R")),ENil))
+    ; [2],[1],Gt(Var (Int,"cur_q"),Value (2)),Output (Contract "garbage_bin", (HumanAddress,Var(HumanAddress,"ID")),(TNil,"NOK"),ENil)
+    ; [2],[3],Eq(Int,Var(Int, "cur_q"),Value (1)),
+      Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress,"ID")),(TCons(Int ,TNil),"OK"), ECons(Var(Int,"R"),ENil))
+    ; [2],[5],Eq(Int,Var(Int, "cur_q"),Value(2)),
+      Output (Contract "garbage_bin",(HumanAddress,Var( HumanAddress,"ID")),(TCons(Int ,TNil),"OK"),ECons(Mult( Numeric 2, Var(Int, "R")),ENil))
     ; [3],[4],Value true,Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"dep"), VCons((Int,"q'"),VCons((String,"id'"),VNil)))
-    ; [4],[3],Gt(Var (Int, "cur_q"),Value (2)),Output (Contract "garbage_bin",Var (HumanAddress, "ID"),(TNil,"NOK"),ENil)
-    ; [4],[5],Eq(Var (Int, "cur_q"), Value (1)),
-      Output (Contract "garbage_bin",Var(HumanAddress, "ID"),(TCons(Int ,TNil),"OK"),ECons(Var(Int,"R"),ENil))
+    ; [4],[3],Gt(Var (Int, "cur_q"),Value (2)),Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress, "ID")),(TNil,"NOK"),ENil)
+    ; [4],[5],Eq(Int,Var (Int, "cur_q"), Value (1)),
+      Output (Contract "garbage_bin",(HumanAddress,Var(HumanAddress, "ID")),(TCons(Int ,TNil),"OK"),ECons(Var(Int,"R"),ENil))
     ; [5],[6],Value true,Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"bid"), VCons((Int,"e"),VCons((String,"gt_id"),VNil)))
     ; [6],[5],Gt(Mult(Numeric 2, Var(Int, "R")), Var (Int,"of")),
-      Output (Contract "garbage_bin",Var (HumanAddress, "ID"),(TCons(Int ,TNil),"lost"),(*[Expr(Var "of")]*) ECons(Var(Int,"of"),ENil))
+      Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress, "ID")),(TCons(Int ,TNil),"lost"),(*[Expr(Var "of")]*) ECons(Var(Int,"of"),ENil))
     ; [6],[7],Geq(Var (Int, "of"),Mult( Numeric 2, Var(Int, "R"))),Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"bid"), VCons((Int,"e'"),VCons((String,"gt_id'"),VNil)))
-    ; [7],[8],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin", Var (HumanAddress,"ID'"),(TCons(Int,TNil),"LOST"),ECons(Var(Int,"of'"),ENil))
-    ; [7],[8],Gt(Var (Int,"of"), Var(Int, "of'")),  Output (Contract "garbage_bin",Var (HumanAddress,"ID"), (TCons(Int ,TNil),"LOST"),ECons(Var(Int,"of"),ENil))
-    ; [8],[9],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin",Var (HumanAddress,"ID"),(TNil,"WIN"),ENil)
-    ; [8],[9],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin",Var (HumanAddress,"ID'"),(TNil,"WIN"),ENil)
+    ; [7],[8],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin", (HumanAddress,Var (HumanAddress,"ID'")),(TCons(Int,TNil),"LOST"),ECons(Var(Int,"of'"),ENil))
+    ; [7],[8],Gt(Var (Int,"of"), Var(Int, "of'")),  Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress,"ID")), (TCons(Int ,TNil),"LOST"),ECons(Var(Int,"of"),ENil))
+    ; [8],[9],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress,"ID")),(TNil,"WIN"),ENil)
+    ; [8],[9],Geq(Var (Int,"of"), Var(Int, "of'")), Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress,"ID'")),(TNil,"WIN"),ENil)
     ; [9],[10],Value true,Input (Contract "garbage_bin",None, (TCons(String ,TNil),"empty"), (*[AVar "id"]*)VCons((String,"id"),VNil))
-    ; [10],[9],Or(And (Geq(Var (Int,"of"), Var(Int, "of'")), Not (Eq(Var(HumanAddress, "id"), Var(HumanAddress, "ID")))),
-                  And (Gt(Var (Int,"of'"), Var(Int, "of")), Not (Eq(Var(HumanAddress, "id"), Var(HumanAddress, "ID'"))))),Tau
+    ; [10],[9],Or(And (Geq(Var (Int,"of"), Var(Int, "of'")), Not (Eq(HumanAddress, Var(HumanAddress, "id"), Var(HumanAddress, "ID")))),
+                  And (Gt(Var (Int,"of'"), Var(Int, "of")), Not (Eq(HumanAddress, Var(HumanAddress, "id"), Var(HumanAddress, "ID'"))))),Tau
     ; [10],[11],Geq(Var (Int,"of"), Var(Int, "of'")),
-      Output (Contract "garbage_bin",  Var (ContractAddress, "incinerator"),(TCons(String,TCons(Int,TNil)),"notify"),
+      Output (Contract "garbage_bin",  (ContractAddress, Var (ContractAddress, "incinerator")),(TCons(String,TCons(Int,TNil)),"notify"),
               ECons(Var(String,"ID"),ECons(Var(Int,"id"),ENil)))
     ; [10],[11],Geq(Var (Int,"of'"), Var(Int, "of")),
-      Output (Contract "garbage_bin",Var (ContractAddress, "incinerator"),(TCons(String,TCons(Int,TNil)),"notify"),
+      Output (Contract "garbage_bin",(ContractAddress, Var (ContractAddress, "incinerator")),(TCons(String,TCons(Int,TNil)),"notify"),
               ECons(Var(String,"ID"),ECons(Var(Int,"id"),ENil)))
     ; [11],[1],Value true,
-      Output (Contract "garbage_bin",Var (ContractAddress, "incinerator"),(TCons(Int ,TNil),"save"),
+      Output (Contract "garbage_bin",(ContractAddress, Var (ContractAddress, "incinerator")),(TCons(Int ,TNil),"save"),
             ECons(Plus(Var(Int,"D"),Plus(Minus(Mult(Numeric(2),Symbol("R"))),Max(Symbol("of"), Symbol("of'")))),ENil))
    ]
 
@@ -650,8 +660,9 @@ module Citizen = struct
 
     let address0 = Human "citizen"
     let address = AnyAddress address0
-    let gb = Var(ContractAddress, "garbage_bin")
-    let incinerator = Var(ContractAddress, "incinerator")
+    let gb = ContractAddress,Var(ContractAddress, "garbage_bin")
+    let incinerator = ContractAddress,Var(ContractAddress, "incinerator")
+    let banca = ContractAddress,Var(ContractAddress, "banca")
 
   let (transitions : transition list) =
     [ [1],[2],Value true,Output (address0, incinerator,(TCons(Int,TNil),"fee"),ECons(Var(Int,"D"),ENil))
@@ -673,12 +684,12 @@ module Citizen = struct
     ; [9],[5],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [5],[10],Value true, Tau
     ; [9],[11],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
-    ; [7],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
-    ; [14],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
-    ; [13],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
-    ; [11],[1],Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
-    ; [10],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
-    ; [6],[1], Value true,Output (address0,Var(ContractAddress, "banca"),(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [7],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [14],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [13],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [11],[1],Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [10],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
+    ; [6],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
 
     ]
 
