@@ -640,6 +640,7 @@ open Presburger
     close_out ch
 
  end
+
 module Citizen = struct
   let (states : state list) =
     [ [1], ([Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Symbol("D"))],true)
@@ -690,7 +691,6 @@ module Citizen = struct
     ; [11],[1],Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
     ; [10],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
     ; [6],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
-
     ]
 
   let automaton : automaton = ([AnyAddress (address0)],[1],states,transitions)
@@ -701,72 +701,6 @@ module Citizen = struct
     close_out ch
 
 end
-
-   (* SCOMMENTA
- module BasicCitizen = struct
-   let (states : state list) =
-     [ [1], ([EVar "cp",Expr(Const (Numeric 2)) ; EVar "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))],true)
-     ; [2], ([EVar "cp",Expr(Const (Numeric 1)) ; EVar "balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "D"))))],true)
-     ; [3], ([EVar "cp",Expr(Const (Numeric 1)) ;
-             EVar "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))],true)
-     ; [4], ([EVar "cp",Expr(Const (Numeric 0)) ;
-             EVar "balance", Expr(Plus (Const (Symbolic "A"), Plus (Var "a", Minus (Const (Symbolic "D")))))],true)
-     ]
-
-   let address0 = Human "basiccitizen"
-   let address = DAddress address0
-   let gb = Contract "garbage_bin"
-
-   let (transitions : transition list) =
-     [ [1],[2],True,
-       Output (address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-     (*; [2],[1],True,Input ("NOK", [])*)
-     (*; [2],[1], True, Input ("OK", ["a"])*)
-     ; [2],[3], True, Input (address0,Some (DAddress gb), "OK", [EVar "a"])
-     ; [3],[4], True,
-       Output(address0,DAddress gb,"dep",[Expr( Const (Numeric 1)); Address address])
-     (*; [4],[3],True ,Input ("NOK", [])*)
-     ; [4],[1], True, Input (address0,Some (DAddress gb), "OK", [EVar "a"])
-     ]
-
-   let automaton : automaton = ([address0],[1],states,transitions)
-
-   let _ =
-     let ch = open_out "basiccitizen.dot" in
-     output_string ch (pp_automaton automaton);
-     close_out ch
-
- end
-
- module BasicTruck = struct
-   let (states : state list) =
-     [ [1], ([EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Const (Symbolic "A"))], true)
-     ; [2], ([EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))], true)
-
-     ; [3], ([EVar "tp",Expr(Const (Numeric 0)) ; EVar "truck_balance", Expr(Plus (Const (Symbolic "A"), Minus (Const (Symbolic "e"))))], true)
-     ]
-
-   let address0 = Human "basictruck"
-   let address = DAddress address0
-   let gb = Contract "garbage_bin"
-
-   let (transitions : transition list) =
-     [ [1],[2],True,
-       Output (address0,DAddress gb,"bid",[Expr( Const( Symbolic "e")) ;Address address])
-     ; [2],[1], True, Input (address0,Some (DAddress gb), "LOST", [EVar "e"])
-     ; [2],[3], True, Input (address0,Some (DAddress gb), "WIN", [])
-     ; [3],[1], True,
-       Output (address0,DAddress gb,"empty",[Address address])
-       ]
-
-   let automaton : automaton = ([address0],[1],states,transitions)
-
-   let _ =
-     let ch = open_out "basictruck.dot" in
-     output_string ch (pp_automaton automaton);
-     close_out ch
- end
-   *)
 
  (*
  module Truck = struct
@@ -878,15 +812,7 @@ end
  *)
 
 
- (* let basiccitizen_bin = compose BasicCitizen.automaton Bin.automaton
- let basictruck_bin = compose BasicTruck.automaton Bin.automaton
- let basiccitizen_basictruck_bin = compose BasicCitizen.automaton basictruck_bin
- let automata =
-  [ "basiccitizen_bin",basiccitizen_bin
-  ; "basictruck_bin",basictruck_bin
-  ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
-  ]
-
+ (*
  let _ =
   List.iter
    (fun (fn,au) ->
