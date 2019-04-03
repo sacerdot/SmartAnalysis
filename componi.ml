@@ -813,8 +813,17 @@ end
  end
  *)
 
+ let citizen_bin = compose Citizen.automaton Bin.automaton
+ (*let basiccitizen_bin = compose BasicCitizen.automaton Bin.automaton
+ let basictruck_bin = compose BasicTruck.automaton Bin.automaton
+ let basiccitizen_basictruck_bin = compose BasicCitizen.automaton basictruck_bin*)
+ let automata =
+  [ (*"basiccitizen_bin",basiccitizen_bin
+  ; "basictruck_bin",basictruck_bin
+  ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
+  ;*) "citizen_bin",citizen_bin
+  ]
 
- (*
  let _ =
   List.iter
    (fun (fn,au) ->
@@ -822,9 +831,4 @@ end
      output_string ch (pp_automaton au) ;
      close_out ch ;
      ignore (Unix.system ("dot -Tpdf " ^ fn ^ ".dot -o " ^ fn ^ ".pdf"))
-    ) automata *)
-
-    let _ =
-     let citizen_bin = compose Citizen.automaton Bin.automaton in
-     let ch = open_out "citizen_bin.dot" in
-     output_string ch (pp_automaton citizen_bin);
+    ) automata
