@@ -569,6 +569,8 @@ end
 open SmartCalculus
 open Presburger
 
+let dep = (TCons(Int,TCons(HumanAddress,TNil)),"dep")
+
  (*** Garbage Collection Example ***)
  module Bin = struct
   let (states : state list) =
@@ -600,13 +602,13 @@ open Presburger
    ]
 
   let (transitions : transition list) =
-    [ [1],[2],Value true, Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"dep"), VCons((Int,"q"),VCons((String,"id"),VNil)))
+    [ [1],[2],Value true, Input (Contract "garbage_bin",None, dep, VCons((Int,"q"),VCons((HumanAddress,"id"),VNil)))
     ; [2],[1],Gt(Var (Int,"cur_q"),Value (2)),Output (Contract "garbage_bin", (HumanAddress,Var(HumanAddress,"ID")),(TNil,"NOK"),ENil)
     ; [2],[3],Eq(Int,Var(Int, "cur_q"),Value (1)),
       Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress,"ID")),(TCons(Int ,TNil),"OK"), ECons(Var(Int,"R"),ENil))
     ; [2],[5],Eq(Int,Var(Int, "cur_q"),Value(2)),
       Output (Contract "garbage_bin",(HumanAddress,Var( HumanAddress,"ID")),(TCons(Int ,TNil),"OK"),ECons(Mult( Numeric 2, Var(Int, "R")),ENil))
-    ; [3],[4],Value true,Input (Contract "garbage_bin",None, (TCons(Int,TCons(String,TNil)),"dep"), VCons((Int,"q'"),VCons((String,"id'"),VNil)))
+    ; [3],[4],Value true,Input (Contract "garbage_bin",None, dep, VCons((Int,"q'"),VCons((HumanAddress,"id'"),VNil)))
     ; [4],[3],Gt(Var (Int, "cur_q"),Value (2)),Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress, "ID")),(TNil,"NOK"),ENil)
     ; [4],[5],Eq(Int,Var (Int, "cur_q"), Value (1)),
       Output (Contract "garbage_bin",(HumanAddress,Var(HumanAddress, "ID")),(TCons(Int ,TNil),"OK"),ECons(Var(Int,"R"),ENil))
@@ -660,28 +662,28 @@ module Citizen = struct
     ]
 
     let address0 = Human "citizen"
-    let address = AnyAddress address0
-    let gb = ContractAddress,Var(ContractAddress, "garbage_bin")
-    let incinerator = ContractAddress,Var(ContractAddress, "incinerator")
-    let banca = ContractAddress,Var(ContractAddress, "banca")
+    let address = Value address0
+    let gb = ContractAddress,Value (Contract "garbage_bin")
+    let incinerator = ContractAddress,Value (Contract "incinerator")
+    let banca = ContractAddress,Value (Contract "banca")
 
   let (transitions : transition list) =
     [ [1],[2],Value true,Output (address0, incinerator,(TCons(Int,TNil),"fee"),ECons(Var(Int,"D"),ENil))
     ; [2],[3],Value true,
-      Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"2"), ECons(Var(HumanAddress,"citizen"),ENil)))
+      Output (address0,gb,dep,ECons( Var(Int,"2"), ECons(address,ENil)))
     ; [3],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [2],[4],Value true,
-      Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"1"), ECons(Var(HumanAddress,"citizen"),ENil)))
+      Output (address0,gb,dep,ECons( Var(Int,"1"), ECons(address,ENil)))
     ; [4],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [2],[5],Value true, Tau
     ; [2],[6],Value true, Tau
     ; [3],[7], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"2*a"),VNil))
     ; [4],[8], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
-    ; [8],[12], Value true, Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"1"), ECons(Var(HumanAddress,"citizen"),ENil)))
+    ; [8],[12], Value true, Output (address0,gb,dep,ECons( Var(Int,"1"), ECons(address,ENil)))
     ; [12],[8],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [8],[13],Value true, Tau
     ; [12],[14],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
-    ; [5],[9],Value true, Output (address0,gb,(TCons(Int,TCons(HumanAddress,TNil)),"dep"),ECons( Var(Int,"1"), ECons(Var(HumanAddress,"citizen"),ENil)))
+    ; [5],[9],Value true, Output (address0,gb,dep,ECons( Var(Int,"1"), ECons(address,ENil)))
     ; [9],[5],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [5],[10],Value true, Tau
     ; [9],[11],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
