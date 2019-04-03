@@ -198,10 +198,8 @@ let rec apply_subst_expr subst =
      (try
        (match List.assoc (EVar v) subst with
          | Expr e -> e
-         | Address _ ->
-         | String _ ->
-            prerr_endline ("### " ^ v);
-            assert false) (* dynamic typing error.. *)
+         | Address _ -> assert false
+         | String _ -> assert false ) (* dynamic typing error.. *)
       with Not_found -> e)
   | Const _ as e -> e
   | Plus (e1,e2) -> Plus (apply_subst_expr subst e1,apply_subst_expr subst e2)
@@ -894,12 +892,27 @@ module Truck = struct
 end
 *)
 
-(*let _ =
+let _ =
  let citizen_bin = compose BasicCitizen.automaton Bin.automaton in
  let ch = open_out "basiccitizen_bin.dot" in
- output_string ch (pp_automaton citizen_bin);*)
-
-let _ =
- let citizen_bin = compose BasicTruck.automaton Bin.automaton in
- let ch = open_out "basictruck_bin.dot" in
  output_string ch (pp_automaton citizen_bin);
+
+ (*let basiccitizen_bin = compose BasicCitizen.automaton Bin.automaton
+ let basiccitizen_bin = compose BasicCitizen.automaton Bin.automaton
+ let basictruck_bin = compose BasicTruck.automaton Bin.automaton
+ let basiccitizen_basictruck_bin = compose BasicCitizen.automaton basictruck_bin*)
+ (* let automata =
+  [ (*"basiccitizen_bin",basiccitizen_bin
+  ; "basictruck_bin",basictruck_bin
+  ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
+  ;*) "basiccitizen_bin",basiccitizen_bin
+  ]
+
+ let _ =
+  List.iter
+   (fun (fn,au) ->
+     let ch = open_out (fn ^ ".dot") in
+     output_string ch (pp_automaton au) ;
+     close_out ch ;
+     ignore (Unix.system ("dot -Tpdf " ^ fn ^ ".dot -o " ^ fn ^ ".pdf"))
+    ) automata *)
