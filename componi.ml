@@ -403,9 +403,7 @@ let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as a
   let (id',_) as s',is_new =
    try
     List.find (fun (idx,sx) -> sx = s12' && same_but_last idx id') sp, false
-   with Not_found ->
-prerr_endline ("### " ^ pp_id id' ^ " SUB=" ^ pp_subst sub ^ " STATE=" ^ pp_subst (fst s12'));
-    (id',s12'),true in
+   with Not_found -> (id',s12'),true in
   let tr = id,id',cond,action in
   let tp = tr::tp in
   if is_new then
@@ -672,19 +670,19 @@ module Citizen = struct
 
   let (transitions : transition list) =
     [ [1],[2],Value true,Output (address0, incinerator,(TCons(Int,TNil),"fee"),ECons(Var(Int,"D"),ENil))
-    ; [2],[3],Value true,Output (address0,gb,dep,ECons( Var(Int,"2"), ECons(address,ENil)))
+    ; [2],[3],Value true,Output (address0,gb,dep,ECons( Value 2, ECons(address,ENil)))
     ; [3],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
-    ; [2],[4],Value true,Output (address0,gb,dep,ECons( Var(Int,"1"), ECons(address,ENil)))
+    ; [2],[4],Value true,Output (address0,gb,dep,ECons( Value 1, ECons(address,ENil)))
     ; [4],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [2],[5],Value true, Tau
     ; [2],[6],Value true, Tau
-    ; [3],[7], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"2*a"),VNil))
+    ; [3],[7], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
     ; [4],[8], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
-    ; [8],[12], Value true, Output (address0,gb,dep,ECons( Var(Int,"1"), ECons(address,ENil)))
+    ; [8],[12], Value true, Output (address0,gb,dep,ECons(Value 1, ECons(address,ENil)))
     ; [12],[8],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [8],[13],Value true, Tau
     ; [12],[14],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
-    ; [5],[9],Value true, Output (address0,gb,dep,ECons( Var(Int,"1"), ECons(address,ENil)))
+    ; [5],[9],Value true, Output (address0,gb,dep,ECons(Value 1, ECons(address,ENil)))
     ; [9],[5],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
     ; [5],[10],Value true, Tau
     ; [9],[11],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
