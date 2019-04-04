@@ -606,6 +606,9 @@ let add_transition cond (assign : Presburger.subst * bool) action id stack stack
    (stack_of,sp,tp),None
  with Skip -> (stack_of,sp,tp),None
 
+let return_ok ty = SmartCalculus.TCons (ty, TNil), "__return_ok__"
+let return_ko = SmartCalculus.TNil, "__return_ko__"
+
 (* takes:
     address = ???
     id = id del nodo che deve eseguire stack
@@ -616,8 +619,8 @@ let add_transition cond (assign : Presburger.subst * bool) action id stack stack
    returns
     stack_of,sp,tp
 *)
-let rec grow_human address id stack stack_of sp tp =
- match stack with
+let rec grow_human address id stm_stack stack_of sp tp =
+ match stm_stack with
     [] -> stack_of,sp,tp
   | stm::stack ->
      let stacks,res =
@@ -637,7 +640,26 @@ let rec grow_human address id stack stack_of sp tp =
            add_transition (SmartCalculus.Value true) assign Presburger.Tau
             id stack stack_of sp tp in
           [stack,next_state], res
-       | Assign(f,SmartCalculus.Call _) -> assert false
+       | Assign(f,SmartCalculus.Call(receiver,meth,exprl)) ->
+          let assign = [],true in
+          let bullet = SmartCalculus.Assign(f,Expr(SmartCalculus.Fail)) in  (*??? FIXME ???*)
+          let label = let (_,tags,name) = meth in tags,name in
+          let (stack_of,sp,tp),next_state1 =
+           add_transition (SmartCalculus.Value true) assign
+            (Presburger.Output(address,(ContractAddress,receiver),label,exprl)) id (bullet::stack) stack_of sp tp in
+          (match next_state1 with
+              None -> assert false (*??? FIXME ???*)
+            | Some next_state1 ->
+               let var = fst f, "__ra__ " ^ string_of_int (Presburger.mk_fresh ()) in
+               (* ok *)
+               let (stack_of,sp,tp),next_state2 =
+                add_transition (SmartCalculus.Value true) ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
+                 (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) next_state1 stack stack_of sp tp in
+               (* ko *)
+               let (stack_of,sp,tp),next_state2 =
+                add_transition (SmartCalculus.Value true) assign
+                 (Presburger.Input(address,Some (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) next_state1 stm_stack stack_of sp tp in
+               [stack,next_state2],(stack_of,sp,tp))
        | Comp(stm1,stm2) ->
           [stm1::stm2::stack, Some id], (stack_of,sp,tp)
        | Choice(stm1,stm2) ->
@@ -682,7 +704,14 @@ end
          Assign((Int,"b"),Expr (Value 2)))
       ,Choice
        (Assign((Int,"b"),Expr (Value 0))
-       ,Assign((Int,"d"),Expr (Value 0)))))
+       ,Assign((Int,"d"),Call (Value(Contract "foo"),(Int,TNil,"foo"),ENil)))))
+
+
+(*
+ | Input : (*receiver:*)(_ SmartCalculus.address) * (*sender:*)((_ SmartCalculus.address) SmartCalculus.tagged_expr) option * 'b label * 'b SmartCalculus.var_list -> action
+  | Call : (contract address) expr * ('a,'b) meth * 'b expr_list -> 'a rhs
+*)
+
 
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton (Human "test") stm
