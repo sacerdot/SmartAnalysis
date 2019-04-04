@@ -56,7 +56,7 @@ struct
   | Choice : stm * stm -> stm
  type 'a program = stm * 'a expr (* statement + return *)
  type assign =
-  | Assign : 'a field * 'a -> assign
+  | Let : 'a field * 'a -> assign
  type store = assign list
  type any_method_decl =
   | AnyMethodDecl : ('a,'b) meth * 'a program -> any_method_decl
@@ -70,7 +70,7 @@ struct
   let rec aux : store -> a =
    function
      [] -> assert false
-   | Assign(g,v)::tl ->
+   | Let(g,v)::tl ->
       match f,g with
          (Int,sf),(Int,sg) when sf=sg -> v
        | (Bool,sf),(Bool,sg) when sf=sg -> v
@@ -150,9 +150,8 @@ let tv_and v1 v2 =
  match v1,v2 with
     F,_
   | _,F -> F
-  | T,x
-  | x,T -> T
-  | M,M -> M
+  | T,T -> T
+  | _,_ -> M
 let tv_or v1 v2 =
  match v1,v2 with
     F,x
@@ -401,7 +400,7 @@ let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as a
     List.find (fun (idx,sx) -> sx = s12' && same_but_last idx id') sp, false
    with Not_found -> (id',s12'),true in
   let tr = id,id',cond,action in
-  let tp = tr::tp in
+  let tp = if List.mem tr tp then tp else tr::tp in
   if is_new then
    let sp = s'::sp in
    move_state ~sub au1 au2 id' id1' id2' sp tp
@@ -565,52 +564,118 @@ struct
 
 exception Skip
 
-let same_stm stm_of id1 id2 = assert false
-let bind stm_of id stm_opt = assert false
+let empty_stack_of = []
+let same_stack stack_of id stack =
+ try
+  List.assoc id stack_of = stack
+ with Not_found -> assert false
+let bind stack_of id stack = (id,stack)::stack_of
+
+type any_var = AnyVar : 'a SmartCalculus.var -> any_var
+
+let (++) (ass1,zero1) (ass2,zero2) =
+ assert(zero1 || zero2) ;
+ let rec aux ass2 =
+  function
+    [] -> ass2
+  | Presburger.Assignment(v,value) as b::ass1 ->
+      aux (b::List.filter (function Presburger.Assignment(v',_) -> AnyVar v <> AnyVar v') ass2) ass1
+ in
+  aux ass2 ass1,zero1 && zero2
 
 (* assign is the NEW assignment after the transition
-   returns ((stm_of,sp',tp'),new_state_generated) *)
-let add_transition cond assign action id stm stm_of sp tp =
+   returns ((stack_of,sp',tp'),new_state_generated) *)
+let add_transition cond (assign : Presburger.subst * bool) action id stack stack_of (sp : Presburger.state list) (tp : Presburger.transition list) =
  try
   let store = List.assoc id sp in
   let cond =
    let ground_cond = Presburger.apply_subst_expr (fst store) cond in
    match SmartCalculus.eval_cond ground_cond with SmartCalculus.T -> SmartCalculus.Value true | M -> cond | F -> raise Skip in
   let id' = [Presburger.mk_fresh ()] in
-  let (id',_) as s',stm_of,is_new =
+  let assign = assign ++ store in
+  let (id',_) as s',stack_of,is_new =
    try
-    List.find (fun (idx,sx) -> sx = assign && same_stm stm_of idx id') sp,
-    stm_of, false
-   with Not_found -> (id',assign),bind stm_of id' stm,true in
+    List.find (fun (idx,sx) -> sx = assign && same_stack stack_of idx stack) sp,
+    stack_of, false
+   with Not_found -> (id',assign),bind stack_of id' stack,true in
   let tr = id,id',cond,action in
-  let tp = tr::tp in
+  let tp = if List.mem tr tp then tp else tr::tp in
   if is_new then
-   (stm_of,s'::sp,tp),true
+   (stack_of,s'::sp,tp),Some id'
   else
-   (stm_of,sp,tp),false
- with Skip -> (stm_of,sp,tp),false
+   (stack_of,sp,tp),None
+ with Skip -> (stack_of,sp,tp),None
 
-let (@@) = Presburger.(@@)
+(* takes:
+    address = ???
+    id = id del nodo che deve eseguire stack
+    stack = to be executed
+    stack_of = maps the ids of the automaton state to their stack
+    sp = list of states
+    tp = list of transitions
+   returns
+    stack_of,sp,tp
+*)
+let rec grow_human address id stack stack_of sp tp =
+ match stack with
+    [] -> stack_of,sp,tp
+  | stm::stack ->
+     let stacks,res =
+      match stm with
+       | SmartCalculus.IfThenElse(c,stm1,stm2) ->
+          let assign = [],true in
+          let (stack_of,sp,tp),next_state1 =
+           add_transition c assign Presburger.Tau id (stm1::stack) stack_of sp tp in
+          let (stack_of,sp,tp),next_state2 =
+           add_transition (SmartCalculus.Not c) assign Presburger.Tau id
+            (stm2::stack) stack_of sp tp in
+          [stm1::stack, next_state1 ; stm2::stack, next_state2],
+            (stack_of,sp,tp)
+       | Assign(f,SmartCalculus.Expr e) ->
+          let assign = ([Presburger.Assignment(f,e)],true) in
+          let res,next_state =
+           add_transition (SmartCalculus.Value true) assign Presburger.Tau
+            id stack stack_of sp tp in
+          [stack,next_state], res
+       | Assign(f,SmartCalculus.Call _) -> assert false
+       | Comp(stm1,stm2) ->
+          [stm1::stm2::stack, Some id], (stack_of,sp,tp)
+       | Choice(stm1,stm2) -> assert false
+     in
+      List.fold_left
+       (fun (stack_of,sp,tp as res) (stack,next_state) ->
+         match next_state with
+            None -> res
+          | Some id -> grow_human address id stack stack_of sp tp
+       ) res stacks 
 
-let rec grow_human address id stm assign stm_of sp tp =
- match stm with
-  | SmartCalculus.IfThenElse(c,stm1,stm2) -> assert false
-  | Assign(f,SmartCalculus.Expr e) ->
-     let assign = ([Presburger.Assignment(f,e)],true) @@ List.assoc id sp in
-     fst (add_transition (SmartCalculus.Value true) assign Presburger.Tau
-      id None stm_of sp tp)
-  | Assign(f,SmartCalculus.Call _) -> assert false
-  | Comp(stm1,stm2) ->
-     let (stm_of,sp,tp as res),new_state_generated =
-BUG: DEVO PASSARE stm2 OVVERO PORTARMI DIETRO LA CONTINUAZIONE
-      grow_human address id stm1 assign stm_of sp tp in
-     if new_state_generated then
-      snd (grow_human address id??? stm2 ???assign??? stm_of sp tp)
-     else
-      res
-  | Choice(stm1,stm2) -> assert false
-
+let human_to_automaton address stm : Presburger.automaton =
+ let id = [Presburger.mk_fresh ()] in
+ let sp = [id,([],true)] in
+ let stack = [stm] in
+ let _,sp,tp = grow_human address id stack (bind empty_stack_of id stack) sp [] in
+  [SmartCalculus.AnyAddress address], id, sp, tp
+ 
 end
+
+ (*** Examples ***)
+ module CalculusTest = struct
+  open SmartCalculus
+
+  let stm =
+   Comp
+    (Assign((Int,"x"),Expr (Value 3))
+    ,Comp
+      (IfThenElse(
+         Gt(Var(Int,"x"),Var(Int,"z")),
+         Assign((Int,"b"),Expr (Value 1)),
+         Assign((Int,"b"),Expr (Value 2)))
+      ,Assign((Int,"b"),Expr (Value 0))))
+
+  let automaton =
+   PresburgerOfSmartCalculus.human_to_automaton (Human "test") stm
+
+ end
 
 open SmartCalculus
 open Presburger
@@ -913,6 +978,7 @@ end
   ; "basictruck_bin",basictruck_bin
   ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
   ;*) "basiccitizen_bin",basiccitizen_bin
+  ; "test",CalculusTest.automaton
   ]
 
  let _ =
