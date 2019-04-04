@@ -640,7 +640,17 @@ let rec grow_human address id stack stack_of sp tp =
        | Assign(f,SmartCalculus.Call _) -> assert false
        | Comp(stm1,stm2) ->
           [stm1::stm2::stack, Some id], (stack_of,sp,tp)
-       | Choice(stm1,stm2) -> assert false
+       | Choice(stm1,stm2) ->
+          let var = SmartCalculus.Int, "__choice__" ^ string_of_int (Presburger.mk_fresh ()) in
+          let cond n = SmartCalculus.Eq (SmartCalculus.Int, SmartCalculus.Var var, SmartCalculus.Value n) in
+          let assign = [],true in
+          let (stack_of,sp,tp),next_state1 =
+           add_transition (cond 0) assign Presburger.Tau id (stm1::stack) stack_of sp tp in
+          let (stack_of,sp,tp),next_state2 =
+           add_transition (cond 1) assign Presburger.Tau id
+            (stm2::stack) stack_of sp tp in
+          [stm1::stack, next_state1 ; stm2::stack, next_state2],
+            (stack_of,sp,tp)
      in
       List.fold_left
        (fun (stack_of,sp,tp as res) (stack,next_state) ->
@@ -670,7 +680,9 @@ end
          Gt(Var(Int,"x"),Var(Int,"z")),
          Assign((Int,"b"),Expr (Value 1)),
          Assign((Int,"b"),Expr (Value 2)))
-      ,Assign((Int,"b"),Expr (Value 0))))
+      ,Choice
+       (Assign((Int,"b"),Expr (Value 0))
+       ,Assign((Int,"d"),Expr (Value 0)))))
 
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton (Human "test") stm
