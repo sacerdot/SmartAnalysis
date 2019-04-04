@@ -218,17 +218,11 @@ let rec eval_expr : type a. a expr -> a expr =
   | Or _ -> assert false
   | Not _ -> assert false
 
-let eq (type a) (e1 : a expr) (e2 : a expr) =
- match eval_expr e1, eval_expr e2 with
-  | x,y when x=y -> T
-  | Var (ContractAddress,_), _ -> M
-  | _, Var (ContractAddress,_) -> M
-  | Var (HumanAddress,_), _ -> M
-  | _, Var (HumanAddress,_) -> M
-  | Var (Int,_), _ -> M
-  | _, Var (Int,_) -> M
-  | _, _ -> F
-
+let eq e1 e2 =
+ match e1,e2 with
+    Value (c1), Value (c2) ->
+     if c1 = c2 then T else F
+  | _,_ -> if e1 = e2 then T else M
 
 let rec eval_cond : bool expr -> truth_values =
  function
