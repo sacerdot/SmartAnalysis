@@ -548,6 +548,7 @@ end
 
 module PresburgerOfSmartCalculus =
 struct
+(*
  let state_of_configuration c : Presburger.state =
   let id = [0] in (* FIXME *)
   let stores =
@@ -560,6 +561,54 @@ struct
     ) stores in
   let store = List.concat stores in
   id,(store,true)
+*)
+
+exception Skip
+
+let same_stm stm_of id1 id2 = assert false
+let bind stm_of id stm_opt = assert false
+
+(* assign is the NEW assignment after the transition
+   returns ((stm_of,sp',tp'),new_state_generated) *)
+let add_transition cond assign action id stm stm_of sp tp =
+ try
+  let store = List.assoc id sp in
+  let cond =
+   let ground_cond = Presburger.apply_subst_expr (fst store) cond in
+   match SmartCalculus.eval_cond ground_cond with SmartCalculus.T -> SmartCalculus.Value true | M -> cond | F -> raise Skip in
+  let id' = [Presburger.mk_fresh ()] in
+  let (id',_) as s',stm_of,is_new =
+   try
+    List.find (fun (idx,sx) -> sx = assign && same_stm stm_of idx id') sp,
+    stm_of, false
+   with Not_found -> (id',assign),bind stm_of id' stm,true in
+  let tr = id,id',cond,action in
+  let tp = tr::tp in
+  if is_new then
+   (stm_of,s'::sp,tp),true
+  else
+   (stm_of,sp,tp),false
+ with Skip -> (stm_of,sp,tp),false
+
+let (@@) = Presburger.(@@)
+
+let rec grow_human address id stm assign stm_of sp tp =
+ match stm with
+  | SmartCalculus.IfThenElse(c,stm1,stm2) -> assert false
+  | Assign(f,SmartCalculus.Expr e) ->
+     let assign = ([Presburger.Assignment(f,e)],true) @@ List.assoc id sp in
+     fst (add_transition (SmartCalculus.Value true) assign Presburger.Tau
+      id None stm_of sp tp)
+  | Assign(f,SmartCalculus.Call _) -> assert false
+  | Comp(stm1,stm2) ->
+     let (stm_of,sp,tp as res),new_state_generated =
+BUG: DEVO PASSARE stm2 OVVERO PORTARMI DIETRO LA CONTINUAZIONE
+      grow_human address id stm1 assign stm_of sp tp in
+     if new_state_generated then
+      snd (grow_human address id??? stm2 ???assign??? stm_of sp tp)
+     else
+      res
+  | Choice(stm1,stm2) -> assert false
 
 end
 
