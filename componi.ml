@@ -60,12 +60,12 @@ struct
  and 'a stack =
   | Return : 'a expr -> 'a stack
   | SComp : 'a stack_entry * 'a stack -> 'a stack
- type 'a program = stm list * (*return:*)'a expr
+ type ('a,'b) program = 'b var_list * stm list * (*return:*)'a expr
  type assign =
   | Let : 'a field * 'a -> assign
  type store = assign list
  type any_method_decl =
-  | AnyMethodDecl : ('a,'b) meth * 'b var_list * 'a program -> any_method_decl
+  | AnyMethodDecl : ('a,'b) meth * ('a,'b) program -> any_method_decl
  type methods = any_method_decl list
  type configuration =
   { contracts : (contract address * methods * store) list
@@ -111,13 +111,13 @@ struct
  let snd3 (_,a,_) = a
  let third3 (_,_,a) = a
 
- let lookup_method (type a b) (f : (a,b) meth) (s : methods) : b var_list * a program =
-  let rec aux : methods -> b var_list * a program =
+ let lookup_method (type a b) (f : (a,b) meth) (s : methods) : (a,b) program =
+  let rec aux : methods -> (a,b) program =
    function
      [] -> assert false
-   | AnyMethodDecl(g,vars,v)::tl ->
+   | AnyMethodDecl(g,v)::tl ->
       match eq_tag (fst3 f) (fst3 g), eq_tag_list (snd3 f) (snd3 g) with
-       | Some Refl, Some Refl when (third3 f)=(third3 g) -> vars,v
+       | Some Refl, Some Refl when (third3 f)=(third3 g) -> v
        | _,_ -> aux tl
   in
    aux s
@@ -354,6 +354,13 @@ let mk_fresh =
  function () -> incr n ; !n
 
 (*** Substitution ***)
+let rec make_subst : type a. a SmartCalculus.var_list -> a SmartCalculus.expr_list -> subst =
+ fun vl el ->
+  match vl, el with
+     SmartCalculus.VNil, SmartCalculus.ENil -> []
+   | SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
+      Assignment(x,e) :: make_subst vtl etl
+
 let map_option f = function None -> None | Some x -> Some (f x)
 
 let rec apply_subst_expr : type a. subst -> a SmartCalculus.expr -> a SmartCalculus.expr =
@@ -390,6 +397,23 @@ let apply_subst_action subst =
   | Input (r, aexpr, l, vl) ->
      Input (r, map_option (apply_subst_tagged_expr subst) aexpr, l, vl)
   | Tau -> Tau
+
+ let apply_subst_rhs subst =
+  function
+   | SmartCalculus.Expr e -> SmartCalculus.Expr (apply_subst_expr subst e)
+   | Call(addr,meth,exprl) ->
+      Call(map_option (apply_subst_expr subst) addr,meth,apply_subst_expr_list subst exprl)
+
+ let rec apply_subst_stm subst =
+  function
+  | SmartCalculus.Assign(f,rhs) -> SmartCalculus.Assign(f,apply_subst_rhs subst rhs)
+  | IfThenElse(c,stm1,stm2) ->
+     IfThenElse(apply_subst_expr subst c, apply_subst_stm subst stm1,
+      apply_subst_stm subst stm2)
+  | Comp(stm1,stm2) ->
+     Comp(apply_subst_stm subst stm1,apply_subst_stm subst stm2)
+  | Choice(stm1,stm2) ->
+     Choice(apply_subst_stm subst stm1,apply_subst_stm subst stm2)
 
 (*** Composition ***)
 let rec same_but_last l1 l2 =
@@ -551,13 +575,7 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
              && snd li = snd lo ->
             (match SmartCalculus.eq_tag_list (fst li) (fst lo) with
               | Some Refl ->
-                 let rec aux : type a. a SmartCalculus.var_list -> a SmartCalculus.expr_list -> subst =
-                  fun vl el ->
-                   match vl, el with
-                      SmartCalculus.VNil, SmartCalculus.ENil -> sub
-                    | SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
-                       Assignment(x,e) :: aux vtl etl in
-                 let sub = aux vl (apply_subst_expr_list sub al) in
+                 let sub = make_subst vl (apply_subst_expr_list sub al) @ sub in
                  let cond = SmartCalculus.smart_and condi condo in
                  add_transition (id1' din don) (id2' din don) ~sub cond
                   (ass_in @@ ass_out) Tau id au1 au2 sp tp
@@ -627,32 +645,21 @@ let return_ok ty = SmartCalculus.TCons (ty, TNil), "__return_ok__"
 let return_ko = SmartCalculus.TNil, "__return_ko__"
 
 let (+:) h t = SmartCalculus.SComp(SmartCalculus.Stm h,t)
+let rec (@:) l = List.fold_right (+:) l
 
-let rec do_substitution : type c. 'a SmartCalculus.stack -> c SmartCalculus.var_list -> c SmartCalculus.expr_list -> 'a SmartCalculus.stack =
- fun s vars exprl ->
-  match vars,exprl with
-   | SmartCalculus.VNil, SmartCalculus.ENil -> s
-   | VCons(v,vars), ECons(e,exprl) ->
-      SmartCalculus.Assign(v,SmartCalculus.Expr e)+:do_substitution s vars exprl
+let do_substitution : type a b. (a,b) SmartCalculus.program -> b SmartCalculus.expr_list -> SmartCalculus.stm list * a SmartCalculus.expr =
+ fun (vars,stm_list,ret) exprl ->
+  let subst = Presburger.make_subst vars exprl in
+  List.map (Presburger.apply_subst_stm subst) stm_list,
+   Presburger.apply_subst_expr subst ret
 
-let stack_call (vars,prog) exprl f stk2 =
- (* FIXME: sostituire le variabili invece di assegnarle *)
- let rec aux : type a b. a SmartCalculus.program -> a SmartCalculus.field -> b SmartCalculus.stack -> b SmartCalculus.stack =
-  fun (stk1,ret) f stk2 ->
-  match stk1 with
-     [] -> SmartCalculus.Assign(f,(SmartCalculus.Expr ret))+:stk2
-  | stm::stk -> stm+:aux (stk,ret) f stk2
- in
-  do_substitution (aux prog f stk2) vars exprl  
+let stack_call prog exprl f stk2 =
+ let stml,ret = do_substitution prog exprl in
+ stml @: SmartCalculus.Assign(f,(SmartCalculus.Expr ret))+:stk2
 
-let tail_stack_call (vars,prog) exprl =
- let rec aux : type a.  a SmartCalculus.program -> a SmartCalculus.stack =
-  fun (stk1,ret) ->
-  match stk1 with
-     [] -> SmartCalculus.Return (ret)
-  | stm::stk -> stm+:aux (stk,ret)
- in
-  do_substitution (aux prog) vars exprl
+let tail_stack_call prog exprl =
+ let stml,ret = do_substitution prog exprl in
+ stml @: SmartCalculus.Return ret
 
 let is_tail_call stack f =
  match stack with
@@ -780,8 +787,8 @@ end
 
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton (Human "test")
-    [AnyMethodDecl (id,VCons((Int,"w"),VNil),([],Var(Int,"w")));
-     AnyMethodDecl (loop,VNil,([loop_body],Var(Int,"res")))]
+    [AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
+     AnyMethodDecl (loop,(VNil,[loop_body],Var(Int,"res")))]
     (SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
 
  end
