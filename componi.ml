@@ -69,10 +69,8 @@ struct
  type methods = any_method_decl list
  type configuration =
   { contracts : (contract address * methods * store) list
-  ; humans : (human address * methods * store * unit stack) list
+  ; humans : (human address * methods * store * int stack) list
   }
-
- let alpha_convert x = x (* FIXME *)
 
  let lookup (type a) (f : a field) (s : store) : a =
   let rec aux : store -> a =
@@ -621,21 +619,36 @@ let return_ko = SmartCalculus.TNil, "__return_ko__"
 
 let (+:) h t = SmartCalculus.SComp(SmartCalculus.Stm h,t)
 
+let rec do_substitution : type c. 'a SmartCalculus.stack -> c SmartCalculus.var_list -> c SmartCalculus.expr_list -> 'a SmartCalculus.stack =
+ fun s vars exprl ->
+  match vars,exprl with
+   | SmartCalculus.VNil, SmartCalculus.ENil -> s
+   | VCons(v,vars), ECons(e,exprl) ->
+      SmartCalculus.Assign(v,SmartCalculus.Expr e)+:do_substitution s vars exprl
+
 let stack_call (vars,prog) exprl f stk2 =
+ (* FIXME: sostituire le variabili invece di assegnarle *)
  let rec aux : type a b. a SmartCalculus.program -> a SmartCalculus.field -> b SmartCalculus.stack -> b SmartCalculus.stack =
   fun (stk1,ret) f stk2 ->
   match stk1 with
      [] -> SmartCalculus.Assign(f,(SmartCalculus.Expr ret))+:stk2
   | stm::stk -> stm+:aux (stk,ret) f stk2
  in
- let rec aux2 : type c. c SmartCalculus.var_list -> c SmartCalculus.expr_list -> _ SmartCalculus.stack =
-  fun vars exprl ->
-   match vars,exprl with
-    | SmartCalculus.VNil, SmartCalculus.ENil -> aux prog f stk2
-    | VCons(v,vars), ECons(e,exprl) ->
-       SmartCalculus.Assign(v,SmartCalculus.Expr e)+:aux2 vars exprl
+  do_substitution (aux prog f stk2) vars exprl  
+
+let tail_stack_call (vars,prog) exprl =
+ let rec aux : type a.  a SmartCalculus.program -> a SmartCalculus.stack =
+  fun (stk1,ret) ->
+  match stk1 with
+     [] -> SmartCalculus.Return (ret)
+  | stm::stk -> stm+:aux (stk,ret)
  in
-  aux2 vars exprl 
+  do_substitution (aux prog) vars exprl
+
+let is_tail_call stack f =
+ match stack with
+    SmartCalculus.Return (Var g) -> AnyVar f = AnyVar g
+  | _ -> false
 
 (* takes:
     address = ???
@@ -672,9 +685,14 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                add_transition (SmartCalculus.Value true) assign Presburger.Tau
                 id stack stack_of sp tp in
               [stack,next_state], res
+           | Assign(f,SmartCalculus.Call(None,meth,exprl)) when
+              is_tail_call stack f ->
+              let body = SmartCalculus.lookup_method meth methods in
+              let store = List.assoc id sp in
+              let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
+              [Obj.magic (tail_stack_call body exprl) (*FIXME*), Some id], (stack_of,sp,tp)
            | Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
               let body = SmartCalculus.lookup_method meth methods in
-              let body = SmartCalculus.alpha_convert body in
               let store = List.assoc id sp in
               let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
               [stack_call body exprl f stack, Some id], (stack_of,sp,tp)
@@ -733,7 +751,8 @@ end
   open SmartCalculus
 
   let id = Int,TCons(Int,TNil),"id"
-  let stm =
+  let loop = Int,TNil,"loop"
+  let loop_body =
    Comp
     (Assign((Int,"x"),Expr (Value 3))
     ,Comp (Assign((Int, "r"), Call(None,id,ECons (Var(Int,"x"), ENil))),
@@ -743,13 +762,14 @@ end
          Assign((Int,"b"),Expr (Value 1)),
          Assign((Int,"b"),Expr (Value 2)))
       ,Choice
-       (Assign((Int,"b"),Expr (Value 0))
+       (Comp(Assign((Int,"b"),Expr (Value 0)),Assign((Int,"res"),Call(None,loop,ENil)))
        ,Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil))))))
 
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton (Human "test")
-    [AnyMethodDecl (id,VCons((Int,"w"),VNil),([],Var(Int,"w")))]
-    (SComp(Stm stm,Return(Value ())))
+    [AnyMethodDecl (id,VCons((Int,"w"),VNil),([],Var(Int,"w")));
+     AnyMethodDecl (loop,VNil,([loop_body],Var(Int,"res")))]
+    (SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
 
  end
 
