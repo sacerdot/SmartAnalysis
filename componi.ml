@@ -102,8 +102,8 @@ struct
      [] -> assert false
    | Let(g,v)::tl ->
       match eq_tag (fst f) (fst g) with
-         None -> aux tl
-       | Some Refl -> if snd f = snd g then v else aux tl
+         Some Refl when snd f = snd g -> v
+       | _ -> aux tl
   in
    aux s
 
@@ -307,12 +307,8 @@ let lookup (type a) (f : a SmartCalculus.var) (s : subst) : a SmartCalculus.expr
   function
     [] -> raise Not_found
   | Assignment(g,v)::tl ->
-     match f,g with
-        (SmartCalculus.Int,sf),(SmartCalculus.Int,sg) when sf=sg -> v
-      | (SmartCalculus.Bool,sf),(SmartCalculus.Bool,sg) when sf=sg -> v
-      | (SmartCalculus.String,sf),(SmartCalculus.String,sg) when sf=sg -> v
-      | (SmartCalculus.HumanAddress,sf),(SmartCalculus.HumanAddress,sg) when sf=sg -> v
-      | (SmartCalculus.ContractAddress,sf),(SmartCalculus.ContractAddress,sg) when sf=sg -> v
+     match SmartCalculus.eq_tag (fst f) (fst g) with
+      | Some SmartCalculus.Refl when (snd f) = (snd g) -> v
       | _ -> aux tl
  in
   aux s
@@ -553,25 +549,19 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
                  apply_subst_tagged_expr sub (apply_subst_tagged_expr (fst ass_in) aexpr)
                  === SmartCalculus.AnyAddress addr_out)
              && snd li = snd lo ->
-            let rec aux : type a b. a SmartCalculus.tag_list -> b SmartCalculus.tag_list -> a SmartCalculus.var_list -> b SmartCalculus.expr_list -> subst =
-             fun li lo vl el ->
-              match li, lo, vl, el with
-                 SmartCalculus.TNil, SmartCalculus.TNil, _, _ -> sub
-               | SmartCalculus.TCons(SmartCalculus.Int,tl1),SmartCalculus.TCons(SmartCalculus.Int,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
-                  Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | SmartCalculus.TCons(SmartCalculus.Bool,tl1),SmartCalculus.TCons(SmartCalculus.Bool,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
-                  Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | SmartCalculus.TCons(SmartCalculus.String,tl1),SmartCalculus.TCons(SmartCalculus.String,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
-                  Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | SmartCalculus.TCons(SmartCalculus.HumanAddress,tl1),SmartCalculus.TCons(SmartCalculus.HumanAddress,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
-                  Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | SmartCalculus.TCons(SmartCalculus.ContractAddress,tl1),SmartCalculus.TCons(SmartCalculus.ContractAddress,tl2),SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
-                  Assignment(x,e) :: aux tl1 tl2 vtl etl
-               | _,_,_,_ -> assert false in
-            let sub = aux (fst li) (fst lo) vl (apply_subst_expr_list sub al) in
-            let cond = SmartCalculus.smart_and condi condo in
-            add_transition (id1' din don) (id2' din don) ~sub cond
-             (ass_in @@ ass_out) Tau id au1 au2 sp tp
+            (match SmartCalculus.eq_tag_list (fst li) (fst lo) with
+              | Some Refl ->
+                 let rec aux : type a. a SmartCalculus.var_list -> a SmartCalculus.expr_list -> subst =
+                  fun vl el ->
+                   match vl, el with
+                      SmartCalculus.VNil, SmartCalculus.ENil -> sub
+                    | SmartCalculus.VCons(x,vtl),SmartCalculus.ECons(e,etl) ->
+                       Assignment(x,e) :: aux vtl etl in
+                 let sub = aux vl (apply_subst_expr_list sub al) in
+                 let cond = SmartCalculus.smart_and condi condo in
+                 add_transition (id1' din don) (id2' din don) ~sub cond
+                  (ass_in @@ ass_out) Tau id au1 au2 sp tp
+              | None -> sp,tp)
         | _ -> sp,tp
      ) (sp,tp) moves_out
   ) (sp,tp) moves_in
