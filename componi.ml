@@ -72,34 +72,53 @@ struct
   ; humans : (human address * methods * store * int stack) list
   }
 
+ type (_,_) eq = Refl : ('a,'a) eq
+
+ let eq_tag : type a b. a tag -> b tag -> (a,b) eq option = fun t1 t2 ->
+  match t1,t2 with
+  | Int, Int -> Some Refl
+  | Bool, Bool -> Some Refl
+  | String, String -> Some Refl
+  | ContractAddress, ContractAddress -> Some Refl
+  | HumanAddress, HumanAddress -> Some Refl
+  | _,_ -> None
+
+ let rec eq_tag_list : type a b. a tag_list -> b tag_list -> (a,b) eq option =
+  fun tl1 tl2 ->
+  match tl1,tl2 with
+   | TNil,TNil -> Some Refl
+   | TCons(t1,tl1),TCons(t2,tl2) ->
+      (match eq_tag t1 t2 with
+          None -> None
+        | Some Refl ->
+           match eq_tag_list tl1 tl2 with
+              None -> None
+            | Some Refl -> Some Refl)
+   | _,_ -> None
+
  let lookup (type a) (f : a field) (s : store) : a =
   let rec aux : store -> a =
    function
      [] -> assert false
    | Let(g,v)::tl ->
-      match f,g with
-         (Int,sf),(Int,sg) when sf=sg -> v
-       | (Bool,sf),(Bool,sg) when sf=sg -> v
-       | (String,sf),(String,sg) when sf=sg -> v
-       | (HumanAddress,sf),(HumanAddress,sg) when sf=sg -> v
-       | (ContractAddress,sf),(ContractAddress,sg) when sf=sg -> v
-       | _ -> aux tl
+      match eq_tag (fst f) (fst g) with
+         None -> aux tl
+       | Some Refl -> if snd f = snd g then v else aux tl
   in
    aux s
+
+ let fst3 (a,_,_) = a
+ let snd3 (_,a,_) = a
+ let third3 (_,_,a) = a
 
  let lookup_method (type a b) (f : (a,b) meth) (s : methods) : b var_list * a program =
   let rec aux : methods -> b var_list * a program =
    function
      [] -> assert false
    | AnyMethodDecl(g,vars,v)::tl ->
-      let vars = Obj.magic vars in (* FIXME *)
-      match f,g with
-         (Int,_,sf),(Int,_,sg) when sf=sg -> vars,v
-       | (Bool,_,sf),(Bool,_,sg) when sf=sg -> vars,v
-       | (String,_,sf),(String,_,sg) when sf=sg -> vars,v
-       | (HumanAddress,_,sf),(HumanAddress,_,sg) when sf=sg -> vars,v
-       | (ContractAddress,_,sf),(ContractAddress,_,sg) when sf=sg -> vars,v
-       | _ -> aux tl
+      match eq_tag (fst3 f) (fst3 g), eq_tag_list (snd3 f) (snd3 g) with
+       | Some Refl, Some Refl when (third3 f)=(third3 g) -> vars,v
+       | _,_ -> aux tl
   in
    aux s
 
@@ -647,8 +666,9 @@ let tail_stack_call (vars,prog) exprl =
 
 let is_tail_call stack f =
  match stack with
-    SmartCalculus.Return (Var g) -> AnyVar f = AnyVar g
-  | _ -> false
+    SmartCalculus.Return (Var g) when snd f = snd g ->
+     SmartCalculus.eq_tag (fst g) (fst f)
+  | _ -> None
 
 (* takes:
     address = ???
@@ -685,17 +705,20 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                add_transition (SmartCalculus.Value true) assign Presburger.Tau
                 id stack stack_of sp tp in
               [stack,next_state], res
-           | Assign(f,SmartCalculus.Call(None,meth,exprl)) when
-              is_tail_call stack f ->
-              let body = SmartCalculus.lookup_method meth methods in
-              let store = List.assoc id sp in
-              let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
-              [Obj.magic (tail_stack_call body exprl) (*FIXME*), Some id], (stack_of,sp,tp)
            | Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
-              let body = SmartCalculus.lookup_method meth methods in
-              let store = List.assoc id sp in
-              let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
-              [stack_call body exprl f stack, Some id], (stack_of,sp,tp)
+              (fun (type a b c) (f: a SmartCalculus.field) (stack: c SmartCalculus.stack) (meth: (a,b) SmartCalculus.meth) exprl : ((c SmartCalculus.stack * _) list * _) ->
+              (match is_tail_call stack f with
+               | Some Refl ->
+                  let body = SmartCalculus.lookup_method meth methods in
+                  let store = List.assoc id sp in
+                  let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
+                  [tail_stack_call body exprl, Some id], (stack_of,sp,tp)
+               | None ->
+                  let body = SmartCalculus.lookup_method meth methods in
+                  let store = List.assoc id sp in
+                  let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
+                  [stack_call body exprl f stack, Some id], (stack_of,sp,tp))
+              ) f stack meth exprl
            | Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
               let assign = [],true in
               let label = let (_,tags,name) = meth in tags,name in
