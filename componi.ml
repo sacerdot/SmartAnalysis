@@ -681,9 +681,11 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
            | Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
               let assign = [],true in
               let label = let (_,tags,name) = meth in tags,name in
+              let stack =
+               SmartCalculus.SComp(SmartCalculus.AssignBullet(f,receiver,stm_stack),stack) in
               let res,next_state =
                add_transition (SmartCalculus.Value true) assign
-                (Presburger.Output(address,(ContractAddress,receiver),label,exprl)) id (SmartCalculus.SComp(SmartCalculus.AssignBullet(f,receiver,stm_stack),stack)) stack_of sp tp in
+                (Presburger.Output(address,(ContractAddress,receiver),label,exprl)) id stack stack_of sp tp in
               [stack,next_state], res
            | Comp(stm1,stm2) ->
               [stm1+:(stm2+:stack), Some id], (stack_of,sp,tp)
