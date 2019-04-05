@@ -67,9 +67,11 @@ struct
  type any_method_decl =
   | AnyMethodDecl : ('a,'b) meth * ('a,'b) program -> any_method_decl
  type methods = any_method_decl list
+ type a_contract = contract address * methods * store
+ type a_human = human address * methods * store * int stack
  type configuration =
-  { contracts : (contract address * methods * store) list
-  ; humans : (human address * methods * store * int stack) list
+  { contracts : a_contract list
+  ; humans : a_human list
   }
 
  type (_,_) eq = Refl : ('a,'a) eq
@@ -608,15 +610,19 @@ let bind stack_of id stack = (id,stack)::stack_of
 
 type any_var = AnyVar : 'a SmartCalculus.var -> any_var
 
+let rec change_in_assignment_list : type a. a SmartCalculus.field -> a SmartCalculus.expr -> Presburger.assignment list -> Presburger.assignment list =
+ fun v value -> function
+    [] -> assert false
+  | Presburger.Assignment(v',_) as hd::tl ->
+     match SmartCalculus.eq_tag (fst v) (fst v') with
+      | Some Refl when snd v = snd v' -> Presburger.Assignment(v,value)::tl
+      | _ ->  hd::change_in_assignment_list v value tl
+
 let (++) (ass1,zero1) (ass2,zero2) =
  assert(zero1 || zero2) ;
- let rec aux ass2 =
-  function
-    [] -> ass2
-  | Presburger.Assignment(v,value) as b::ass1 ->
-      aux (b::List.filter (function Presburger.Assignment(v',_) -> AnyVar v <> AnyVar v') ass2) ass1
- in
-  aux ass2 ass1,zero1 && zero2
+ List.fold_left
+  (fun ass2 (Presburger.Assignment(v,value)) ->
+    change_in_assignment_list v value ass2) ass2 ass1,zero1 && zero2
 
 (* assign is the NEW assignment after the transition
    returns ((stack_of,sp',tp'),new_state_generated) *)
@@ -758,9 +764,10 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
           | Some id -> grow_human address methods id stack stack_of sp tp
        ) res stacks 
 
-let human_to_automaton address methods (stack : 'a SmartCalculus.stack) : Presburger.automaton =
+let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
- let sp = [id,([],true)] in
+ let store = List.map (function SmartCalculus.Let(x,v) -> Presburger.Assignment(x,SmartCalculus.Value v)) store in
+ let sp = [id,(store,true)] in
  let _,sp,tp = grow_human address methods id stack (bind empty_stack_of id stack) sp [] in
   [SmartCalculus.AnyAddress address], id, sp, tp
  
@@ -786,10 +793,15 @@ end
        ,Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil))))))
 
   let automaton =
-   PresburgerOfSmartCalculus.human_to_automaton (Human "test")
-    [AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
-     AnyMethodDecl (loop,(VNil,[loop_body],Var(Int,"res")))]
-    (SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
+   PresburgerOfSmartCalculus.human_to_automaton
+    (Human "test"
+    ,[AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
+      AnyMethodDecl (loop,(VNil,[loop_body],Var(Int,"res")))]
+    , [Let((Int,"b"),0)
+      ;Let((Int,"r"),3)
+      ;Let((Int,"x"),3)
+      ;Let((Int,"d"),0)]
+    ,SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
 
  end
 
