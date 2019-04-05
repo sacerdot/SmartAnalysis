@@ -48,23 +48,31 @@ struct
   | ECons : 'a expr * 'b expr_list -> ('a * 'b) expr_list
  type _ rhs =
   | Expr : 'a expr -> 'a rhs
-  | Call : (contract address) expr * ('a,'b) meth * 'b expr_list -> 'a rhs
+  | Call : (contract address) expr option * ('a,'b) meth * 'b expr_list -> 'a rhs
  type stm =
   | Assign : 'a field * 'a rhs -> stm
   | IfThenElse : bool expr * stm * stm -> stm
   | Comp : stm * stm -> stm
   | Choice : stm * stm -> stm
- type 'a program = stm * 'a expr (* statement + return *)
+ type 'a stack_entry =
+    Stm : stm -> 'a stack_entry
+  | AssignBullet : 'b field * (contract address) expr * (*backtracking:*)'a stack -> 'a stack_entry
+ and 'a stack =
+  | Return : 'a expr -> 'a stack
+  | SComp : 'a stack_entry * 'a stack -> 'a stack
+ type 'a program = stm list * (*return:*)'a expr
  type assign =
   | Let : 'a field * 'a -> assign
  type store = assign list
  type any_method_decl =
-  | AnyMethodDecl : ('a,'b) meth * 'a program -> any_method_decl
+  | AnyMethodDecl : ('a,'b) meth * 'b var_list * 'a program -> any_method_decl
  type methods = any_method_decl list
  type configuration =
   { contracts : (contract address * methods * store) list
-  ; humans : (human address * store * stm) list
+  ; humans : (human address * methods * store * unit stack) list
   }
+
+ let alpha_convert x = x (* FIXME *)
 
  let lookup (type a) (f : a field) (s : store) : a =
   let rec aux : store -> a =
@@ -77,6 +85,22 @@ struct
        | (String,sf),(String,sg) when sf=sg -> v
        | (HumanAddress,sf),(HumanAddress,sg) when sf=sg -> v
        | (ContractAddress,sf),(ContractAddress,sg) when sf=sg -> v
+       | _ -> aux tl
+  in
+   aux s
+
+ let lookup_method (type a b) (f : (a,b) meth) (s : methods) : b var_list * a program =
+  let rec aux : methods -> b var_list * a program =
+   function
+     [] -> assert false
+   | AnyMethodDecl(g,vars,v)::tl ->
+      let vars = Obj.magic vars in (* FIXME *)
+      match f,g with
+         (Int,_,sf),(Int,_,sg) when sf=sg -> vars,v
+       | (Bool,_,sf),(Bool,_,sg) when sf=sg -> vars,v
+       | (String,_,sf),(String,_,sg) when sf=sg -> vars,v
+       | (HumanAddress,_,sf),(HumanAddress,_,sg) when sf=sg -> vars,v
+       | (ContractAddress,_,sf),(ContractAddress,_,sg) when sf=sg -> vars,v
        | _ -> aux tl
   in
    aux s
@@ -547,20 +571,6 @@ end
 
 module PresburgerOfSmartCalculus =
 struct
-(*
- let state_of_configuration c : Presburger.state =
-  let id = [0] in (* FIXME *)
-  let stores =
-   List.map (fun (_,_,s) -> s) c.SmartCalculus.contracts @
-   List.map (fun (_,s,_) -> s) c.humans in
-  let stores =
-   List.map
-    (fun store ->
-      assert false (* FIXME usare codice tipo lookup *)
-    ) stores in
-  let store = List.concat stores in
-  id,(store,true)
-*)
 
 exception Skip
 
@@ -609,6 +619,24 @@ let add_transition cond (assign : Presburger.subst * bool) action id stack stack
 let return_ok ty = SmartCalculus.TCons (ty, TNil), "__return_ok__"
 let return_ko = SmartCalculus.TNil, "__return_ko__"
 
+let (+:) h t = SmartCalculus.SComp(SmartCalculus.Stm h,t)
+
+let stack_call (vars,prog) exprl f stk2 =
+ let rec aux : type a b. a SmartCalculus.program -> a SmartCalculus.field -> b SmartCalculus.stack -> b SmartCalculus.stack =
+  fun (stk1,ret) f stk2 ->
+  match stk1 with
+     [] -> SmartCalculus.Assign(f,(SmartCalculus.Expr ret))+:stk2
+  | stm::stk -> stm+:aux (stk,ret) f stk2
+ in
+ let rec aux2 : type c. c SmartCalculus.var_list -> c SmartCalculus.expr_list -> _ SmartCalculus.stack =
+  fun vars exprl ->
+   match vars,exprl with
+    | SmartCalculus.VNil, SmartCalculus.ENil -> aux prog f stk2
+    | VCons(v,vars), ECons(e,exprl) ->
+       SmartCalculus.Assign(v,SmartCalculus.Expr e)+:aux2 vars exprl
+ in
+  aux2 vars exprl 
+
 (* takes:
     address = ???
     id = id del nodo che deve eseguire stack
@@ -619,73 +647,81 @@ let return_ko = SmartCalculus.TNil, "__return_ko__"
    returns
     stack_of,sp,tp
 *)
-let rec grow_human address id stm_stack stack_of sp tp =
+let rec grow_human address methods id stm_stack stack_of sp tp =
  match stm_stack with
-    [] -> stack_of,sp,tp
-  | stm::stack ->
+    SmartCalculus.Return _ -> stack_of,sp,tp
+  | SComp(entry,stack) ->
      let stacks,res =
-      match stm with
-       | SmartCalculus.IfThenElse(c,stm1,stm2) ->
-          let assign = [],true in
-          let (stack_of,sp,tp),next_state1 =
-           add_transition c assign Presburger.Tau id (stm1::stack) stack_of sp tp in
-          let (stack_of,sp,tp),next_state2 =
-           add_transition (SmartCalculus.Not c) assign Presburger.Tau id
-            (stm2::stack) stack_of sp tp in
-          [stm1::stack, next_state1 ; stm2::stack, next_state2],
-            (stack_of,sp,tp)
-       | Assign(f,SmartCalculus.Expr e) ->
-          let assign = ([Presburger.Assignment(f,e)],true) in
-          let res,next_state =
-           add_transition (SmartCalculus.Value true) assign Presburger.Tau
-            id stack stack_of sp tp in
-          [stack,next_state], res
-       | Assign(f,SmartCalculus.Call(receiver,meth,exprl)) ->
-          let assign = [],true in
-          let bullet = SmartCalculus.Assign(f,Expr(SmartCalculus.Fail)) in  (*??? FIXME ???*)
-          let label = let (_,tags,name) = meth in tags,name in
-          let (stack_of,sp,tp),next_state1 =
-           add_transition (SmartCalculus.Value true) assign
-            (Presburger.Output(address,(ContractAddress,receiver),label,exprl)) id (bullet::stack) stack_of sp tp in
-          (match next_state1 with
-              None -> assert false (*??? FIXME ???*)
-            | Some next_state1 ->
-               let var = fst f, "__ra__ " ^ string_of_int (Presburger.mk_fresh ()) in
-               (* ok *)
-               let (stack_of,sp,tp),next_state2 =
-                add_transition (SmartCalculus.Value true) ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
-                 (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) next_state1 stack stack_of sp tp in
-               (* ko *)
-               let (stack_of,sp,tp),next_state2 =
-                add_transition (SmartCalculus.Value true) assign
-                 (Presburger.Input(address,Some (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) next_state1 stm_stack stack_of sp tp in
-               [stack,next_state2],(stack_of,sp,tp))
-       | Comp(stm1,stm2) ->
-          [stm1::stm2::stack, Some id], (stack_of,sp,tp)
-       | Choice(stm1,stm2) ->
-          let var = SmartCalculus.Int, "__choice__" ^ string_of_int (Presburger.mk_fresh ()) in
-          let cond n = SmartCalculus.Eq (SmartCalculus.Int, SmartCalculus.Var var, SmartCalculus.Value n) in
-          let assign = [],true in
-          let (stack_of,sp,tp),next_state1 =
-           add_transition (cond 0) assign Presburger.Tau id (stm1::stack) stack_of sp tp in
-          let (stack_of,sp,tp),next_state2 =
-           add_transition (cond 1) assign Presburger.Tau id
-            (stm2::stack) stack_of sp tp in
-          [stm1::stack, next_state1 ; stm2::stack, next_state2],
-            (stack_of,sp,tp)
+      match entry with
+       | SmartCalculus.Stm stm ->
+          (match stm with
+           | SmartCalculus.IfThenElse(c,stm1,stm2) ->
+              let assign = [],true in
+              let (stack_of,sp,tp),next_state1 =
+               add_transition c assign Presburger.Tau id (stm1+:stack) stack_of sp tp in
+              let (stack_of,sp,tp),next_state2 =
+               add_transition (SmartCalculus.Not c) assign Presburger.Tau id
+                (stm2+:stack) stack_of sp tp in
+              [stm1+:stack, next_state1 ; stm2+:stack, next_state2],
+                (stack_of,sp,tp)
+           | Assign(f,SmartCalculus.Expr e) ->
+              let store = List.assoc id sp in
+              let e = Presburger.apply_subst_expr (fst store) e in
+              let assign = ([Presburger.Assignment(f,e)],true) in
+              let res,next_state =
+               add_transition (SmartCalculus.Value true) assign Presburger.Tau
+                id stack stack_of sp tp in
+              [stack,next_state], res
+           | Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
+              let body = SmartCalculus.lookup_method meth methods in
+              let body = SmartCalculus.alpha_convert body in
+              let store = List.assoc id sp in
+              let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
+              [stack_call body exprl f stack, Some id], (stack_of,sp,tp)
+           | Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
+              let assign = [],true in
+              let label = let (_,tags,name) = meth in tags,name in
+              let res,next_state =
+               add_transition (SmartCalculus.Value true) assign
+                (Presburger.Output(address,(ContractAddress,receiver),label,exprl)) id (SmartCalculus.SComp(SmartCalculus.AssignBullet(f,receiver,stm_stack),stack)) stack_of sp tp in
+              [stack,next_state], res
+           | Comp(stm1,stm2) ->
+              [stm1+:(stm2+:stack), Some id], (stack_of,sp,tp)
+           | Choice(stm1,stm2) ->
+              let var = SmartCalculus.Int, "__choice__" ^ string_of_int (Presburger.mk_fresh ()) in
+              let cond n = SmartCalculus.Eq (SmartCalculus.Int, SmartCalculus.Var var, SmartCalculus.Value n) in
+              let assign = [],true in
+              let (stack_of,sp,tp),next_state1 =
+               add_transition (cond 0) assign Presburger.Tau id (stm1+:stack) stack_of sp tp in
+              let (stack_of,sp,tp),next_state2 =
+               add_transition (cond 1) assign Presburger.Tau id
+                (stm2+:stack) stack_of sp tp in
+              [stm1+:stack, next_state1 ; stm2+:stack, next_state2],
+                (stack_of,sp,tp))
+     | AssignBullet(f,receiver,backtracking_stack) ->
+        let assign = [],true in
+        let var = fst f, "__ra__ " ^ string_of_int (Presburger.mk_fresh ()) in
+        (* ok *)
+        let (stack_of,sp,tp),next_state =
+         add_transition (SmartCalculus.Value true) ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
+          (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id stack stack_of sp tp in
+        (* ko *)
+        let (stack_of,sp,tp),_ =
+         add_transition (SmartCalculus.Value true) assign
+          (Presburger.Input(address,Some (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) id backtracking_stack stack_of sp tp in
+        [stack,next_state],(stack_of,sp,tp)
      in
       List.fold_left
        (fun (stack_of,sp,tp as res) (stack,next_state) ->
          match next_state with
             None -> res
-          | Some id -> grow_human address id stack stack_of sp tp
+          | Some id -> grow_human address methods id stack stack_of sp tp
        ) res stacks 
 
-let human_to_automaton address stm : Presburger.automaton =
+let human_to_automaton address methods (stack : 'a SmartCalculus.stack) : Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
  let sp = [id,([],true)] in
- let stack = [stm] in
- let _,sp,tp = grow_human address id stack (bind empty_stack_of id stack) sp [] in
+ let _,sp,tp = grow_human address methods id stack (bind empty_stack_of id stack) sp [] in
   [SmartCalculus.AnyAddress address], id, sp, tp
  
 end
@@ -694,27 +730,24 @@ end
  module CalculusTest = struct
   open SmartCalculus
 
+  let id = Int,TCons(Int,TNil),"id"
   let stm =
    Comp
     (Assign((Int,"x"),Expr (Value 3))
-    ,Comp
+    ,Comp (Assign((Int, "r"), Call(None,id,ECons (Var(Int,"x"), ENil))),
+     Comp
       (IfThenElse(
          Gt(Var(Int,"x"),Var(Int,"z")),
          Assign((Int,"b"),Expr (Value 1)),
          Assign((Int,"b"),Expr (Value 2)))
       ,Choice
        (Assign((Int,"b"),Expr (Value 0))
-       ,Assign((Int,"d"),Call (Value(Contract "foo"),(Int,TNil,"foo"),ENil)))))
-
-
-(*
- | Input : (*receiver:*)(_ SmartCalculus.address) * (*sender:*)((_ SmartCalculus.address) SmartCalculus.tagged_expr) option * 'b label * 'b SmartCalculus.var_list -> action
-  | Call : (contract address) expr * ('a,'b) meth * 'b expr_list -> 'a rhs
-*)
-
+       ,Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil))))))
 
   let automaton =
-   PresburgerOfSmartCalculus.human_to_automaton (Human "test") stm
+   PresburgerOfSmartCalculus.human_to_automaton (Human "test")
+    [AnyMethodDecl (id,VCons((Int,"w"),VNil),([],Var(Int,"w")))]
+    (SComp(Stm stm,Return(Value ())))
 
  end
 
