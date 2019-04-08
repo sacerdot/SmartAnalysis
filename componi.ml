@@ -179,6 +179,9 @@ let rec pp_expr : type a. a tag -> a expr -> string =
   | Not g -> "~" ^ pp_expr tag g
   | Value v -> pp_value tag v
 
+
+let pp_stack stack e = pp_expr e
+
 let pp_tagged_expr e = pp_expr (fst e) (snd e)
 
 let rec pp_expr_list : type a. a tag_list -> a expr_list -> string list = fun tg el ->
@@ -320,6 +323,8 @@ let pp_id l = String.concat "*" (List.map string_of_int l)
 let pp_label (tags,s) = s ^ "::" ^ String.concat "*" (SmartCalculus.pp_tag_list tags)
 let pp_assignment (Assignment (v,e)) = SmartCalculus.pp_var v ^ "=" ^ SmartCalculus.pp_expr (fst v) e
 let pp_subst al = String.concat " ; " (List.map pp_assignment al)
+let pp_subst_bool (al,e) = String.concat " ; " (List.map pp_assignment al) ^ "  " ^ string_of_bool e
+
 let pp_cond : bool SmartCalculus.expr -> string = function SmartCalculus.Value true -> "" | g -> SmartCalculus.pp_expr Bool g
 let pp_action =
  function
@@ -602,10 +607,12 @@ struct
 exception Skip
 
 let empty_stack_of = []
+
 let same_stack stack_of id stack =
- try
-  List.assoc id stack_of = stack
+  try
+   List.assoc id stack_of = stack
  with Not_found -> assert false
+
 let bind stack_of id stack = (id,stack)::stack_of
 
 type any_var = AnyVar : 'a SmartCalculus.var -> any_var
@@ -636,8 +643,8 @@ let add_transition cond (assign : Presburger.subst * bool) action id stack stack
   let assign = assign ++ store in
   let (id',_) as s',stack_of,is_new =
    try
-    List.find (fun (idx,sx) -> sx = assign && same_stack stack_of idx stack) sp,
-    stack_of, false
+     List.find (fun (idx,sx) -> sx = assign && (same_stack stack_of idx stack)) sp,
+     stack_of, false
    with Not_found -> (id',assign),bind stack_of id' stack,true in
   let tr = id,id',cond,action in
   let tp = if List.mem tr tp then tp else tr::tp in
@@ -740,21 +747,21 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
               let (stack_of,sp,tp),next_state1 =
                add_transition (cond 0) assign Presburger.Tau id (stm1+:stack) stack_of sp tp in
               let (stack_of,sp,tp),next_state2 =
-               add_transition (cond 1) assign Presburger.Tau id
-                (stm2+:stack) stack_of sp tp in
+               add_transition (cond 1) assign Presburger.Tau id (stm2+:stack) stack_of sp tp in
               [stm1+:stack, next_state1 ; stm2+:stack, next_state2],
                 (stack_of,sp,tp))
      | SmartCalculus.AssignBullet(f,receiver,backtracking_stack) ->
         let assign = [],true in
         let var = fst f, "__ra__ " ^ string_of_int (Presburger.mk_fresh ()) in
-        (* ok *)
-        let (stack_of,sp,tp),next_state =
-         add_transition (SmartCalculus.Value true) ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
-          (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id stack stack_of sp tp in
         (* ko *)
         let (stack_of,sp,tp),_ =
          add_transition (SmartCalculus.Value true) assign
           (Presburger.Input(address,Some (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) id backtracking_stack stack_of sp tp in
+        (* ok *)
+        let (stack_of,sp,tp),next_state =
+         add_transition (SmartCalculus.Value true) ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
+          (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id stack stack_of sp tp in
+
         [stack,next_state],(stack_of,sp,tp)
      in
       List.fold_left
@@ -792,16 +799,7 @@ end
                    (Comp(Assign((Int,"b"),Expr (Value 0)),Assign((Int,"res"),Call(None,loop,ENil)))
                    ,Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil))))))
 
-  let automaton2 =
-    PresburgerOfSmartCalculus.human_to_automaton
-      (Human "test"
-      ,[AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
-        AnyMethodDecl (loop,(VNil,[loop_body],Var(Int,"res")))]
-      , [Let((Int,"b"),0)
-        ;Let((Int,"r"),3)
-        ;Let((Int,"x"),3)
-        ;Let((Int,"d"),0)]
-      ,SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
+
 
 
 
@@ -817,16 +815,16 @@ end
           ,Comp(
               Assign((Int,"weight"),Expr(Value 2))
              ,Choice(
-                Comp(
-                  Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil)))
-                 ,Comp(
-                    Assign((Int,"weight"),Expr (Value 1))
-                   ,Comp(
-                      Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil)))
-                    ,Assign((Int,"weight"),Expr (Value 0)))))
-            ,Comp(
-                Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 2,ENil)))
-              ,Assign((Int,"weight"),Expr (Value 0))))))
+                 Comp(
+                   Comp(
+                     Comp(
+                       Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil)))
+                     ,Assign((Int,"weight"),Expr (Value 1)))
+                     ,Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))))
+                 ,Assign((Int,"weight"),Expr (Value 0)))
+                ,Comp(
+                    Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 2,ENil)))
+                  ,Assign((Int,"weight"),Expr (Value 0))))))
     ,Assign((Int,"balance"),Call (Some (Value(Contract "banca")),(Int,TCons(Int,TNil),"save"),ECons(Var(Int,"balance"),ENil))))
   ,Assign((Int,"res"),Call(None,loop,ENil)))
 
@@ -1146,7 +1144,6 @@ end
   ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
   ;*) "basiccitizen_bin",basiccitizen_bin
     ; "citizen",CalculusTest.automaton
-  ; "test",CalculusTest.automaton2
   ]
 
  let _ =
