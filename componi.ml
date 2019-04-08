@@ -403,18 +403,18 @@ let apply_subst_action subst =
  let apply_subst_rhs subst =
   function
    | SmartCalculus.Expr e -> SmartCalculus.Expr (apply_subst_expr subst e)
-   | Call(addr,meth,exprl) ->
+   | SmartCalculus.Call(addr,meth,exprl) ->
       Call(map_option (apply_subst_expr subst) addr,meth,apply_subst_expr_list subst exprl)
 
  let rec apply_subst_stm subst =
   function
   | SmartCalculus.Assign(f,rhs) -> SmartCalculus.Assign(f,apply_subst_rhs subst rhs)
-  | IfThenElse(c,stm1,stm2) ->
+  | SmartCalculus.IfThenElse(c,stm1,stm2) ->
      IfThenElse(apply_subst_expr subst c, apply_subst_stm subst stm1,
       apply_subst_stm subst stm2)
-  | Comp(stm1,stm2) ->
+  | SmartCalculus.Comp(stm1,stm2) ->
      Comp(apply_subst_stm subst stm1,apply_subst_stm subst stm2)
-  | Choice(stm1,stm2) ->
+  | SmartCalculus.Choice(stm1,stm2) ->
      Choice(apply_subst_stm subst stm1,apply_subst_stm subst stm2)
 
 (*** Composition ***)
@@ -576,7 +576,7 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
                  === SmartCalculus.AnyAddress addr_out)
              && snd li = snd lo ->
             (match SmartCalculus.eq_tag_list (fst li) (fst lo) with
-              | Some Refl ->
+              | Some SmartCalculus.Refl ->
                  let sub = make_subst vl (apply_subst_expr_list sub al) @ sub in
                  let cond = SmartCalculus.smart_and condi condo in
                  add_transition (id1' din don) (id2' din don) ~sub cond
@@ -615,7 +615,7 @@ let rec change_in_assignment_list : type a. a SmartCalculus.field -> a SmartCalc
     [] -> assert false
   | Presburger.Assignment(v',_) as hd::tl ->
      match SmartCalculus.eq_tag (fst v) (fst v') with
-      | Some Refl when snd v = snd v' -> Presburger.Assignment(v,value)::tl
+      | Some SmartCalculus.Refl when snd v = snd v' -> Presburger.Assignment(v,value)::tl
       | _ ->  hd::change_in_assignment_list v value tl
 
 let (++) (ass1,zero1) (ass2,zero2) =
@@ -669,7 +669,7 @@ let tail_stack_call prog exprl =
 
 let is_tail_call stack f =
  match stack with
-    SmartCalculus.Return (Var g) when snd f = snd g ->
+    SmartCalculus.Return (SmartCalculus.Var g) when snd f = snd g ->
      SmartCalculus.eq_tag (fst g) (fst f)
   | _ -> None
 
@@ -686,7 +686,7 @@ let is_tail_call stack f =
 let rec grow_human address methods id stm_stack stack_of sp tp =
  match stm_stack with
     SmartCalculus.Return _ -> stack_of,sp,tp
-  | SComp(entry,stack) ->
+  | SmartCalculus.SComp(entry,stack) ->
      let stacks,res =
       match entry with
        | SmartCalculus.Stm stm ->
@@ -700,7 +700,7 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                 (stm2+:stack) stack_of sp tp in
               [stm1+:stack, next_state1 ; stm2+:stack, next_state2],
                 (stack_of,sp,tp)
-           | Assign(f,SmartCalculus.Expr e) ->
+           | SmartCalculus.Assign(f,SmartCalculus.Expr e) ->
               let store = List.assoc id sp in
               let e = Presburger.apply_subst_expr (fst store) e in
               let assign = ([Presburger.Assignment(f,e)],true) in
@@ -708,10 +708,10 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                add_transition (SmartCalculus.Value true) assign Presburger.Tau
                 id stack stack_of sp tp in
               [stack,next_state], res
-           | Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
+           | SmartCalculus.Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
               (fun (type a b c) (f: a SmartCalculus.field) (stack: c SmartCalculus.stack) (meth: (a,b) SmartCalculus.meth) exprl : ((c SmartCalculus.stack * _) list * _) ->
               (match is_tail_call stack f with
-               | Some Refl ->
+               | Some SmartCalculus.Refl ->
                   let body = SmartCalculus.lookup_method meth methods in
                   let store = List.assoc id sp in
                   let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
@@ -722,7 +722,7 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                   let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
                   [stack_call body exprl f stack, Some id], (stack_of,sp,tp))
               ) f stack meth exprl
-           | Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
+           | SmartCalculus.Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
               let assign = [],true in
               let label = let (_,tags,name) = meth in tags,name in
               let stack =
@@ -731,9 +731,9 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                add_transition (SmartCalculus.Value true) assign
                 (Presburger.Output(address,(ContractAddress,receiver),label,exprl)) id stack stack_of sp tp in
               [stack,next_state], res
-           | Comp(stm1,stm2) ->
+           | SmartCalculus.Comp(stm1,stm2) ->
               [stm1+:(stm2+:stack), Some id], (stack_of,sp,tp)
-           | Choice(stm1,stm2) ->
+           | SmartCalculus.Choice(stm1,stm2) ->
               let var = SmartCalculus.Int, "__choice__" ^ string_of_int (Presburger.mk_fresh ()) in
               let cond n = SmartCalculus.Eq (SmartCalculus.Int, SmartCalculus.Var var, SmartCalculus.Value n) in
               let assign = [],true in
@@ -744,7 +744,7 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                 (stm2+:stack) stack_of sp tp in
               [stm1+:stack, next_state1 ; stm2+:stack, next_state2],
                 (stack_of,sp,tp))
-     | AssignBullet(f,receiver,backtracking_stack) ->
+     | SmartCalculus.AssignBullet(f,receiver,backtracking_stack) ->
         let assign = [],true in
         let var = fst f, "__ra__ " ^ string_of_int (Presburger.mk_fresh ()) in
         (* ok *)
@@ -762,7 +762,7 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
          match next_state with
             None -> res
           | Some id -> grow_human address methods id stack stack_of sp tp
-       ) res stacks 
+       ) res stacks
 
 let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
@@ -770,7 +770,7 @@ let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : P
  let sp = [id,(store,true)] in
  let _,sp,tp = grow_human address methods id stack (bind empty_stack_of id stack) sp [] in
   [SmartCalculus.AnyAddress address], id, sp, tp
- 
+
 end
 
  (*** Examples ***)
@@ -780,27 +780,66 @@ end
   let id = Int,TCons(Int,TNil),"id"
   let loop = Int,TNil,"loop"
   let loop_body =
-   Comp
-    (Assign((Int,"x"),Expr (Value 3))
-    ,Comp (Assign((Int, "r"), Call(None,id,ECons (Var(Int,"x"), ENil))),
-     Comp
-      (IfThenElse(
-         Gt(Var(Int,"x"),Var(Int,"z")),
-         Assign((Int,"b"),Expr (Value 1)),
-         Assign((Int,"b"),Expr (Value 2)))
-      ,Choice
-       (Comp(Assign((Int,"b"),Expr (Value 0)),Assign((Int,"res"),Call(None,loop,ENil)))
-       ,Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil))))))
+    Comp
+      (Assign((Int,"x"),Expr (Value 3))
+      ,Comp (Assign((Int, "r"), Call(None,id,ECons (Var(Int,"x"), ENil))),
+             Comp
+               (IfThenElse(
+                   Gt(Var(Int,"x"),Var(Int,"z")),
+                   Assign((Int,"b"),Expr (Value 1)),
+                   Assign((Int,"b"),Expr (Value 2)))
+               ,Choice
+                   (Comp(Assign((Int,"b"),Expr (Value 0)),Assign((Int,"res"),Call(None,loop,ENil)))
+                   ,Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil))))))
+
+  let automaton2 =
+    PresburgerOfSmartCalculus.human_to_automaton
+      (Human "test"
+      ,[AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
+        AnyMethodDecl (loop,(VNil,[loop_body],Var(Int,"res")))]
+      , [Let((Int,"b"),0)
+        ;Let((Int,"r"),3)
+        ;Let((Int,"x"),3)
+        ;Let((Int,"d"),0)]
+      ,SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
+
+
+
+  let citizen_body =
+    Comp(
+    Comp(
+      Comp(
+        Comp(
+          Assign((Int,"balance"),Expr (Symbol ("D")))
+          ,Comp(
+              Assign((Int,"weight"),Expr (Value 0))
+            ,Assign((Int,"balance"),Call (Some (Value(Contract "incinerator")),(Int,TCons(Int,TNil),"fee"),ECons( Symbol("D"),ENil)))))
+          ,Comp(
+              Assign((Int,"weight"),Expr(Value 2))
+             ,Choice(
+                Comp(
+                  Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil)))
+                 ,Comp(
+                    Assign((Int,"weight"),Expr (Value 1))
+                   ,Comp(
+                      Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil)))
+                    ,Assign((Int,"weight"),Expr (Value 0)))))
+            ,Comp(
+                Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 2,ENil)))
+              ,Assign((Int,"weight"),Expr (Value 0))))))
+    ,Assign((Int,"balance"),Call (Some (Value(Contract "banca")),(Int,TCons(Int,TNil),"save"),ECons(Var(Int,"balance"),ENil))))
+  ,Assign((Int,"res"),Call(None,loop,ENil)))
+
+
+
 
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton
-    (Human "test"
+    (Human "citizen"
     ,[AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
-      AnyMethodDecl (loop,(VNil,[loop_body],Var(Int,"res")))]
-    , [Let((Int,"b"),0)
-      ;Let((Int,"r"),3)
-      ;Let((Int,"x"),3)
-      ;Let((Int,"d"),0)]
+      AnyMethodDecl (loop,(VNil,[citizen_body],Var(Int,"res")))]
+    , [Let((Int,"balance"),0)
+      ;Let((Int,"weight"),0)]
     ,SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
 
  end
@@ -1106,7 +1145,8 @@ end
   ; "basictruck_bin",basictruck_bin
   ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
   ;*) "basiccitizen_bin",basiccitizen_bin
-  ; "test",CalculusTest.automaton
+    ; "citizen",CalculusTest.automaton
+  ; "test",CalculusTest.automaton2
   ]
 
  let _ =
