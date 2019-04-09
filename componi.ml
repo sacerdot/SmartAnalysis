@@ -633,8 +633,9 @@ let (++) (ass1,zero1) (ass2,zero2) =
     change_in_assignment_list v value ass2) ass2 ass1,zero1 && zero2
 
 (* assign is the NEW assignment after the transition
-   returns ((stack_of,sp',tp'),new_state_generated) *)
-let add_transition cond (assign : Presburger.subst * bool) action id stack stack_of (sp : Presburger.state list) (tp : Presburger.transition list) =
+   returns (new_states_generated,(stack_of,sp',tp')) *)
+let add_transition cond (assign : Presburger.subst * bool) action id stack
+ (stack_of,(sp : Presburger.state list),(tp : Presburger.transition list)) =
  try
   let store = List.assoc id sp in
   let cond =
@@ -650,10 +651,10 @@ let add_transition cond (assign : Presburger.subst * bool) action id stack stack
   let tr = id,id',cond,action in
   let tp = if List.mem tr tp then tp else tr::tp in
   if is_new then
-   (stack_of,s'::sp,tp),[stack,id']
+   [stack,id'],(stack_of,s'::sp,tp)
   else
-   (stack_of,sp,tp),[]
- with Skip -> (stack_of,sp,tp),[]
+   [],(stack_of,sp,tp)
+ with Skip -> [],(stack_of,sp,tp)
 
 let return_ok ty = SmartCalculus.TCons (ty, TNil), "__return_ok__"
 let return_ko = SmartCalculus.TNil, "__return_ko__"
@@ -691,9 +692,9 @@ let is_tail_call stack f =
    returns
     stack_of,sp,tp
 *)
-let rec grow_human address methods id stm_stack stack_of sp tp =
+let rec grow_human address methods id stm_stack (_stack_of,sp,_tp as res) =
  match stm_stack with
-    SmartCalculus.Return _ -> stack_of,sp,tp
+    SmartCalculus.Return _ -> res
   | SmartCalculus.SComp(entry,stack) ->
      let stacks,res =
       match entry with
@@ -701,24 +702,23 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
           (match stm with
            | SmartCalculus.IfThenElse(c,stm1,stm2) ->
               let assign = [],true in
-              let (stack_of,sp,tp),next_state1 =
-               add_transition c assign Presburger.Tau id (stm1+:stack) stack_of sp tp in
-              let (stack_of,sp,tp),next_state2 =
+              let next_state1,res =
+               add_transition c assign Presburger.Tau id (stm1+:stack)
+                res in
+              let next_state2,res =
                add_transition (SmartCalculus.Not c) assign Presburger.Tau id
-                (stm2+:stack) stack_of sp tp in
-              next_state1 @ next_state2,(stack_of,sp,tp)
+                (stm2+:stack) res in
+              next_state1 @ next_state2,res
            | SmartCalculus.Assign(f,SmartCalculus.Expr e) ->
               let store = List.assoc id sp in
               let e = Presburger.apply_subst_expr (fst store) e in
               let assign = ([Presburger.Assignment(f,e)],true) in
-              let res,next_state =
-               add_transition (SmartCalculus.Value true) assign Presburger.Tau
-                id stack stack_of sp tp in
-              next_state, res
+              add_transition (SmartCalculus.Value true) assign
+               Presburger.Tau id stack res
            | SmartCalculus.Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
              (fun (type a b c) (f: a SmartCalculus.field) (stack: c SmartCalculus.stack)
                (meth: (a,b) SmartCalculus.meth) exprl
-               (stack_of: (_ * c SmartCalculus.stack) list)
+               (_,sp,_ as res: (_ * c SmartCalculus.stack) list * _ * _)
                                                 : ((c SmartCalculus.stack * _) list * _) ->
               match is_tail_call stack f with
                | Some SmartCalculus.Refl ->
@@ -727,70 +727,65 @@ let rec grow_human address methods id stm_stack stack_of sp tp =
                   let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
                   let assign = [],true in
                   let stack : c SmartCalculus.stack =  tail_stack_call body exprl in
-                  let res,next_state =
-                    add_transition (SmartCalculus.Value true) assign Presburger.Tau
-                      id stack stack_of sp tp in
-                  next_state, res
+                  add_transition (SmartCalculus.Value true) assign
+                   Presburger.Tau id stack res
                | None ->
                   let body = SmartCalculus.lookup_method meth methods in
                   let store = List.assoc id sp in
                   let exprl = Presburger.apply_subst_expr_list (fst store) exprl in
                   let assign = [],true in
                   let stack : c SmartCalculus.stack =  stack_call body exprl f stack in
-                  let res,next_state =
-                    add_transition (SmartCalculus.Value true) assign Presburger.Tau
-                      id stack stack_of sp tp in
-                  next_state, res
-              ) f stack meth exprl stack_of
+                  add_transition (SmartCalculus.Value true) assign
+                   Presburger.Tau id stack res
+              ) f stack meth exprl res
            | SmartCalculus.Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
               let assign = [],true in
               let label = let (_,tags,name) = meth in tags,name in
               let stack =
                SmartCalculus.SComp(SmartCalculus.AssignBullet(f,receiver,stm_stack),stack) in
-              let res,next_state =
-               add_transition (SmartCalculus.Value true) assign
-                (Presburger.Output(address,(ContractAddress,receiver),label,exprl)) id stack stack_of sp tp in
-              next_state, res
+              add_transition (SmartCalculus.Value true) assign
+               (Presburger.Output(address,(ContractAddress,receiver),label,exprl))
+               id stack res
            | SmartCalculus.Comp(stm1,stm2) ->
              let assign = [],true in
              let stack = (stm1+:(stm2+:stack)) in
-             let res,next_state =
-               add_transition (SmartCalculus.Value true) assign Presburger.Tau
-                 id stack stack_of sp tp in
-             next_state, res
+             add_transition (SmartCalculus.Value true) assign Presburger.Tau
+              id stack res
            | SmartCalculus.Choice(stm1,stm2) ->
               let var = SmartCalculus.Int, "__choice__" ^ string_of_int (Presburger.mk_fresh ()) in
               let cond n = SmartCalculus.Eq (SmartCalculus.Int, SmartCalculus.Var var, SmartCalculus.Value n) in
               let assign = [],true in
-              let (stack_of,sp,tp),next_state1 =
-               add_transition (cond 0) assign Presburger.Tau id (stm1+:stack) stack_of sp tp in
-              let res,next_state2 =
-               add_transition (cond 1) assign Presburger.Tau id (stm2+:stack) stack_of sp tp in
+              let next_state1,res =
+               add_transition (cond 0) assign Presburger.Tau id
+                (stm1+:stack) res in
+              let next_state2,res =
+               add_transition (cond 1) assign Presburger.Tau id
+                (stm2+:stack) res in
               next_state1 @ next_state2, res)
      | SmartCalculus.AssignBullet(f,receiver,backtracking_stack) ->
         let assign = [],true in
         let var = fst f, "__ra__ " ^ string_of_int (Presburger.mk_fresh ()) in
         (* ko *)
-        let (stack_of,sp,tp),_ =
+        let next_state1,res =
          add_transition (SmartCalculus.Value true) assign
-          (Presburger.Input(address,Some (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) id backtracking_stack stack_of sp tp in
+          (Presburger.Input(address,Some (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) id backtracking_stack res in
         (* ok *)
-        let res,next_state =
-         add_transition (SmartCalculus.Value true) ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
-           (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id stack stack_of sp tp
-
+        let next_state2,res =
+         add_transition (SmartCalculus.Value true)
+           ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
+           (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id stack res
         in
-        next_state,res
+        next_state1 @ next_state2,res
      in
      List.fold_left
-       (fun (stack_of,sp,tp) (stack,id) ->
-         grow_human address methods id stack stack_of sp tp) res stacks
+       (fun res (stack,id) ->
+         grow_human address methods id stack res) res stacks
 
 let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
  let store = List.map (function SmartCalculus.Let(x,v) -> Presburger.Assignment(x,SmartCalculus.Value v)) store in
  let sp = [id,(store,true)] in
- let _,sp,tp = grow_human address methods id stack (bind empty_stack_of id stack) sp [] in
+ let _,sp,tp = grow_human address methods id stack (bind empty_stack_of id stack,sp,[]) in
   [SmartCalculus.AnyAddress address], id, sp, tp
 
 end
