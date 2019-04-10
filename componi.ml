@@ -698,6 +698,7 @@ let add_transition cond (assign : Presburger.subst * bool) action id stack
  ((sp : _ SmartCalculus.stack Presburger.state list),(tp : Presburger.transition list)) =
  try
   let store = List.assoc id sp in
+  let action = Presburger.apply_subst_action (snd3 store) action in
   let cond =
    let ground_cond = Presburger.apply_subst_expr (snd3 store) cond in
    match SmartCalculus.eval_cond ground_cond with SmartCalculus.T -> SmartCalculus.Value true | M -> cond | F -> raise Skip in
