@@ -635,6 +635,40 @@ let compose ((a1,i1,sl1,tl1) as au1 : unit automaton) ((a2,i2,sl2,tl2) as au2 : 
 
 end
 
+module RemoveTau = struct
+ let add_transition id2 s2 tr (sp,tp) =
+  let tp = if List.mem tr tp then tp else tr::tp in
+  if List.mem s2 sp then
+   None,(sp,tp)
+  else
+   Some id2,(s2::sp,tp)
+
+ let rec visit (sp0,tp0 as au0) id idtau condtau res =
+  let adj = List.filter(function (id',_,_,_) -> id' = idtau) tp0 in
+  List.fold_left (fun res (_,id2,cond,action) ->
+   let cond = SmartCalculus.smart_and condtau cond in
+   match action with
+     Presburger.Tau ->
+      visit au0 id id2 cond res
+   | Presburger.Input _ | Presburger.Output _ ->
+      let s2 = List.assoc id2 sp0 in
+      let new_state,res = add_transition id2 (id2,s2) (id,id2,cond,action) res in
+      (match new_state with
+          None -> res
+        | Some id ->
+           visit au0 id id (SmartCalculus.Value true) res)
+  ) res adj
+
+ let remove_tau (addrs,init,sp,tp : 's Presburger.automaton) :
+  's Presburger.automaton
+ =
+  let sinit = init, List.assoc init sp in
+  let sp,tp =
+   visit (sp,tp) init init (SmartCalculus.Value true) ([sinit],[]) in
+  addrs,init,sp,tp
+
+end
+
 module PresburgerOfSmartCalculus =
 struct
 
@@ -859,7 +893,9 @@ end
       ;Let((Int,"weight"),0)]
     ,SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
 
- end
+  let notau_automaton = RemoveTau.remove_tau automaton
+
+end
 
 open SmartCalculus
 open Presburger
@@ -1163,6 +1199,7 @@ end
   ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
   ;*) "basiccitizen_bin",pp_automaton pp_unit basiccitizen_bin
     ; "citizen",pp_automaton (SmartCalculus.pp_stack Int) CalculusTest.automaton
+    ; "citizen_notau",pp_automaton (SmartCalculus.pp_stack Int) CalculusTest.notau_automaton
   ]
 
  let _ =
