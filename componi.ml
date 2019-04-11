@@ -73,7 +73,7 @@ struct
  and ('actor,'a) stack =
   | Zero : (idle,'a) stack
   | Return : 'a expr -> ('actor,'a) stack
-  | HumanCall : 'a expr * human address -> (contract,'a) stack
+  | HumanCall : 'a expr * human address var -> (contract,'a) stack
   | ContractCall :
      (contract,'b) stack * contract address * 'b field * (contract,'a) stack
        -> (contract,'a) stack
@@ -230,7 +230,7 @@ let rec pp_stack : type contract a. a tag -> (contract,a) stack -> string =
  fun tag -> function
   | Zero -> "0"
   | Return e -> "return " ^ pp_expr tag e
-  | HumanCall(e,addr) -> "return " ^ pp_expr tag e ^ ";" ^ pp_address addr
+  | HumanCall(e,addr) -> "return " ^ pp_expr tag e ^ ";" ^ pp_var addr
   | ContractCall(s1,addr,f,s2) ->
      pp_stack (fst f) s1 ^ ";" ^ pp_address addr ^ "." ^
       pp_field f ^ " := * " ^ pp_stack tag s2
@@ -347,8 +347,12 @@ type assignment =
 type subst = assignment list
 type cond = bool SmartCalculus.expr
 
+type bind_or_check_address =
+ | Bind : (_ SmartCalculus.address) SmartCalculus.var -> bind_or_check_address
+ | Check : (_ SmartCalculus.address) SmartCalculus.tagged_expr -> bind_or_check_address
+
 type action =
- | Input : (*receiver:*)(_ SmartCalculus.address) * (*sender:*)((_ SmartCalculus.address) SmartCalculus.tagged_expr) option * 'b label * 'b SmartCalculus.var_list -> action
+ | Input : (*receiver:*)(_ SmartCalculus.address) * (*sender:*) bind_or_check_address * 'b label * 'b SmartCalculus.var_list -> action
  | Output : (*sender:*)(_ SmartCalculus.address) * (*receiver:*)(_ SmartCalculus.address) SmartCalculus.tagged_expr * 'b label * 'b SmartCalculus.expr_list -> action
  | Tau : action
 
@@ -380,7 +384,7 @@ let pp_action =
   | Input (r,s,l,vl) ->
      SmartCalculus.pp_address r ^ "." ^
      pp_label l ^
-     "[" ^ (match s with None -> "" | Some a -> SmartCalculus.pp_tagged_expr a ^ ".") ^ "]" ^
+     "[" ^ (match s with Bind a -> "?" ^ SmartCalculus.pp_var a | Check a -> SmartCalculus.pp_tagged_expr a ^ ".") ^ "]" ^
      "(" ^ String.concat "," (SmartCalculus.pp_var_list vl) ^ ")"
   | Output (r,aexpr,l,al) ->
      SmartCalculus.pp_address r ^ ":" ^
@@ -452,7 +456,11 @@ let apply_subst_action subst =
   | Output (r, aexpr,l,al) ->
      Output (r, apply_subst_tagged_expr subst aexpr,l,apply_subst_expr_list subst al)
   | Input (r, aexpr, l, vl) ->
-     Input (r, map_option (apply_subst_tagged_expr subst) aexpr, l, vl)
+     let aexpr =
+      match aexpr with
+       | Bind _ -> aexpr
+       | Check x -> Check (apply_subst_tagged_expr subst x) in
+     Input (r, aexpr, l, vl)
   | Tau -> Tau
 
  let apply_subst_rhs subst =
@@ -555,8 +563,8 @@ and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as 
  let assign = your_ass @@ other_ass in
  let can_fire =
   function
-   | Tau | Input (_,None,_,_) -> true
-   | Input (_,Some d,_,_) ->
+   | Tau | Input (_,Bind _,_,_) -> true
+   | Input (_,Check d,_,_) ->
       let d = apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 your_ass) d) in
       List.for_all (fun a -> not (d === a)) the_others
    | Output(r,d,_,_) ->
@@ -625,8 +633,8 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
           when
             apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 ass_out) rec_out) === (SmartCalculus.AnyAddress receiver) &&
             (match sender with
-                None -> true
-              | Some aexpr ->
+                Bind _ -> true
+              | Check aexpr ->
                  apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 ass_in) aexpr)
                  === SmartCalculus.AnyAddress addr_out)
              && snd li = snd lo ->
@@ -774,7 +782,7 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
   | SmartCalculus.HumanCall(ret,addr) ->
      let next_state,res =
       add_transition (SmartCalculus.Value true) ([],true)
-      (Presburger.Output(address,(HumanAddress,SmartCalculus.Value addr),return_ok tag,ECons(ret,ENil)))
+      (Presburger.Output(address,(HumanAddress,SmartCalculus.Var addr),return_ok tag,ECons(ret,ENil)))
       id tag Zero res in
      (* FIXME: use next_state *)
      res
@@ -854,12 +862,12 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
         (* ko *)
         let next_state1,res =
          add_transition (SmartCalculus.Value true) assign
-          (Presburger.Input(address,Some (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) id tag backtracking_stack res in
+          (Presburger.Input(address,Check (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) id tag backtracking_stack res in
         (* ok *)
         let next_state2,res =
          add_transition (SmartCalculus.Value true)
            ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
-           (Presburger.Input(address,Some (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id tag stack res
+           (Presburger.Input(address,Check (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id tag stack res
         in
         next_state1 @ next_state2,res
      in
@@ -888,12 +896,12 @@ let grow_idle address methods id res =
   (fun res (SmartCalculus.AnyMethodDecl(meth,program)) ->
     let tag = fst3 meth in
     let exprl = expr_list_of_var_list (fst3 program) in
-    let caller = SmartCalculus.Human "!!FIXME!!" in
+    let caller = SmartCalculus.HumanAddress, "caller" in
     let stack = human_call caller tag program exprl in
     let label = snd3 meth,third3 meth in
     let next_state,res =
      add_transition (SmartCalculus.Value true) ([],false)
-      (Presburger.Input(address,None,label,fst3 program)) id tag stack res in
+      (Presburger.Input(address,Bind caller,label,fst3 program)) id tag stack res in
     match next_state with
        [tag,stack,id] -> grow_human address methods id tag stack res
      | _ -> assert false (*???*)
@@ -1002,7 +1010,7 @@ let dep = (TCons(Int,TCons(HumanAddress,TNil)),"dep")
 
   let (transitions : transition list) =
     [ [1],[2],Value true,
-      Input (Contract "garbage_bin",None, dep, VCons((Int,"q"),VCons((HumanAddress,"id"),VNil)))
+      Input (Contract "garbage_bin",Bind (HumanAddress,"caller"), dep, VCons((Int,"q"),VCons((HumanAddress,"id"),VNil)))
     ; [2],[1],Gt(Var (Int,"cur_q"),Value (2)),
       Output (Contract "garbage_bin", (HumanAddress,Var(HumanAddress,"ID")),(TNil,"NOK"),ENil)
     ; [2],[3],Eq(Int,Var(Int, "cur_q"),Value (1)),
@@ -1010,17 +1018,17 @@ let dep = (TCons(Int,TCons(HumanAddress,TNil)),"dep")
     ; [2],[5],Eq(Int,Var(Int, "cur_q"),Value(2)),
       Output (Contract "garbage_bin",(HumanAddress,Var( HumanAddress,"ID")),(TCons(Int ,TNil),"OK"),ECons(Mult( Numeric 2, Symbol("R")),ENil))
     ; [3],[4],Value true,
-      Input (Contract "garbage_bin",None, dep, VCons((Int,"q'"),VCons((HumanAddress,"id'"),VNil)))
+      Input (Contract "garbage_bin",Bind (HumanAddress,"caller"), dep, VCons((Int,"q'"),VCons((HumanAddress,"id'"),VNil)))
     ; [4],[3],Gt(Var (Int, "cur_q"),Value (2)),
       Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress, "ID")),(TNil,"NOK"),ENil)
     ; [4],[5],Eq(Int,Var (Int, "cur_q"), Value (1)),
       Output (Contract "garbage_bin",(HumanAddress,Var(HumanAddress, "ID")),(TCons(Int ,TNil),"OK"),ECons(Symbol("R"),ENil))
     ; [5],[6],Value true,
-      Input (Contract "garbage_bin",None, (TCons(Int,TCons(HumanAddress,TNil)),"bid"), VCons((Int,"e"),VCons((HumanAddress,"gt_id"),VNil)))
+      Input (Contract "garbage_bin",Bind (HumanAddress,"caller"), (TCons(Int,TCons(HumanAddress,TNil)),"bid"), VCons((Int,"e"),VCons((HumanAddress,"gt_id"),VNil)))
     ; [6],[5],Gt(Mult(Numeric 2, Var(Int, "R")), Var (Int,"of")),
       Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress, "ID")),(TCons(Int ,TNil),"lost"),ECons(Var(Int,"of"),ENil))
     ; [6],[7],Geq(Var (Int, "of"),Mult( Numeric 2, Var(Int, "R"))),
-      Input (Contract "garbage_bin",None, (TCons(Int,TCons(HumanAddress,TNil)),"bid"), VCons((Int,"e'"),VCons((HumanAddress,"gt_id'"),VNil)))
+      Input (Contract "garbage_bin",Bind (HumanAddress,"caller"), (TCons(Int,TCons(HumanAddress,TNil)),"bid"), VCons((Int,"e'"),VCons((HumanAddress,"gt_id'"),VNil)))
     ; [7],[8],Geq(Var (Int,"of"), Var(Int, "of'")),
       Output (Contract "garbage_bin", (HumanAddress,Var (HumanAddress,"ID'")),(TCons(Int,TNil),"LOST"),ECons(Var(Int,"of'"),ENil))
     ; [7],[8],Gt(Var (Int,"of"), Var(Int, "of'")),
@@ -1030,7 +1038,7 @@ let dep = (TCons(Int,TCons(HumanAddress,TNil)),"dep")
     ; [8],[9],Geq(Var (Int,"of"), Var(Int, "of'")),
       Output (Contract "garbage_bin",(HumanAddress,Var (HumanAddress,"ID'")),(TNil,"WIN"),ENil)
     ; [9],[10],Value true,
-      Input (Contract "garbage_bin",None, (TCons(String ,TNil),"empty"), (*[AVar "id"]*)VCons((String,"id"),VNil))
+      Input (Contract "garbage_bin",Bind (HumanAddress,"caller"), (TCons(String ,TNil),"empty"), (*[AVar "id"]*)VCons((String,"id"),VNil))
     ; [10],[9],Or(And (Geq(Var (Int,"of"), Var(Int, "of'")), Not (Eq(HumanAddress, Var(HumanAddress, "id"), Var(HumanAddress, "ID")))),
                   And (Gt(Var (Int,"of'"), Var(Int, "of")), Not (Eq(HumanAddress, Var(HumanAddress, "id"), Var(HumanAddress, "ID'"))))),Tau
     ; [10],[11],Geq(Var (Int,"of"), Var(Int, "of'")),
@@ -1080,21 +1088,21 @@ module Citizen = struct
   let (transitions : transition list) =
     [ [1],[2],Value true,Output (address0, incinerator,(TCons(Int,TNil),"fee"),ECons(Var(Int,"D"),ENil))
     ; [2],[3],Value true,Output (address0,gb,dep,ECons( Value 2, ECons(address,ENil)))
-    ; [3],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [3],[2],Value true,Input (address0,Check (gb),(TNil,"NOK"), VNil)
     ; [2],[4],Value true,Output (address0,gb,dep,ECons( Value 1, ECons(address,ENil)))
-    ; [4],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [4],[2],Value true,Input (address0,Check (gb),(TNil,"NOK"), VNil)
     ; [2],[5],Value true, Tau
     ; [2],[6],Value true, Tau
-    ; [3],[7], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
-    ; [4],[8], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [3],[7], Value true,Input (address0,Check (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [4],[8], Value true,Input (address0,Check (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
     ; [8],[12], Value true, Output (address0,gb,dep,ECons(Value 1, ECons(address,ENil)))
-    ; [12],[8],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [12],[8],Value true,Input (address0,Check (gb),(TNil,"NOK"), VNil)
     ; [8],[13],Value true, Tau
-    ; [12],[14],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [12],[14],Value true,Input (address0,Check (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
     ; [5],[9],Value true, Output (address0,gb,dep,ECons(Value 1, ECons(address,ENil)))
-    ; [9],[5],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
+    ; [9],[5],Value true,Input (address0,Check (gb),(TNil,"NOK"), VNil)
     ; [5],[10],Value true, Tau
-    ; [9],[11],Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [9],[11],Value true,Input (address0,Check (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
     ; [7],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
     ; [14],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
     ; [13],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
@@ -1132,11 +1140,11 @@ module BasicCitizen = struct
   let (transitions : transition list) =
     [ [1],[2],Value true,Output (address0, incinerator,(TCons(Int,TNil),"fee"),ECons(Var(Int,"D"),ENil))
     ; [2],[3],Value true,Output (address0,gb,dep,ECons( Value 1, ECons(address,ENil)))
-    ; [3],[2],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
-    ; [3],[4], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [3],[2],Value true,Input (address0,Check (gb),(TNil,"NOK"), VNil)
+    ; [3],[4], Value true,Input (address0,Check (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
     ; [4],[5],Value true,Output (address0,gb,dep,ECons( Value 1, ECons(address,ENil)))
-    ; [5],[4],Value true,Input (address0,Some (gb),(TNil,"NOK"), VNil)
-    ; [5],[6], Value true,Input (address0,Some (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
+    ; [5],[4],Value true,Input (address0,Check (gb),(TNil,"NOK"), VNil)
+    ; [5],[6], Value true,Input (address0,Check (gb),(TCons(Int,TNil),"OK"), VCons((Int,"a"),VNil))
     ; [6],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
     ]
 
