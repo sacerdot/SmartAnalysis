@@ -5,6 +5,7 @@ let third3 (_,_,a) = a
 let map_option f = function None -> None | Some x -> Some (f x)
 
 let pp_unit () = ""
+let pp_bool = string_of_bool
 
 (*** Smart Calculus ***)
 
@@ -356,7 +357,7 @@ type action =
  | Output : (*sender:*)(_ SmartCalculus.address) * (*receiver:*)(_ SmartCalculus.address) SmartCalculus.tagged_expr * 'b label * 'b SmartCalculus.expr_list -> action
  | Tau : action
 
-type 's state = id * ('s * subst * bool(*= no actor running*))
+type 's state = id * ('s * subst)
 type transition = id * id * cond * action
 type 's automaton = SmartCalculus.any_address list * id(*=initial state*) * 's state list * transition list
 
@@ -391,9 +392,9 @@ let pp_action =
      SmartCalculus.pp_tagged_expr aexpr ^ "." ^ pp_label l ^
       "(" ^ String.concat "," (SmartCalculus.pp_expr_list (fst l) al) ^ ")"
   | Tau -> "tau"
-let pp_state pp_stack i (id,(stack,al,zero)) =
+let pp_state pp_stack i (id,(stack,al)) =
  "\"" ^ pp_id id ^ "\" [label=\"" ^
-  pp_id id ^ "[" ^ string_of_bool zero ^ "]: " ^ String.concat ", " (List.map pp_assignment al) ^ "\n" ^ pp_stack stack ^
+  pp_id id ^ String.concat ", " (List.map pp_assignment al) ^ "\n" ^ pp_stack stack ^
   "\"" ^
   (if i = id then " shape=\"rectangle\"" else "") ^
  "]"
@@ -489,9 +490,9 @@ let rec same_but_last l1 l2 =
 
 exception Skip
 
-let (@@) ((),ass1,zero1) ((),ass2,zero2) =
+let (@@) (zero1,ass1) (zero2,ass2) =
  assert(zero1 || zero2) ;
- (), ass1 @ ass2, zero1 && zero2
+ zero1 && zero2, ass1 @ ass2
 
 let (===) (e : ('a SmartCalculus.address) SmartCalculus.tagged_expr) (a : SmartCalculus.any_address) =
  match snd e with
@@ -509,17 +510,17 @@ let change_sub (sub : subst) : action -> subst =
   | Tau
   | Output _ -> sub
 
-let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1 : unit automaton) ((a2,_,sl2,tl2) as au2 : unit automaton) (sp : _ state list) tp =
+let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as au1 : bool automaton) ((a2,_,sl2,tl2) as au2 : bool automaton) (sp : _ state list) tp =
  try
   let id' = id1' @ id2' in
   let cond = apply_subst_expr sub cond in
   let cond =
    let ground_cond =
-    apply_subst_expr sub (apply_subst_expr (snd3 assign) cond) in
+    apply_subst_expr sub (apply_subst_expr (snd assign) cond) in
    match SmartCalculus.eval_cond ground_cond with SmartCalculus.T -> SmartCalculus.Value true | M -> cond | F -> raise Skip in
   let action = apply_subst_action sub action in
   let s12' = List.assoc id1' sl1 @@ List.assoc id2' sl2 in
-  let s12' = (),apply_subst_subst sub (snd3 s12'),third3 s12' in
+  let s12' = fst s12',apply_subst_subst sub (snd s12') in
   let id' = id' @ [mk_fresh ()] in
   let (id',_) as s',is_new =
    try
@@ -534,14 +535,14 @@ let rec add_transition id1' id2' ~sub cond assign action id ((a1,_,sl1,tl1) as a
    sp,tp
  with Skip -> sp,tp
 
-and move_state ~sub (au1 : unit automaton) (au2 : unit automaton) id id1 id2 sp tp =
+and move_state ~sub (au1 : bool automaton) (au2 : bool automaton) id id1 id2 sp tp =
  let sp,tp = move1 ~sub au1 au2 id id1 id2 sp tp in
  let sp,tp = move2 ~sub au1 au2 id id1 id2 sp tp in
  let sp,tp = interact1in_2out ~sub au1 au2 id id1 id2 sp tp in
  let sp,tp = interact2in_1out ~sub au1 au2 id id1 id2 sp tp in
  sp,tp
 
-and move1 ~sub ((_,_,sl1,tl1) as au1 : unit automaton) ((a2,_,sl2,tl2) as au2 : unit automaton) id id1 id2 sp tp =
+and move1 ~sub ((_,_,sl1,tl1) as au1 : bool automaton) ((a2,_,sl2,tl2) as au2 : bool automaton) id id1 id2 sp tp =
  let moves = List.filter (fun (s,_,_,_) -> s = id1) tl1 in
  let id1' x = x in
  let id2' _ = id2 in
@@ -559,17 +560,17 @@ and move2 ~sub ((a1,_,sl1,tl1) as au1) ((_,_,sl2,tl2) as au2) id id1 id2 sp tp =
  let the_others = a1 in
  movex your_ass other_ass the_others moves id1' id2' ~sub au1 au2 id sp tp
 
-and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as au1 : unit automaton) ((a2,_,sl2,tl2) as au2 : unit automaton) id sp tp =
+and movex your_ass other_ass the_others moves id1' id2' ~sub ((a1,_,sl1,tl1) as au1 : bool automaton) ((a2,_,sl2,tl2) as au2 : bool automaton) id sp tp =
  let assign = your_ass @@ other_ass in
  let can_fire =
   function
    | Tau | Input (_,Bind _,_,_) -> true
    | Input (_,Check d,_,_) ->
-      let d = apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 your_ass) d) in
+      let d = apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd your_ass) d) in
       List.for_all (fun a -> not (d === a)) the_others
    | Output(r,d,_,_) ->
-      (is_contract r || third3 assign) &&
-      let d = apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 your_ass) d) in
+      (is_contract r || fst assign) &&
+      let d = apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd your_ass) d) in
       List.for_all (fun a -> not (d === a)) the_others in
  List.fold_left
   (fun (sp,tp) (_,aexpr,cond,action) ->
@@ -585,10 +586,10 @@ prerr_endline ("## " ^ string_of_bool (snd assign)); *)
      sp,tp
   ) (sp,tp) moves
 
-and interact1in_2out ~sub ((a1,_,sl1,tl1) as au1 : unit automaton) ((a2,_,sl2,tl2) as au2 : unit automaton) id id1 id2 sp tp =
+and interact1in_2out ~sub ((a1,_,sl1,tl1) as au1 : bool automaton) ((a2,_,sl2,tl2) as au2 : bool automaton) id id1 id2 sp tp =
 let ass_in = List.assoc id1 sl1 in
 let ass_out = List.assoc id2 sl2 in
- let zero = third3 ass_in && third3 ass_out in
+ let zero = fst ass_in && fst ass_out in
  let moves1 =
   List.filter (function (s,_,_,Input _) -> s = id1 | _ -> false) tl1 in
  let moves2 =
@@ -597,7 +598,7 @@ let ass_out = List.assoc id2 sl2 in
        (s,_,_,Output (r,d,_,_)) ->
          (is_contract r || zero) &&
          let d =
-          apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 (List.assoc id2 sl2)) d) in
+          apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd (List.assoc id2 sl2)) d) in
          s = id2 && List.exists (fun a -> d === a) a1
      | _ -> false) tl2 in
  let id1' din _ = din in
@@ -607,7 +608,7 @@ let ass_out = List.assoc id2 sl2 in
 and interact2in_1out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1 id2 sp tp =
  let ass_in = List.assoc id2 sl2 in
  let ass_out = List.assoc id1 sl1 in
- let zero = third3 ass_in && third3 ass_out in
+ let zero = fst ass_in && fst ass_out in
  let moves2 =
   List.filter (function (s,_,_,Input _) -> s = id2 | _ -> false) tl2 in
  let moves1 =
@@ -616,7 +617,7 @@ and interact2in_1out ~sub ((a1,_,sl1,tl1) as au1) ((a2,_,sl2,tl2) as au2) id id1
        (s,_,_,Output (r,d,_,_)) ->
          (is_contract r || zero) &&
          let d =
-          apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 (List.assoc id1 sl1)) d) in
+          apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd (List.assoc id1 sl1)) d) in
          s = id1 && List.exists (fun a -> d === a) a2
      | _ -> false) tl1 in
  let id1' _ don = don in
@@ -631,11 +632,11 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
        match t_in,t_out with
         | (_,din,condi,Input(receiver,sender,li,vl)), (_,don,condo,Output(addr_out,rec_out,lo,al))
           when
-            apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 ass_out) rec_out) === (SmartCalculus.AnyAddress receiver) &&
+            apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd ass_out) rec_out) === (SmartCalculus.AnyAddress receiver) &&
             (match sender with
                 Bind _ -> true
               | Check aexpr ->
-                 apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd3 ass_in) aexpr)
+                 apply_subst_tagged_expr sub (apply_subst_tagged_expr (snd ass_in) aexpr)
                  === SmartCalculus.AnyAddress addr_out)
              && snd li = snd lo ->
             (match SmartCalculus.eq_tag_list (fst li) (fst lo) with
@@ -649,7 +650,7 @@ and interact_in_out id1' id2' moves_in moves_out ass_in ass_out ~sub ((a1,_,sl1,
      ) (sp,tp) moves_out
   ) (sp,tp) moves_in
 
-let compose ((a1,i1,sl1,tl1) as au1 : unit automaton) ((a2,i2,sl2,tl2) as au2 : unit automaton) =
+let compose ((a1,i1,sl1,tl1) as au1 : bool automaton) ((a2,i2,sl2,tl2) as au2 : bool automaton) =
  let id = i1 @ i2 @ [mk_fresh ()] in
  let s1 = List.assoc i1 sl1 in
  let s2 = List.assoc i2 sl2 in
@@ -708,23 +709,21 @@ let rec change_in_assignment_list : type a. a SmartCalculus.field -> a SmartCalc
       | Some SmartCalculus.Refl when snd v = snd v' -> Presburger.Assignment(v,value)::tl
       | _ ->  hd::change_in_assignment_list v value tl
 
-let make_store tag stack (ass1,zero1) (_,ass2,zero2) =
- assert(zero1 || zero2) ;
+let make_store tag stack ass1 (_,ass2) =
  SmartCalculus.AnyStack(tag,stack),
   List.fold_left
    (fun ass2 (Presburger.Assignment(v,value)) ->
-     change_in_assignment_list v value ass2) ass2 ass1,
-  zero1 && zero2
+     change_in_assignment_list v value ass2) ass2 ass1
 
 (* assign is the NEW assignment after the transition
    returns (new_states_generated,(sp',tp')) *)
-let add_transition cond (assign : Presburger.subst * bool) action id tag stack
+let add_transition cond (assign : Presburger.subst) action id tag stack
  ((sp : SmartCalculus.any_stack Presburger.state list),(tp : Presburger.transition list)) =
  try
   let store = List.assoc id sp in
-  let action = Presburger.apply_subst_action (snd3 store) action in
+  let action = Presburger.apply_subst_action (snd store) action in
   let cond =
-   let ground_cond = Presburger.apply_subst_expr (snd3 store) cond in
+   let ground_cond = Presburger.apply_subst_expr (snd store) cond in
    match SmartCalculus.eval_cond ground_cond with SmartCalculus.T -> SmartCalculus.Value true | M -> cond | F -> raise Skip in
   let id' = [Presburger.mk_fresh ()] in
   let assign = make_store tag stack assign store in
@@ -781,7 +780,7 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
   | SmartCalculus.Zero -> assert false
   | SmartCalculus.HumanCall(ret,addr) ->
      let next_state,res =
-      add_transition (SmartCalculus.Value true) ([],true)
+      add_transition (SmartCalculus.Value true) []
       (Presburger.Output(address,(HumanAddress,SmartCalculus.Var addr),return_ok tag,ECons(ret,ENil)))
       id tag Zero res in
      (* FIXME: use next_state *)
@@ -794,18 +793,17 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
        | SmartCalculus.Stm stm ->
           (match stm with
            | SmartCalculus.IfThenElse(c,stm1,stm2) ->
-              let assign = [],true in
               let next_state1,res =
-               add_transition c assign Presburger.Tau id tag (stm1+:stack)
+               add_transition c [] Presburger.Tau id tag (stm1+:stack)
                 res in
               let next_state2,res =
-               add_transition (SmartCalculus.Not c) assign Presburger.Tau id
+               add_transition (SmartCalculus.Not c) [] Presburger.Tau id
                 tag (stm2+:stack) res in
               next_state1 @ next_state2,res
            | SmartCalculus.Assign(f,SmartCalculus.Expr e) ->
               let store = List.assoc id sp in
-              let e = Presburger.apply_subst_expr (snd3 store) e in
-              let assign = ([Presburger.Assignment(f,e)],true) in
+              let e = Presburger.apply_subst_expr (snd store) e in
+              let assign = [Presburger.Assignment(f,e)] in
               add_transition (SmartCalculus.Value true) assign
                Presburger.Tau id tag stack res
            | SmartCalculus.Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
@@ -818,55 +816,49 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
                | Some SmartCalculus.Refl ->
                   let body = SmartCalculus.lookup_method meth methods in
                   let store = List.assoc id sp in
-                  let exprl = Presburger.apply_subst_expr_list (snd3 store) exprl in
-                  let assign = [],true in
+                  let exprl = Presburger.apply_subst_expr_list (snd store) exprl in
                   let stack : (actor,c) SmartCalculus.stack = tail_stack_call body exprl in
-                  add_transition (SmartCalculus.Value true) assign
+                  add_transition (SmartCalculus.Value true) []
                    Presburger.Tau id tag stack res
                | None ->
                   let body = SmartCalculus.lookup_method meth methods in
                   let store = List.assoc id sp in
-                  let exprl = Presburger.apply_subst_expr_list (snd3 store) exprl in
-                  let assign = [],true in
+                  let exprl = Presburger.apply_subst_expr_list (snd store) exprl in
                   let stack : (actor,c) SmartCalculus.stack = stack_call body exprl f stack in
-                  add_transition (SmartCalculus.Value true) assign
+                  add_transition (SmartCalculus.Value true) []
                    Presburger.Tau id tag stack res
               ) f tag stack meth exprl
            | SmartCalculus.Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
-              let assign = [],true in
               let label = let (_,tags,name) = meth in tags,name in
               let stack =
                SmartCalculus.SComp(SmartCalculus.AssignBullet(f,receiver,stm_stack),stack) in
-              add_transition (SmartCalculus.Value true) assign
+              add_transition (SmartCalculus.Value true) []
                (Presburger.Output(address,(ContractAddress,receiver),label,exprl))
                id tag stack res
            | SmartCalculus.Comp(stm1,stm2) ->
-             let assign = [],true in
              let stack = (stm1+:(stm2+:stack)) in
-             add_transition (SmartCalculus.Value true) assign Presburger.Tau
+             add_transition (SmartCalculus.Value true) [] Presburger.Tau
               id tag stack res
            | SmartCalculus.Choice(stm1,stm2) ->
               let var = SmartCalculus.Int, "__choice__" ^ string_of_int (Presburger.mk_fresh ()) in
               let cond n = SmartCalculus.Eq (SmartCalculus.Int, SmartCalculus.Var var, SmartCalculus.Value n) in
-              let assign = [],true in
               let next_state1,res =
-               add_transition (cond 0) assign Presburger.Tau id
+               add_transition (cond 0) [] Presburger.Tau id
                 tag (stm1+:stack) res in
               let next_state2,res =
-               add_transition (cond 1) assign Presburger.Tau id
+               add_transition (cond 1) [] Presburger.Tau id
                 tag (stm2+:stack) res in
               next_state1 @ next_state2, res)
      | SmartCalculus.AssignBullet(f,receiver,backtracking_stack) ->
-        let assign = [],true in
         let var = fst f, "__ra__ " ^ string_of_int (Presburger.mk_fresh ()) in
         (* ko *)
         let next_state1,res =
-         add_transition (SmartCalculus.Value true) assign
+         add_transition (SmartCalculus.Value true) []
           (Presburger.Input(address,Check (ContractAddress,receiver),return_ko,SmartCalculus.VNil)) id tag backtracking_stack res in
         (* ok *)
         let next_state2,res =
          add_transition (SmartCalculus.Value true)
-           ([Presburger.Assignment(f,SmartCalculus.Var var)],true)
+           [Presburger.Assignment(f,SmartCalculus.Var var)]
            (Presburger.Input(address,Check (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id tag stack res
         in
         next_state1 @ next_state2,res
@@ -878,7 +870,7 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
 let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : SmartCalculus.any_stack Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
  let store = List.map (function SmartCalculus.Let(x,v) -> Presburger.Assignment(x,SmartCalculus.Value v)) store in
- let sp = [id,(SmartCalculus.AnyStack(Int,stack),store,true)] in
+ let sp = [id,(SmartCalculus.AnyStack(Int,stack),store)] in
  let sp,tp = grow_human address methods id Int stack (sp,[]) in
   [SmartCalculus.AnyAddress address], id, sp, tp
 
@@ -900,7 +892,7 @@ let grow_idle address methods id res =
     let stack = human_call caller tag program exprl in
     let label = snd3 meth,third3 meth in
     let next_state,res =
-     add_transition (SmartCalculus.Value true) ([],false)
+     add_transition (SmartCalculus.Value true) []
       (Presburger.Input(address,Bind caller,label,fst3 program)) id tag stack res in
     match next_state with
        [tag,stack,id] -> grow_human address methods id tag stack res
@@ -910,7 +902,7 @@ let grow_idle address methods id res =
 let contract_to_automaton (address,methods,store : SmartCalculus.a_contract) : SmartCalculus.any_stack Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
  let store = List.map (function SmartCalculus.Let(x,v) -> Presburger.Assignment(x,SmartCalculus.Value v)) store in
- let sp = [id,(SmartCalculus.AnyStack(Int,SmartCalculus.Zero),store,true)] in
+ let sp = [id,(SmartCalculus.AnyStack(Int,SmartCalculus.Zero),store)] in
  let sp,tp = grow_idle address methods id (sp,[]) in
   [SmartCalculus.AnyAddress address], id, sp, tp
 
@@ -980,32 +972,32 @@ let dep = (TCons(Int,TCons(HumanAddress,TNil)),"dep")
 
  (*** Garbage Collection Example ***)
  module Bin = struct
-  let (states : unit state list) =
-    [ [1], ((),[Assignment((Int,"gp"),Value(0)) ; Assignment((Int,"gbalance"),Symbol("D"))], true)
-    ; [2], ((),[Assignment((Int,"gp"),Value(0)) ; Assignment((Int,"gbalance"),Symbol("D")) ; Assignment((Int,"cur_q"),Var(Int,"q"))
-            ; Assignment((HumanAddress,"ID"),Var(HumanAddress,"id"))],false)
-    ; [3], ((),[Assignment((Int,"gp"),Value(1)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Symbol("R"))))],true)
-    ; [4], ((),[Assignment((Int,"gp"),Value(1)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Symbol("R")))) ; Assignment((Int,"cur_q"),Var(Int,"q'"))
-            ; Assignment((HumanAddress,"ID"),Var(HumanAddress,"id'"))],false)
-    ; [5], ((),[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))],true)
-    ; [6], ((),[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
-            ; Assignment((Int,"of"),Var(Int,"e'")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))],true)
-    ; [7], ((),[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+  let (states : bool state list) =
+    [ [1], (true,[Assignment((Int,"gp"),Value(0)) ; Assignment((Int,"gbalance"),Symbol("D"))])
+    ; [2], (false,[Assignment((Int,"gp"),Value(0)) ; Assignment((Int,"gbalance"),Symbol("D")) ; Assignment((Int,"cur_q"),Var(Int,"q"))
+            ; Assignment((HumanAddress,"ID"),Var(HumanAddress,"id"))])
+    ; [3], (true,[Assignment((Int,"gp"),Value(1)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Symbol("R"))))])
+    ; [4], (false,[Assignment((Int,"gp"),Value(1)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Symbol("R")))) ; Assignment((Int,"cur_q"),Var(Int,"q'"))
+            ; Assignment((HumanAddress,"ID"),Var(HumanAddress,"id'"))])
+    ; [5], (true,[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))])
+    ; [6], (true,[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of"),Var(Int,"e'")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))])
+    ; [7], (true,[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
             ; Assignment((Int,"of"),Var(Int,"e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
-            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
-    ; [8], ((),[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))])
+    ; [8], (true,[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
             ; Assignment((Int,"of"),Var(Int,"e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
-            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
-    ; [9], ((),[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))])
+    ; [9], (true,[Assignment((Int,"gp"),Value(2)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
             ; Assignment((Int,"of"),Var(Int,"e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
-            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
-    ; [10], ((),[Assignment((Int,"gp"),Value(0)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
+            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))])
+    ; [10], (false,[Assignment((Int,"gp"),Value(0)) ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Minus(Mult(Numeric(2),Symbol("R")))))
             ; Assignment((Int,"of"),Var(Int,"e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
-            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],false)
-    ; [11], ((),[Assignment((Int,"gp"),Value(0))
+            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))])
+    ; [11], (true,[Assignment((Int,"gp"),Value(0))
             ; Assignment((Int,"gbalance"),Plus(Symbol("D"),Plus(Minus(Mult(Numeric(2),Symbol("R"))),Max(Var(Int,"of"), Var(Int,"of'")))))
             ; Assignment((Int,"of"),Var(Int,"e")); Assignment((HumanAddress,"ID"),Var(HumanAddress,"gt_id"))
-            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))],true)
+            ; Assignment((Int,"of'"),Var(Int,"e'")); Assignment((HumanAddress,"ID'"),Var(HumanAddress,"gt_id'"))])
    ]
 
   let (transitions : transition list) =
@@ -1052,31 +1044,31 @@ let dep = (TCons(Int,TCons(HumanAddress,TNil)),"dep")
             ECons(Plus(Var(Int,"D"),Plus(Minus(Mult(Numeric(2),Symbol("R"))),Max(Var(Int,"of"), Var(Int,"of'")))),ENil))
    ]
 
-  let automaton : unit automaton = ([AnyAddress (Contract( "garbage_bin"))],[1],states,transitions)
+  let automaton : bool automaton = ([AnyAddress (Contract( "garbage_bin"))],[1],states,transitions)
 
    let _ =
     let ch = open_out "garbage_bin.dot" in
-    output_string ch (pp_automaton pp_unit automaton);
+    output_string ch (pp_automaton pp_bool automaton);
     close_out ch
 
  end
 
 module Citizen = struct
-  let (states : unit state list) =
-    [ [1], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Symbol("D"))],true)
-    ; [2], ((),[Assignment((Int,"cp"),Value(2)); Assignment((Int,"balance"),Value(0))],true)
-    ; [3], ((),[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
-    ; [4], ((),[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
-    ; [5], ((),[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
-    ; [6], ((),[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))],true)
-    ; [7], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))],true)
-    ; [8], ((),[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Var(Int,"a"))],true)
-    ; [9], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Value(0))],true)
-    ;[10], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Value(0))],true)
-    ;[11], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))],true)
-    ;[12], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))],true)
-    ;[13], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))],true)
-    ;[14], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Mult(Numeric 2,Var(Int,"a")))],true)
+  let (states : bool state list) =
+    [ [1], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Symbol("D"))])
+    ; [2], (true,[Assignment((Int,"cp"),Value(2)); Assignment((Int,"balance"),Value(0))])
+    ; [3], (true,[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))])
+    ; [4], (true,[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))])
+    ; [5], (true,[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))])
+    ; [6], (true,[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Value(0))])
+    ; [7], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))])
+    ; [8], (true,[Assignment((Int,"cp"),Value(1)); Assignment((Int,"balance"),Var(Int,"a"))])
+    ; [9], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Value(0))])
+    ;[10], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Value(0))])
+    ;[11], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))])
+    ;[12], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))])
+    ;[13], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Var(Int,"a"))])
+    ;[14], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"balance"),Mult(Numeric 2,Var(Int,"a")))])
     ]
 
     let address0 = Human "citizen"
@@ -1111,23 +1103,23 @@ module Citizen = struct
     ; [6],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
     ]
 
-  let automaton : unit automaton = ([AnyAddress (address0)],[1],states,transitions)
+  let automaton : bool automaton = ([AnyAddress (address0)],[1],states,transitions)
 
   let _ =
     let ch = open_out "citizen.dot" in
-    output_string ch (pp_automaton pp_unit automaton);
+    output_string ch (pp_automaton pp_bool automaton);
     close_out ch
 
 end
 
 module BasicCitizen = struct
-  let (states : unit state list) =
-    [ [1], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"cbalance"),Symbol("D"))],true)
-    ; [2], ((),[Assignment((Int,"cp"),Value(2)); Assignment((Int,"cbalance"),Value(0))],true)
-    ; [3], ((),[Assignment((Int,"cp"),Value(1)); Assignment((Int,"cbalance"),Value(0))],true)
-    ; [4], ((),[Assignment((Int,"cp"),Value(1)); Assignment((Int,"cbalance"),Var(Int,"a"))],true)
-    ; [5], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"cbalance"),Var(Int,"a"))],true)
-    ; [6], ((),[Assignment((Int,"cp"),Value(0)); Assignment((Int,"cbalance"),Var(Int,"a"))],true)
+  let (states : bool state list) =
+    [ [1], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"cbalance"),Symbol("D"))])
+    ; [2], (true,[Assignment((Int,"cp"),Value(2)); Assignment((Int,"cbalance"),Value(0))])
+    ; [3], (true,[Assignment((Int,"cp"),Value(1)); Assignment((Int,"cbalance"),Value(0))])
+    ; [4], (true,[Assignment((Int,"cp"),Value(1)); Assignment((Int,"cbalance"),Var(Int,"a"))])
+    ; [5], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"cbalance"),Var(Int,"a"))])
+    ; [6], (true,[Assignment((Int,"cp"),Value(0)); Assignment((Int,"cbalance"),Var(Int,"a"))])
 
     ]
 
@@ -1148,11 +1140,11 @@ module BasicCitizen = struct
     ; [6],[1], Value true,Output (address0,banca,(TCons(Int,TNil),"save"),ECons( Var(Int,"balance"),ENil))
     ]
 
-  let automaton : unit automaton = ([AnyAddress (address0)],[1],states,transitions)
+  let automaton : bool automaton = ([AnyAddress (address0)],[1],states,transitions)
 
   let _ =
     let ch = open_out "basiccitizen.dot" in
-    output_string ch (pp_automaton pp_unit automaton);
+    output_string ch (pp_automaton pp_bool automaton);
     close_out ch
 
 end
@@ -1273,7 +1265,7 @@ end
   [ (*"basiccitizen_bin",basiccitizen_bin
   ; "basictruck_bin",basictruck_bin
   ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
-  ;*) "basiccitizen_bin",pp_automaton pp_unit basiccitizen_bin
+  ;*) "basiccitizen_bin",pp_automaton pp_bool basiccitizen_bin
     ; "citizen",pp_automaton SmartCalculus.pp_any_stack CalculusTest.automaton
     ; "citizen_notau",pp_automaton SmartCalculus.pp_any_stack CalculusTest.notau_automaton
     ; "bin",pp_automaton SmartCalculus.pp_any_stack CalculusTest.contract_automaton
