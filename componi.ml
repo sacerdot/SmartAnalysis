@@ -733,7 +733,7 @@ let add_transition cond (assign : Presburger.subst) action id tag stack
   let tr = id,id',cond,action in
   let tp = if List.mem tr tp then tp else tr::tp in
   if is_new then
-   [tag,stack,id'],(s'::sp,tp)
+   [SmartCalculus.AnyStack(tag,stack),id'],(s'::sp,tp)
   else
    [],(sp,tp)
  with Skip -> [],(sp,tp)
@@ -764,6 +764,31 @@ let is_tail_call stack f =
      SmartCalculus.eq_tag (fst g) (fst f)
   | _ -> None
 
+let rec expr_list_of_var_list : type b. b SmartCalculus.var_list -> b SmartCalculus.expr_list =
+ function
+    VNil -> ENil
+  | VCons(v,tl) -> ECons(SmartCalculus.Var v,expr_list_of_var_list tl)
+
+let human_call caller tag prog exprl =
+ let stml,ret = do_substitution prog exprl in
+ stml @: SmartCalculus.HumanCall(ret,caller)
+
+let grow_idle address methods id res =
+(*let add_transition cond (assign : Presburger.subst) action id tag stack
+ ((sp : SmartCalculus.any_stack Presburger.state list),(tp : Presburger.transition list)) = *)
+ List.fold_left
+  (fun (next_states,res) (SmartCalculus.AnyMethodDecl(meth,program)) ->
+    let tag = fst3 meth in
+    let exprl = expr_list_of_var_list (fst3 program) in
+    let caller = SmartCalculus.HumanAddress, "caller" in
+    let stack = human_call caller tag program exprl in
+    let label = snd3 meth,third3 meth in
+    let next_state,res =
+     add_transition (SmartCalculus.Value true) []
+      (Presburger.Input(address,Bind caller,label,fst3 program)) id tag stack res in
+    next_state @ next_states, res
+  ) ([],res) methods
+
 (* takes:
     address = ???
     id = id del nodo che deve eseguire stack
@@ -776,19 +801,16 @@ let is_tail_call stack f =
 let rec grow_human : type actor c. _ -> _ -> _ ->
  c SmartCalculus.tag -> ((actor,c) SmartCalculus.stack as 'stack) -> ((SmartCalculus.any_stack Presburger.state list * _) as 'b) -> 'b =
  fun address methods id tag stm_stack (sp,_tp as res) ->
+ let next_states,res =
  match stm_stack with
-  | SmartCalculus.Zero -> assert false
+  | SmartCalculus.Zero -> grow_idle address methods id res
   | SmartCalculus.HumanCall(ret,addr) ->
-     let next_state,res =
-      add_transition (SmartCalculus.Value true) []
-      (Presburger.Output(address,(HumanAddress,SmartCalculus.Var addr),return_ok tag,ECons(ret,ENil)))
-      id tag Zero res in
-     (* FIXME: use next_state *)
-     res
+     add_transition (SmartCalculus.Value true) []
+     (Presburger.Output(address,(HumanAddress,SmartCalculus.Var addr),return_ok tag,ECons(ret,ENil)))
+     id tag Zero res
   | SmartCalculus.ContractCall _ -> assert false
-  | SmartCalculus.Return _ -> res
+  | SmartCalculus.Return _ -> [],res
   | SmartCalculus.SComp(entry,stack) ->
-     let stacks,res =
       match entry with
        | SmartCalculus.Stm stm ->
           (match stm with
@@ -862,49 +884,23 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
            (Presburger.Input(address,Check (ContractAddress,receiver),return_ok (fst f),SmartCalculus.VCons(var,VNil))) id tag stack res
         in
         next_state1 @ next_state2,res
-     in
-     List.fold_left
-       (fun res (tag,stack,id) ->
-         grow_human address methods id tag stack res) res stacks
+ in
+ List.fold_left
+   (fun res (SmartCalculus.AnyStack(tag,stack),id) ->
+     grow_human address methods id tag stack res) res next_states
 
-let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : SmartCalculus.any_stack Presburger.automaton =
+let actor_to_automaton address methods store stack : SmartCalculus.any_stack Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
  let store = List.map (function SmartCalculus.Let(x,v) -> Presburger.Assignment(x,SmartCalculus.Value v)) store in
  let sp = [id,(SmartCalculus.AnyStack(Int,stack),store)] in
  let sp,tp = grow_human address methods id Int stack (sp,[]) in
   [SmartCalculus.AnyAddress address], id, sp, tp
 
-let rec expr_list_of_var_list : type b. b SmartCalculus.var_list -> b SmartCalculus.expr_list =
- function
-    VNil -> ENil
-  | VCons(v,tl) -> ECons(SmartCalculus.Var v,expr_list_of_var_list tl)
-
-let human_call caller tag prog exprl =
- let stml,ret = do_substitution prog exprl in
- stml @: SmartCalculus.HumanCall(ret,caller)
-
-let grow_idle address methods id res =
- List.fold_left
-  (fun res (SmartCalculus.AnyMethodDecl(meth,program)) ->
-    let tag = fst3 meth in
-    let exprl = expr_list_of_var_list (fst3 program) in
-    let caller = SmartCalculus.HumanAddress, "caller" in
-    let stack = human_call caller tag program exprl in
-    let label = snd3 meth,third3 meth in
-    let next_state,res =
-     add_transition (SmartCalculus.Value true) []
-      (Presburger.Input(address,Bind caller,label,fst3 program)) id tag stack res in
-    match next_state with
-       [tag,stack,id] -> grow_human address methods id tag stack res
-     | _ -> assert false (*???*)
-  ) res methods
+let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : SmartCalculus.any_stack Presburger.automaton =
+ actor_to_automaton address methods store stack
 
 let contract_to_automaton (address,methods,store : SmartCalculus.a_contract) : SmartCalculus.any_stack Presburger.automaton =
- let id = [Presburger.mk_fresh ()] in
- let store = List.map (function SmartCalculus.Let(x,v) -> Presburger.Assignment(x,SmartCalculus.Value v)) store in
- let sp = [id,(SmartCalculus.AnyStack(Int,SmartCalculus.Zero),store)] in
- let sp,tp = grow_idle address methods id (sp,[]) in
-  [SmartCalculus.AnyAddress address], id, sp, tp
+ actor_to_automaton address methods store (SmartCalculus.Zero)
 
 end
 
@@ -956,11 +952,15 @@ end
   let notau_automaton = RemoveTau.remove_tau automaton
 
   let dep = Int,TCons(Int,TNil),"dep"
+  let bid = Int,TCons(Int,TNil),"bid"
+  let bidder = Int,"bidder"
   let contract_automaton =
    PresburgerOfSmartCalculus.contract_to_automaton
     (Contract "bin"
-    ,[AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[],Var(Int,"x")))]
-    ,[]
+    ,[AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[],Var(Int,"x")))
+     ;AnyMethodDecl (bid,(VCons((Int,"x"),VNil),[Assign(bidder,Expr (Var (Int,"x")))],Var(Int,"x")))
+     ]
+    ,[Let(bidder,0)]
     )
 
 end
