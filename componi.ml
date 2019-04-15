@@ -798,7 +798,7 @@ let grow_idle address methods id res =
    returns
     sp,tp
 *)
-let rec grow_human : type actor c. _ -> _ -> _ ->
+let rec grow : type actor c. _ -> _ -> _ ->
  c SmartCalculus.tag -> ((actor,c) SmartCalculus.stack as 'stack) -> ((SmartCalculus.any_stack Presburger.state list * _) as 'b) -> 'b =
  fun address methods id tag stm_stack (sp,_tp as res) ->
  let next_states,res =
@@ -887,13 +887,13 @@ let rec grow_human : type actor c. _ -> _ -> _ ->
  in
  List.fold_left
    (fun res (SmartCalculus.AnyStack(tag,stack),id) ->
-     grow_human address methods id tag stack res) res next_states
+     grow address methods id tag stack res) res next_states
 
 let actor_to_automaton address methods store stack : SmartCalculus.any_stack Presburger.automaton =
  let id = [Presburger.mk_fresh ()] in
  let store = List.map (function SmartCalculus.Let(x,v) -> Presburger.Assignment(x,SmartCalculus.Value v)) store in
  let sp = [id,(SmartCalculus.AnyStack(Int,stack),store)] in
- let sp,tp = grow_human address methods id Int stack (sp,[]) in
+ let sp,tp = grow address methods id Int stack (sp,[]) in
   [SmartCalculus.AnyAddress address], id, sp, tp
 
 let human_to_automaton (address,methods,store,stack : SmartCalculus.a_human) : SmartCalculus.any_stack Presburger.automaton =
