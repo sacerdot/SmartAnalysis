@@ -758,14 +758,25 @@ let tail_stack_call tag prog exprl =
  let stml,ret = do_substitution prog exprl in
  stml @: SmartCalculus.Return (tag,ret)
 
-let is_tail_call :
- type actor. actor SmartCalculus.stack -> _ -> (actor,SmartCalculus.human) SmartCalculus.eq option =
- fun stack f ->
- match stack with
-    SmartCalculus.Return (_,SmartCalculus.Var g) when snd f = snd g ->
-     (match SmartCalculus.eq_tag (fst g) (fst f)
-      with None -> None | Some _ -> Some SmartCalculus.Refl)
-  | _ -> None
+let optimize_stack_call stack f prog exprl =
+ let stml,ret = do_substitution prog exprl in
+ let optimized_stack =
+  (fun (type c) (stack : c SmartCalculus.stack) : (c SmartCalculus.stack) option ->
+    match stack with
+       SmartCalculus.Return (_,SmartCalculus.Var g)
+        when snd f = snd g ->
+        map_option (fun _ -> stml @: SmartCalculus.Return(fst f,ret))
+         (SmartCalculus.eq_tag (fst g) (fst f))
+     | SmartCalculus.HumanCall ((_,SmartCalculus.Var g),addr)
+        when snd f = snd g ->
+        map_option
+         (fun _ -> stml @: SmartCalculus.HumanCall((fst f,ret),addr))
+         (SmartCalculus.eq_tag (fst g) (fst f))
+     | _ -> None) stack in
+ match optimized_stack with
+    None -> stack_call prog exprl f stack
+  | Some optimized_stack -> optimized_stack
+
 
 let rec expr_list_of_var_list : type b. b SmartCalculus.var_list -> b SmartCalculus.expr_list =
  function
@@ -829,21 +840,12 @@ let rec grow : type actor. _ -> _ -> _ ->
               add_transition (SmartCalculus.Value true) assign
                Presburger.Tau id stack res
            | SmartCalculus.Assign(f,SmartCalculus.Call(None,meth,exprl)) ->
-              (match is_tail_call (stack : actor SmartCalculus.stack) f with
-               | Some SmartCalculus.Refl ->
-                  let body = SmartCalculus.lookup_method meth methods in
-                  let store = List.assoc id sp in
-                  let exprl = Presburger.apply_subst_expr_list (snd store) exprl in
-                  let stack = tail_stack_call (fst f) body exprl in
-                  add_transition (SmartCalculus.Value true) []
-                   Presburger.Tau id stack res
-               | None ->
-                  let body = SmartCalculus.lookup_method meth methods in
-                  let store = List.assoc id sp in
-                  let exprl = Presburger.apply_subst_expr_list (snd store) exprl in
-                  let stack = stack_call body exprl f stack in
-                  add_transition (SmartCalculus.Value true) []
-                   Presburger.Tau id stack res)
+              let body = SmartCalculus.lookup_method meth methods in
+              let store = List.assoc id sp in
+              let exprl= Presburger.apply_subst_expr_list (snd store) exprl in
+              let stack = optimize_stack_call stack f body exprl in
+              add_transition (SmartCalculus.Value true) []
+               Presburger.Tau id stack res
            | SmartCalculus.Assign(f,SmartCalculus.Call(Some receiver,meth,exprl)) ->
               let label = let (_,tags,name) = meth in tags,name in
               let stack =
@@ -971,15 +973,18 @@ end
         ,Assign((Int,"weight"),Expr (Value 2)))
 
   let dep = Int,TCons(Int,TNil),"dep"
+  let dep2 = Int,TCons(Int,TNil),"dep2"
   let bid = Int,TCons(Int,TNil),"bid"
   let bidder = Int,"bidder"
   let contract_automaton =
    PresburgerOfSmartCalculus.contract_to_automaton
     (Contract "bin"
     ,[AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[],Var(Int,"x")))
+     ;AnyMethodDecl (dep2,(VCons((Int,"z"),VNil),[Assign((Int,"zz"),Call (None,dep,ECons(Var(Int,"z"),ENil)))],Field(Int,"zz")))
      ;AnyMethodDecl (bid,(VCons((Int,"x"),VNil),[Assign(bidder,Expr (Var (Int,"x")))],Var(Int,"x")))
      ]
     ,[Let(bidder,0);
+      Let((Int,"zz"),0);
       (*Let((Int,"bin_balance"),0);
       Let((Int,"bin_weight"),0);
       Let((HumanAddress,"ID1"),(Human "caller"));
