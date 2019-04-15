@@ -501,8 +501,8 @@ let (===) (e : ('a SmartCalculus.address) SmartCalculus.tagged_expr) (a : SmartC
 
 let rec make_identity_subst : type b. b SmartCalculus.var_list -> subst =
  function
-    VNil -> []
-  | VCons(v,tl) -> Assignment(v,SmartCalculus.Var v) :: make_identity_subst tl
+    SmartCalculus.VNil -> []
+  | SmartCalculus.VCons(v,tl) -> Assignment(v,SmartCalculus.Var v) :: make_identity_subst tl
 
 let change_sub (sub : subst) : action -> subst =
  function
@@ -909,6 +909,8 @@ end
   open SmartCalculus
 
   let id = Int,TCons(Int,TNil),"id"
+  let throw = Int,TCons(Int,TNil),"throwAway"
+
   let loop = Int,TNil,"loop"
   let loop_body =
     Comp
@@ -921,35 +923,58 @@ end
                    Assign((Int,"b"),Expr (Value 2)))
                ,Choice
                    (Comp(Assign((Int,"b"),Expr (Value 0)),Assign((Int,"res"),Call(None,loop,ENil)))
-                   ,Comp(Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil)),Assign((Int,"x"),Expr(Symbol("cacca"))))))))
+                   ,Comp(Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil)),Assign((Int,"x"),Expr(Symbol("y"))))))))
 
   let citizen_body =
     Comp(Assign((Int,"balance"),Expr (Symbol ("D"))),
     Comp(Assign((Int,"weight"),Expr (Value 0)),
-    Comp(Assign((Int,"balance"),Call (Some (Value(Contract "incinerator")),(Int,TCons(Int,TNil),"fee"),ECons( Symbol("D"),ENil))),
-    Comp(Assign((Int,"weight"),Expr(Value 2)),
-    Comp(Choice(
-      Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
-      Comp(Assign((Int,"weight"),Expr (Value 1)),
-      Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
-      Assign((Int,"weight"),Expr (Value 0)))))
-
-     ,Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 2,ENil))),
-      Assign((Int,"weight"),Expr (Value 0)))),
+    Comp(Comp(Assign((Int,"balance"),Call (Some (Value(Contract "incinerator")),(Int,TCons(Int,TNil),"fee"),ECons( Symbol("D"),ENil))),
+              Assign((Int,"weight"),Expr(Value 2))),
+    Comp(Choice(Choice(
+      Comp(Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
+                Assign((Int,"weight"),Expr (Value 1))),
+                Choice(
+                  Comp(Assign((Int,"balance"),Call (None,throw,ECons(Value 1,ENil) )),
+                       Assign((Int,"weight"),Expr (Value 0))),
+                  Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
+                       Assign((Int,"weight"),Expr (Value 0)))))
+     ,Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons(Value 2,ENil))),
+           Assign((Int,"weight"),Expr (Value 0)))),
+         Choice(
+           Comp(Assign((Int,"balance"),Call (None,throw,ECons(Value 1,ENil) )),
+           Comp(Assign((Int,"weight"),Expr (Value 1)),
+                Choice(
+                  Comp(Assign((Int,"balance"),Call (None,throw,ECons( Value 1,ENil) )),
+                  Assign((Int,"weight"),Expr (Value 0))),
+           Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
+                Assign((Int,"weight"),Expr (Value 0))))))
+         ,Comp(Assign((Int,"balance"),Call (None,throw,ECons( Value 2,ENil) )),
+                Assign((Int,"weight"),Expr (Value 0))))),
     Comp(Assign((Int,"balance"),Call (Some (Value(Contract "banca")),(Int,TCons(Int,TNil),"save"),ECons(Var(Int,"balance"),ENil))),
-    Assign((Int,"res"),Call(None,loop,ENil))))))))
+    Assign((Int,"res"),Call(None,loop,ENil)))))))
+
+  (* let garbagebin_body =
+    Comp(Assign((Int,"bin_balance"),Expr (Symbol ("D"))),
+         Comp(Assign((Int,"bin_weight"),Expr (Value (2))),
+              Assign((Int,"balance"),Call (Some (Value(Human "citizen")),(Int,TCons(Int,TNil),"dep"),ECons( Symbol("D"),ENil))))) *)
 
 
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton
     (Human "citizen"
     ,[AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
-      AnyMethodDecl (loop,(VNil,[citizen_body],Var(Int,"res")))]
+      AnyMethodDecl (loop,(VNil,[citizen_body],Var(Int,"res")));
+      AnyMethodDecl (throw,(VCons((Int,"x"),VNil),[],Var(Int,"x")))]
+
     , [Let((Int,"balance"),0)
       ;Let((Int,"weight"),0)]
     ,SComp(Stm (Assign((Int,"res2"),Call(None,loop,ENil))),Return(Var (Int,"res2"))))
 
   let notau_automaton = RemoveTau.remove_tau automaton
+
+  let bin_body =
+    Comp(Assign((Int,"bin_balance"),Expr (Symbol ("D")))
+        ,Assign((Int,"weight"),Expr (Value 2)))
 
   let dep = Int,TCons(Int,TNil),"dep"
   let bid = Int,TCons(Int,TNil),"bid"
@@ -960,8 +985,14 @@ end
     ,[AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[],Var(Int,"x")))
      ;AnyMethodDecl (bid,(VCons((Int,"x"),VNil),[Assign(bidder,Expr (Var (Int,"x")))],Var(Int,"x")))
      ]
-    ,[Let(bidder,0)]
-    )
+    ,[Let(bidder,0);
+      (*Let((Int,"bin_balance"),0);
+      Let((Int,"bin_weight"),0);
+      Let((HumanAddress,"ID1"),(Human "caller"));
+      Let((HumanAddress,"ID2"),(Human "caller"));
+      Let((Int,"off1"),0);
+      Let((Int,"off2"),0);
+      Let((Int,"cur_q"),0)*)])
 
 end
 
