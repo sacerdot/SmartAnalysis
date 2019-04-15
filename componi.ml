@@ -68,16 +68,13 @@ struct
   | Choice : stm * stm -> stm
  type 'actor stack_entry =
     Stm : stm -> _ stack_entry
-  | AssignBullet :
-      'b field * (contract address) expr
-     * (*backtracking:*)'actor stack -> 'actor stack_entry
+  | AssignBullet : (* FIXME: make it idle if a human ?? *)
+     'b field * (contract address) expr
+     * (*backtracking:*)'actor stack -> _ stack_entry
  and 'actor stack =
   | Zero : idle stack
   | Return : _ tagged_expr -> human stack
   | HumanCall : _ tagged_expr * human address var -> contract stack
-  | ContractCall :
-     contract stack * contract address * 'b field * contract stack
-       -> contract stack
   | SComp : ([< actor] as 'actor) stack_entry * 'actor stack -> 'actor stack
  type any_stack = AnyStack : _ stack -> any_stack
  type ('a,'b) program = 'b var_list * stm list * (*return:*)'a expr
@@ -117,28 +114,6 @@ struct
               None -> None
             | Some Refl -> Some Refl)
    | _,_ -> None
-
- let lookup (type a) (f : a field) (s : store) : a =
-  let rec aux : store -> a =
-   function
-     [] -> assert false
-   | Let(g,v)::tl ->
-      match eq_tag (fst f) (fst g) with
-         Some Refl when snd f = snd g -> v
-       | _ -> aux tl
-  in
-   aux s
-
- let lookup_method (type a b) (f : (a,b) meth) (s : methods) : (a,b) program =
-  let rec aux : methods -> (a,b) program =
-   function
-     [] -> assert false
-   | AnyMethodDecl(g,v)::tl ->
-      match eq_tag (fst3 f) (fst3 g), eq_tag_list (snd3 f) (snd3 g) with
-       | Some Refl, Some Refl when (third3 f)=(third3 g) -> v
-       | _,_ -> aux tl
-  in
-   aux s
 
 (*** Serialization ***)
 let pp_tag : type a. a tag -> string =
@@ -232,12 +207,38 @@ let rec pp_stack : type contract. contract stack -> string =
   | Zero -> "0"
   | Return e -> "return " ^ pp_tagged_expr e
   | HumanCall(e,addr) -> "return " ^ pp_tagged_expr e ^ ";" ^ pp_var addr
-  | ContractCall(s1,addr,f,s2) ->
-     pp_stack s1 ^ ";" ^ pp_address addr ^ "." ^
-      pp_field f ^ " := * " ^ pp_stack s2
   | SComp(se,s) -> pp_stack_entry se ^ ";\n" ^ pp_stack s
 
 let pp_any_stack (AnyStack s) = pp_stack s
+
+(*** Lookups ***)
+
+let lookup (type a) (f : a field) (s : store) : a =
+ let rec aux : store -> a =
+  function
+    [] ->
+     prerr_endline ("Error: assignment to undefined field " ^ pp_field f);
+     assert false
+  | Let(g,v)::tl ->
+     match eq_tag (fst f) (fst g) with
+        Some Refl when snd f = snd g -> v
+      | _ -> aux tl
+ in
+  aux s
+
+let lookup_method (type a b) (f : (a,b) meth) (s : methods) : (a,b) program =
+ let rec aux : methods -> (a,b) program =
+  function
+    [] ->
+     prerr_endline ("Error: call to undefined method " ^ pp_meth f);
+     assert false
+  | AnyMethodDecl(g,v)::tl ->
+     match eq_tag (fst3 f) (fst3 g), eq_tag_list (snd3 f) (snd3 g) with
+      | Some Refl, Some Refl when (third3 f)=(third3 g) -> v
+      | _,_ -> aux tl
+ in
+  aux s
+
 
 (*** Evaluation ***)
 type truth_values = F | T | M (* false, true, maybe *)
@@ -812,7 +813,6 @@ let rec grow : type actor. _ -> _ -> _ ->
      add_transition (SmartCalculus.Value true) []
      (Presburger.Output(address,(HumanAddress,SmartCalculus.Var addr),return_ok (fst ret),ECons(snd ret,ENil)))
      id Zero res
-  | SmartCalculus.ContractCall _ -> assert false
   | SmartCalculus.Return _ -> [],res
   | SmartCalculus.SComp(entry,stack) ->
       match entry with
