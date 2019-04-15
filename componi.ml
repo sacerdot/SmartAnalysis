@@ -750,14 +750,6 @@ let do_substitution : type a b. (a,b) SmartCalculus.program -> b SmartCalculus.e
   List.map (Presburger.apply_subst_stm subst) stm_list,
    Presburger.apply_subst_expr subst ret
 
-let stack_call prog exprl f stk2 =
- let stml,ret = do_substitution prog exprl in
- stml @: SmartCalculus.Assign(f,(SmartCalculus.Expr ret))+:stk2
-
-let tail_stack_call tag prog exprl =
- let stml,ret = do_substitution prog exprl in
- stml @: SmartCalculus.Return (tag,ret)
-
 let optimize_stack_call stack f prog exprl =
  let stml,ret = do_substitution prog exprl in
  let optimized_stack =
@@ -774,7 +766,7 @@ let optimize_stack_call stack f prog exprl =
          (SmartCalculus.eq_tag (fst g) (fst f))
      | _ -> None) stack in
  match optimized_stack with
-    None -> stack_call prog exprl f stack
+    None -> stml @: SmartCalculus.Assign(f,(SmartCalculus.Expr ret))+:stack
   | Some optimized_stack -> optimized_stack
 
 
