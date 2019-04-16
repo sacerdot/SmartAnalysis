@@ -455,8 +455,8 @@ let optimize_stack_call stack f prog exprl =
 
 let rec expr_list_of_var_list : type b. b SmartCalculus.var_list -> b SmartCalculus.expr_list =
  function
-    VNil -> ENil
-  | VCons(v,tl) -> ECons(SmartCalculus.Var v,expr_list_of_var_list tl)
+    SmartCalculus.VNil -> ENil
+  | SmartCalculus.VCons(v,tl) -> ECons(SmartCalculus.Var v,expr_list_of_var_list tl)
 
 let human_call caller tag prog exprl =
  let stml,ret = do_substitution prog exprl in
@@ -686,30 +686,36 @@ end
 
   let notau_automaton = RemoveTau.remove_tau automaton
 
+  let dep = Int,TCons(Int,TNil),"dep"
+  let dep2 = Int,TCons(Int,TNil),"dep2"
+  let bid = Int,TCons(Int,TNil),"bid"
+  let bin_weight = Int,"bin_weight"
+  let bidder = Int,"bidder"
+  let off1 = Int,"off1"
+  let off2 = Int,"off2"
+  let cur_q = Int,"cur_q"
+  let id1 = String,"id1"
+  let id2 = String,"id2"
+
   let bin_body =
     Comp(Assign((Int,"bin_balance"),Expr (Symbol ("D")))
         ,Assign((Int,"weight"),Expr (Value 2)))
 
-  let dep = Int,TCons(Int,TNil),"dep"
-  let dep2 = Int,TCons(Int,TNil),"dep2"
-  let bid = Int,TCons(Int,TNil),"bid"
-  let bidder = Int,"bidder"
+  let cond = Eq(Int,Var(off1),Value 0)
+
   let contract_automaton =
-   PresburgerOfSmartCalculus.contract_to_automaton
-    (Contract "bin"
-    ,[AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[],Var(Int,"x")))
-     ;AnyMethodDecl (dep2,(VCons((Int,"z"),VNil),[Assign((Int,"zz"),Call (None,dep,ECons(Var(Int,"z"),ENil)))],Field(Int,"zz")))
-     ;AnyMethodDecl (bid,(VCons((Int,"x"),VNil),[Assign(bidder,Expr (Var (Int,"x")))],Var(Int,"x")))
-     ]
-    ,[Let(bidder,0);
-      Let((Int,"zz"),0);
-      (*Let((Int,"bin_balance"),0);
-      Let((Int,"bin_weight"),0);
-      Let((HumanAddress,"ID1"),(Human "caller"));
-      Let((HumanAddress,"ID2"),(Human "caller"));
-      Let((Int,"off1"),0);
-      Let((Int,"off2"),0);
-      Let((Int,"cur_q"),0)*)])
+    PresburgerOfSmartCalculus.contract_to_automaton
+      (Contract "bin"
+      ,[AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[Assign(bin_weight,Expr(Var(Int,"x")))],Var(Int,"x")))
+       ;AnyMethodDecl (bid,(VCons((Int,"x"),VNil),[IfThenElse(cond,Assign(off1,Expr (Var (Int,"s"))),Assign(off2,Expr (Var (Int,"s"))))],Var(Int,"s")))
+       ]
+      ,[Let(bin_weight,0);
+        Let(off1,0);
+        Let(off2,0);
+        Let(cur_q,0);
+        Let(id1,"");
+        Let(id2,"");
+        Let((Int,"zz"),0)])
 
 end
 
