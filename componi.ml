@@ -713,6 +713,10 @@ let rec change_in_assignment_list : type a. a SmartCalculus.field -> a SmartCalc
       | Some SmartCalculus.Refl when snd v = snd v' -> Presburger.Assignment(v,value)::tl
       | _ ->  hd::change_in_assignment_list v value tl
 
+(* ignore assignments to "_" *)
+let change_in_assignment_list f e subst =
+ if snd f = "_" then subst else change_in_assignment_list f e subst
+
 let make_store stack backtrackto ass1 (_,ass2) =
  (SmartCalculus.AnyStack stack,backtrackto),
   List.fold_left
@@ -947,33 +951,60 @@ end
                    (Comp(Assign((Int,"b"),Expr (Value 0)),Assign((Int,"res"),Call(None,loop,ENil)))
                    ,Comp(Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil)),Assign((Int,"x"),Expr(Symbol("y"))))))))
 
+  let balance = Int,"balance"
+  let weight = Int,"weight"
+  let _D = Symbol "D"
+  let incinerator = Value (Contract "incinerator")
+  let banca = Value (Contract "banca")
+  let bin = Value (Contract "garbage_bin")
+  let dep = Int,TCons(Int,TNil),"dep"
+  let fee = Int,TCons(Int,TNil),"fee"
+  let save = Int,TCons(Int,TNil),"save"
+  let res = Int,"res"
+  let tmp = Int,"_"
+
   let citizen_body =
-    Comp(Assign((Int,"balance"),Expr (Symbol ("D"))),
-    Comp(Assign((Int,"weight"),Expr (Value 0)),
-    Comp(Assign((Int,"balance"),Call (Some (Value(Contract "incinerator")),(Int,TCons(Int,TNil),"fee"),ECons( Symbol("D"),ENil))),
-    Comp(Assign((Int,"weight"),Expr(Value 2)),
-    Comp(Choice(Choice(
-      Comp(Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
-                Assign((Int,"weight"),Expr (Value 1))),
-                Choice(
-                  Comp(Assign((Int,"balance"),Call (None,throw,ECons(Value 1,ENil) )),
-                       Assign((Int,"weight"),Expr (Value 0))),
-                  Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
-                       Assign((Int,"weight"),Expr (Value 0)))))
-     ,Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons(Value 2,ENil))),
-           Assign((Int,"weight"),Expr (Value 0)))),
-         Choice(
-           Comp(Assign((Int,"balance"),Call (None,throw,ECons(Value 1,ENil) )),
-           Comp(Assign((Int,"weight"),Expr (Value 1)),
-                Choice(
-                  Comp(Assign((Int,"balance"),Call (None,throw,ECons( Value 1,ENil) )),
-                  Assign((Int,"weight"),Expr (Value 0))),
-           Comp(Assign((Int,"balance"),Call (Some (Value(Contract "garbage_bin")),(Int,TCons(Int,TNil),"dep"),ECons( Value 1,ENil))),
-                Assign((Int,"weight"),Expr (Value 0))))))
-         ,Comp(Assign((Int,"balance"),Call (None,throw,ECons( Value 2,ENil) )),
-                Assign((Int,"weight"),Expr (Value 0))))),
-    Comp(Assign((Int,"balance"),Call (Some (Value(Contract "banca")),(Int,TCons(Int,TNil),"save"),ECons(Var(Int,"balance"),ENil))),
-    Assign((Int,"res"),Call(None,loop,ENil))))))))
+    Comp(Assign(balance,Expr _D),
+    Comp(Assign(weight,Expr (Value 0)),
+    Comp(Assign(tmp,Call (Some incinerator,fee,ECons(_D,ENil))),
+    Comp(Assign(balance,Expr(Value 0)),
+    Comp(Assign(weight,Expr(Value 2)),
+    Comp(
+     Choice( (* kg 1/2 *)
+      (* 1 kg *)
+      Choice( (* bin yes/no *)
+       (* bin yes *)
+       Comp(Assign(tmp,Call (Some bin,dep,ECons( Value 1,ENil))),
+       Comp(Assign(balance,Expr (Plus(Var balance,Var tmp))),
+       Comp(Assign(weight,Expr (Value 1)),
+       Choice( (* bin no/yes *)
+        (* bin no *)
+        Assign(weight,Expr (Value 0)),
+        (* bin yes *)
+        Comp(Assign(tmp,Call (Some bin,dep,ECons( Value 1,ENil))),
+        Comp(Assign(balance,Expr (Plus(Var balance,Var tmp))),
+             Assign(weight,Expr (Value 0)))))))),
+       (* bin no *)
+       Comp(Assign(weight,Expr (Value 1)),
+       Choice( (* bin no/yes *)
+        (* bin no *)
+        Assign(weight,Expr (Value 0)),
+        (* bin yes *)
+        Comp(Assign(tmp,Call (Some bin,dep,ECons( Value 1,ENil))),
+        Comp(Assign(balance,Expr (Plus(Var balance,Var tmp))),
+             Assign(weight,Expr (Value 0))))))),
+      (* 2 kg *)
+      Choice( (* bin no/yes *)
+       (* bin no *)
+       Assign(weight,Expr (Value 0)),
+       (* bin yes *)
+       Comp(Assign(tmp,Call (Some bin,dep,ECons( Value 2,ENil))),
+       Comp(Assign(balance,Expr (Plus(Var balance,Var tmp))),
+            Assign(weight,Expr (Value 0)))))),
+    Comp(Assign(tmp,Call (Some banca,save,ECons(Var balance,ENil))),
+    Comp(Assign(tmp,Expr (Value 0)),
+    Comp(Assign(balance,Expr (Value 0)),
+    Assign(res,Call(None,loop,ENil)))))))))))
 
   (* let garbagebin_body =
     Comp(Assign((Int,"bin_balance"),Expr (Symbol ("D"))),
@@ -984,13 +1015,10 @@ end
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton
     (Human "citizen"
-    ,[AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
-      AnyMethodDecl (loop,(VNil,[citizen_body],Var(Int,"res")));
-      AnyMethodDecl (throw,(VCons((Int,"x"),VNil),[],Var(Int,"x")))]
-
-    , [Let((Int,"balance"),0)
-      ;Let((Int,"weight"),0)]
-    ,SComp(Stm (Assign((Int,"res"),Call(None,loop,ENil))),Return(Int, Var (Int,"res"))))
+    ,[AnyMethodDecl (loop,(VNil,[citizen_body],Var res))]
+    , [Let(balance,0)
+      ;Let(weight,0)]
+    ,SComp(Stm (Assign(res,Call(None,loop,ENil))),Return(Int, Var res)))
 
   let notau_automaton = RemoveTau.remove_tau automaton
 
