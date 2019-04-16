@@ -1,0 +1,26 @@
+(* libreria di parser combinators *)
+type parser = string -> string*AST
+
+const : string -> (string -> ast) parser
+es.  const "ciao" f "ciao bello" = "bello",f "ciao"
+     const "ciao" f "buongionro" = eccezzione
+
+let concat : parser -> parser -> (ast -> ast -> ast) -> parser
+= fun p1 p2 f s ->
+ let rest1,ast1 = p1 s in
+ let rest2,ast2 = p2 rest1 in
+ rest2,f ast1 ast2
+
+let choice : parser -> parser -> parser
+= fun p1 p2 s -> try p1 s with Fail -> p2 s
+
+(* esempio di uso *)
+f ::= "ciao" | g "x" | g "y" | h*
+
+let f = choice (const "ciao" xx1) 
+         (choice (concat g (const "x" xx2) xx3)
+           ....
+            (kleenestar h xx4))
+
+(* NOTA: per motivi di efficienza/praticità invece di lavorare con string
+   lavorare con stream di caratteri *)

@@ -1,0 +1,34 @@
+**** PARSER per SmartCalculus *****
+
+- solo gli umani possono invocare Choice
+- non ammettere due variabili con lo stesso nome ma tipo diverso
+- parsare un file in input che dichiara un solo attore (contratto o umano)
+  e restituire come output un a_human o un a_contract
+- prevedi commenti
+- esempio di input:
+
+Human citizen
+ /* campi */
+ int balance = 0
+ int weight = 2
+
+ /* metodi */
+ int dep(int x, bool b) {
+   /* test intelligente */
+   if b && x > 0 then
+     weight = weight - 1
+   else
+     balance = 1
+   return balance
+ }
+
+ /* codice iniziale; oppure a tua
+    scelta un metodo "main" da cui
+    generi tu come codice iniziale la
+    chiamata iniziale */
+ return dep(3, true)
+
+- come scrivere il parser:
+  * parser combinators
+  * libreria menhir di OCaml o altre "simili"
+    eviterei però camlp4 e camlp5
