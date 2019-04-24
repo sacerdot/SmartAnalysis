@@ -370,7 +370,7 @@ let pp_any_stack_backtrack (s,bt) =
   match bt with None -> "_" | Some id -> Presburger.pp_id id
 
 let rec change_in_assignment_list : type a. a SmartCalculus.field -> a SmartCalculus.expr -> Presburger.assignment list -> Presburger.assignment list =
- fun v value -> function
+  fun v value -> function
     [] -> assert false
   | Presburger.Assignment(v',_) as hd::tl ->
      match SmartCalculus.eq_tag (fst v) (fst v') with
@@ -385,7 +385,7 @@ let make_store stack backtrackto ass1 (_,ass2) =
  (SmartCalculus.AnyStack stack,backtrackto),
   List.fold_left
    (fun ass2 (Presburger.Assignment(v,value)) ->
-     change_in_assignment_list v value ass2) ass2 ass1
+      change_in_assignment_list v value ass2) ass2 ass1
 
 (* assign is the NEW assignment after the transition
    returns (new_states_generated,(sp',tp')) *)
@@ -600,7 +600,7 @@ end
 
   let id = Int,TCons(Int,TNil),"id"
   let throw = Int,TCons(Int,TNil),"throwAway"
-
+  let res = Int,"res"
   let loop = Int,TNil,"loop"
   let loop_body =
     Comp
@@ -614,6 +614,17 @@ end
                ,Choice
                    (Comp(Assign((Int,"b"),Expr (Value 0)),Assign((Int,"res"),Call(None,loop,ENil)))
                    ,Comp(Assign((Int,"d"),Call (Some (Value(Contract "foo")),(Int,TNil,"foo"),ENil)),Assign((Int,"x"),Expr(Symbol("y"))))))))
+
+  let test_automaton =
+    PresburgerOfSmartCalculus.human_to_automaton
+      (Human "test"
+         ,[AnyMethodDecl (id,(VCons((Int,"w"),VNil),[],Var(Int,"w")));
+          AnyMethodDecl (loop,(VNil,[loop_body],Var(Int,"res")))]
+      , [Let((Int,"x"),0)
+        ;Let((Int,"r"),0)
+        ;Let((Int,"b"),0)
+        ;Let((Int,"d"),0)]
+      ,SComp(Stm (Assign(res,Call(None,loop,ENil))),Return(Int, Var res)))
 
   let balance = Int,"balance"
   let weight = Int,"weight"
@@ -670,11 +681,6 @@ end
     Comp(Assign(balance,Expr (Value 0)),
     Assign(res,Call(None,loop,ENil)))))))))))
 
-  (* let garbagebin_body =
-    Comp(Assign((Int,"bin_balance"),Expr (Symbol ("D"))),
-         Comp(Assign((Int,"bin_weight"),Expr (Value (2))),
-              Assign((Int,"balance"),Call (Some (Value(Human "citizen")),(Int,TCons(Int,TNil),"dep"),ECons( Symbol("D"),ENil))))) *)
-
 
   let automaton =
    PresburgerOfSmartCalculus.human_to_automaton
@@ -688,34 +694,81 @@ end
 
   let dep = Int,TCons(Int,TNil),"dep"
   let dep2 = Int,TCons(Int,TNil),"dep2"
-  let bid = Int,TCons(Int,TNil),"bid"
+  let bid = Int,TCons(Int,TCons(HumanAddress,TNil)),"bid"
   let bin_weight = Int,"bin_weight"
   let bidder = Int,"bidder"
   let off1 = Int,"off1"
   let off2 = Int,"off2"
-  let cur_q = Int,"cur_q"
-  let id1 = String,"id1"
-  let id2 = String,"id2"
+  let id1 = HumanAddress,"id1"
+  let id2 = HumanAddress,"id2"
+  let bin_balance = Int,"bin_balance"
+  let _R = Symbol "_R"
+  let min_off = Symbol "min_off"
+  let max_balance = Symbol "max_balance"
+  let _M = Symbol "_M"
+  let num_off = Int,"num_off"
+  let notify = Int,TCons(Int,TCons(HumanAddress,TNil)),"notify"
+  let winner_off = Int,"winner_off"
+  let winner_truck = HumanAddress,"winner_truck"
 
   let bin_body =
-    Comp(Assign((Int,"bin_balance"),Expr (Symbol ("D")))
-        ,Assign((Int,"weight"),Expr (Value 2)))
+    Comp(Assign(bin_weight,Expr(Value 0)),
+         Comp(Assign(bin_balance,Expr(Value 10)),
+              Assign(num_off,Expr(Value 0))))
 
-  let cond = Eq(Int,Var(off1),Value 0)
+  let dep_body =
+    (* aggiungere controllo che siamo in fase di deposito *)
+    Comp(Assign(bin_balance,Expr(_M)),
+    IfThenElse(
+       And(Eq(Int,Var(Int,"x"),Value 1),Not(Gt(Var(bin_weight),Value 2))), (* se butto un kg e non sono pieno *)
+       Comp(Assign(bin_weight,Expr(Var(Int,"x"))),
+            Assign(bin_balance,Expr (Plus(Var bin_balance, Minus(_R))))),
+       IfThenElse(
+        And(Eq(Int,Var(Int,"x"),Value 2),Eq(Int,Var bin_weight,Value 0)), (* se butto due kg e non sono pieno *)
+        Comp(Assign(bin_weight,Expr(Var(Int,"x"))),
+             Assign(bin_balance,Expr (Plus(Var bin_balance, Mult(Numeric 2,Minus(_R)))))),
+        Assign(tmp,Expr Fail))))
+
+
+   let bid_body =
+     (* aggiungere controllo che siamo in fase di bidding *)
+     Comp(Assign(num_off,Expr(Value 0)),
+     Comp(
+      IfThenElse(And(Not(Gt(Var(Int,"x"),min_off)),Eq(Int,Var bin_weight,Value 2)),
+                IfThenElse(Eq(Int,Var(num_off),Value 0),
+                Comp(Comp(Comp(Assign(off1,Expr (Var (Int,"x"))),
+                      Assign(bin_balance,Expr(Var(Int,"x")))),
+                      Assign(id1,Expr(Var(HumanAddress,"name")))),
+                      Assign(num_off,Expr(Plus(Var num_off, Value 1))))
+               ,Comp(Comp(Comp(Assign(off2,Expr (Var (Int,"x"))),
+                      Assign(bin_balance,Expr(Var(Int,"x")))),
+                      Assign(id2,Expr(Var(HumanAddress,"name")))),
+                      Assign(num_off,Expr(Plus(Var num_off, Value 1)))))
+                ,Assign(tmp,Expr Fail))
+           ,IfThenElse(Eq(Int,Var num_off,Value 2),
+                Comp(IfThenElse(Gt(Var off1,Var off2),
+                   Comp(Assign(winner_off,Expr( Var off1)), Assign(winner_truck, Expr(Var id1))),
+                   Comp(Assign(winner_off,Expr( Var off2)), Assign(winner_truck, Expr(Var id2))))
+                  ,Assign(tmp,Call(Some incinerator,notify,ECons(Var winner_off,ECons(Var winner_truck,ENil)))))
+      ,Assign(tmp,Expr Fail))))
 
   let contract_automaton =
     PresburgerOfSmartCalculus.contract_to_automaton
       (Contract "bin"
-      ,[AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[Assign(bin_weight,Expr(Var(Int,"x")))],Var(Int,"x")))
-       ;AnyMethodDecl (bid,(VCons((Int,"x"),VNil),[IfThenElse(cond,Assign(off1,Expr (Var (Int,"s"))),Assign(off2,Expr (Var (Int,"s"))))],Var(Int,"s")))
-       ]
+      ,[
+       AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[dep_body],Var(tmp)))
+      ;AnyMethodDecl (bid,(VCons((Int,"x"),VCons((HumanAddress,"name"),VNil)),[bid_body],Var(tmp)))
+       (* ;AnyMethodDecl (loop,(VNil,[bid_body],Var res)) *)
+      ]
       ,[Let(bin_weight,0);
+        Let(bin_balance,0);
         Let(off1,0);
         Let(off2,0);
-        Let(cur_q,0);
-        Let(id1,"");
-        Let(id2,"");
-        Let((Int,"zz"),0)])
+        Let(id1, Human "caller");
+        Let(id2, Human "caller");
+        Let(num_off,0)])
+
+  let notau_bin = RemoveTau.remove_tau contract_automaton
 
 end
 
@@ -1019,9 +1072,12 @@ end
   [ (*"basiccitizen_bin",basiccitizen_bin
   ; "basictruck_bin",basictruck_bin
   ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
-  ;*) "basiccitizen_bin",pp_automaton pp_bool basiccitizen_bin
+      ;*) "basiccitizen_bin",pp_automaton pp_bool basiccitizen_bin
+    ; "test",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.test_automaton
     ; "citizen",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.automaton
     ; "citizen_notau",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.notau_automaton
+    ; "bin_notau",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.notau_bin
+
     ; "bin",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.contract_automaton
   ]
 
