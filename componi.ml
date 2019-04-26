@@ -716,9 +716,8 @@ end
          Comp(Assign(bin_balance,Expr(Value 10)),
               Assign(num_off,Expr(Value 0))))
 
-  let dep_body =
+  (* let dep_body =
     (* aggiungere controllo che siamo in fase di deposito *)
-    Comp(Assign(bin_balance,Expr(_M)),
     IfThenElse(
        And(Eq(Int,Var(Int,"x"),Value 1),Not(Gt(Var(bin_weight),Value 2))), (* se butto un kg e non sono pieno *)
        Comp(Assign(bin_weight,Expr(Var(Int,"x"))),
@@ -727,38 +726,51 @@ end
         And(Eq(Int,Var(Int,"x"),Value 2),Eq(Int,Var bin_weight,Value 0)), (* se butto due kg e non sono pieno *)
         Comp(Assign(bin_weight,Expr(Var(Int,"x"))),
              Assign(bin_balance,Expr (Plus(Var bin_balance, Mult(Numeric 2,Minus(_R)))))),
-        Assign(tmp,Expr Fail))))
+        Assign(tmp,Expr Fail))) *)
+
+  let dep_body =
+    IfThenElse(And(Gt(Value 2,Var(bin_weight)),Geq(Value 2,Var(Int,"x"))),
+               IfThenElse(Eq(Int,Var bin_weight,Value 0),
+                          IfThenElse(Eq(Int,Var(Int,"x"),Value 1),
+                                     Comp(Assign(bin_balance,Expr(Plus(_M,Minus(_R)))),
+                                          Assign(bin_weight,Expr(Value 1))),
+                                     Comp(Assign(bin_balance,Expr(Plus(_M,Minus(Mult(Numeric 2,_R))))),
+                                          Assign(bin_weight,Expr(Value 2)))),
+                          IfThenElse(Eq(Int,Var(Int,"x"),Value 1),
+                                     Comp(Assign(bin_balance,Expr(Plus(_M,Minus(Mult(Numeric 2,_R))))),
+                                          Assign(bin_weight,Expr(Value 2))),
+                                     Assign(tmp,Expr Fail))),
+               Assign(tmp,Expr Fail))
 
 
-   let bid_body =
-     (* aggiungere controllo che siamo in fase di bidding *)
-     Comp(Assign(num_off,Expr(Value 0)),
+  let bid_body =
      Comp(
-      IfThenElse(And(Not(Gt(Var(Int,"x"),min_off)),Eq(Int,Var bin_weight,Value 2)),
-                IfThenElse(Eq(Int,Var(num_off),Value 0),
-                Comp(Comp(Comp(Assign(off1,Expr (Var (Int,"x"))),
-                      Assign(bin_balance,Expr(Var(Int,"x")))),
-                      Assign(id1,Expr(Var(HumanAddress,"name")))),
-                      Assign(num_off,Expr(Plus(Var num_off, Value 1))))
-               ,Comp(Comp(Comp(Assign(off2,Expr (Var (Int,"x"))),
-                      Assign(bin_balance,Expr(Var(Int,"x")))),
-                      Assign(id2,Expr(Var(HumanAddress,"name")))),
-                      Assign(num_off,Expr(Plus(Var num_off, Value 1)))))
-                ,Assign(tmp,Expr Fail))
-           ,IfThenElse(Eq(Int,Var num_off,Value 2),
-                Comp(IfThenElse(Gt(Var off1,Var off2),
-                   Comp(Assign(winner_off,Expr( Var off1)), Assign(winner_truck, Expr(Var id1))),
-                   Comp(Assign(winner_off,Expr( Var off2)), Assign(winner_truck, Expr(Var id2))))
-                  ,Assign(tmp,Call(Some incinerator,notify,ECons(Var winner_off,ECons(Var winner_truck,ENil)))))
-      ,Assign(tmp,Expr Fail))))
+       IfThenElse(And(Geq(Var(Int,"x"),min_off),Eq(Int,Var bin_weight,Value 2)),
+                  IfThenElse(Eq(Int,Var num_off,Value 0),
+                             Comp(Assign(bin_balance,Expr(Var(Int,"x"))),
+                             Comp(Assign(id1,Expr(Var(HumanAddress,"name"))),
+                             Assign(num_off,Expr(Value 1))))
+                            ,Comp(Assign(bin_balance,Expr(Var(Int,"x"))),
+                             Comp(Assign(id2,Expr(Var(HumanAddress,"name"))),
+                             Assign(num_off,Expr(Value 2)))))
+                  ,Assign(tmp,Expr(Fail)))
+       ,IfThenElse(Eq(Int,Var num_off,Value 2),
+                 Comp(IfThenElse(Gt(Var off1,Var off2),
+                                 Comp(Assign(winner_off,Expr( Var off1)), Assign(winner_truck, Expr(Var id1))),
+                                 Comp(Assign(winner_off,Expr( Var off2)), Assign(winner_truck, Expr(Var id2))))
+                ,Assign(tmp,Call(Some incinerator,notify,ECons(Var winner_off,ECons(Var winner_truck,ENil)))))
+        ,Assign(tmp,Expr(Value 0))))
+
+
 
   let contract_automaton =
     PresburgerOfSmartCalculus.contract_to_automaton
       (Contract "bin"
       ,[
+        (* AnyMethodDecl (loop,(VNil,[bid_body],Var res)) *)
+
        AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[dep_body],Var(tmp)))
       ;AnyMethodDecl (bid,(VCons((Int,"x"),VCons((HumanAddress,"name"),VNil)),[bid_body],Var(tmp)))
-       (* ;AnyMethodDecl (loop,(VNil,[bid_body],Var res)) *)
       ]
       ,[Let(bin_weight,0);
         Let(bin_balance,0);
@@ -766,7 +778,9 @@ end
         Let(off2,0);
         Let(id1, Human "caller");
         Let(id2, Human "caller");
-        Let(num_off,0)])
+        Let(num_off,0);
+        Let(winner_off,0);
+        Let(winner_truck, Human "caller")])
 
   let notau_bin = RemoveTau.remove_tau contract_automaton
 
