@@ -693,7 +693,7 @@ end
   let notau_automaton = RemoveTau.remove_tau automaton
 
   let dep = Int,TCons(Int,TNil),"dep"
-  let dep2 = Int,TCons(Int,TNil),"dep2"
+  let empty = Int,TCons(HumanAddress,TNil),"empty"
   let bid = Int,TCons(Int,TCons(HumanAddress,TNil)),"bid"
   let bin_weight = Int,"bin_weight"
   let bidder = Int,"bidder"
@@ -710,6 +710,7 @@ end
   let notify = Int,TCons(Int,TCons(HumanAddress,TNil)),"notify"
   let winner_off = Int,"winner_off"
   let winner_truck = HumanAddress,"winner_truck"
+  let tmp2 = Int,"_"
 
   let bin_body =
     Comp(Assign(bin_weight,Expr(Value 0)),
@@ -742,7 +743,6 @@ end
                                      Assign(tmp,Expr Fail))),
                Assign(tmp,Expr Fail))
 
-
   let bid_body =
      Comp(
        IfThenElse(And(Geq(Var(Int,"x"),min_off),Eq(Int,Var bin_weight,Value 2)),
@@ -755,32 +755,43 @@ end
                              Assign(num_off,Expr(Value 2)))))
                   ,Assign(tmp,Expr(Fail)))
        ,IfThenElse(Eq(Int,Var num_off,Value 2),
-                 Comp(IfThenElse(Gt(Var off1,Var off2),
-                                 Comp(Assign(winner_off,Expr( Var off1)), Assign(winner_truck, Expr(Var id1))),
-                                 Comp(Assign(winner_off,Expr( Var off2)), Assign(winner_truck, Expr(Var id2))))
-                ,Assign(tmp,Call(Some incinerator,notify,ECons(Var winner_off,ECons(Var winner_truck,ENil)))))
+                 IfThenElse(Gt(Var off1,Var off2),
+                            Comp(Assign(winner_truck,Expr(Var id1)),
+                                 Assign(winner_off,Expr(Var off1))),
+                            Comp(Assign(winner_truck,Expr(Var id2)),
+                                 Assign(winner_off,Expr(Var off2))))
         ,Assign(tmp,Expr(Value 0))))
 
-
+  let empty_body =
+    IfThenElse(And(Eq(Int,Var num_off,Value 2),Eq(HumanAddress,Var winner_truck,Var (HumanAddress,"name"))),
+                  Comp(Assign(tmp,Call(Some incinerator,notify,ECons(Var winner_off,ECons(Var winner_truck,ENil)))),
+                  Comp(Assign(tmp,Call(Some banca,save,ECons(Var bin_balance,ENil))),
+                  Comp(Assign(bin_balance,Expr(Value 0)),
+                  Comp(Assign(bin_weight,Expr(Value 0)),
+                  Comp(Assign(num_off,Expr(Value 0)),
+                  Comp(Assign(off1,Expr(Value 0)),
+                  Comp(Assign(off2,Expr(Value 0)),
+                  Comp(Assign(id1,Expr(Var(HumanAddress, ""))),
+                  Assign(id2,Expr(Var(HumanAddress, ""))))))))))),
+              Assign(tmp,Expr(Fail)))
 
   let contract_automaton =
     PresburgerOfSmartCalculus.contract_to_automaton
       (Contract "bin"
       ,[
-        (* AnyMethodDecl (loop,(VNil,[bid_body],Var res)) *)
-
        AnyMethodDecl (dep,(VCons((Int,"x"),VNil),[dep_body],Var(tmp)))
       ;AnyMethodDecl (bid,(VCons((Int,"x"),VCons((HumanAddress,"name"),VNil)),[bid_body],Var(tmp)))
+      ;AnyMethodDecl (empty,(VCons((HumanAddress,"name"),VNil),[empty_body],Var(tmp)))
       ]
       ,[Let(bin_weight,0);
         Let(bin_balance,0);
         Let(off1,0);
         Let(off2,0);
-        Let(id1, Human "caller");
-        Let(id2, Human "caller");
-        Let(num_off,0);
-        Let(winner_off,0);
-        Let(winner_truck, Human "caller")])
+        Let(id1, Human "");
+        Let(id2, Human "");
+        Let(winner_truck, Human "");
+        Let(winner_off, 0);
+        Let(num_off,0)])
 
   let notau_bin = RemoveTau.remove_tau contract_automaton
 
