@@ -677,12 +677,12 @@ end
 
   let simple_dep_body =
     IfThenElse(Eq(Int,Var h,Value 0),
-               Comp(Assign(h,Expr(Value 0)),
+               Comp(Assign(h,Expr(Value 1)),
                     Assign(res,Expr(Plus(Var a, Minus(k))))),
-               Comp(Assign(a,Call (Some banca,save,ECons((Plus(Var a, k)),ENil))),
+               Comp(Assign(tmp,Call (Some banca,save,ECons((Plus(Var a, k)),ENil))),
+                    Comp(Assign(a,Expr(Var tmp)),
                     Comp(Assign(tmp,Call (Some truck,empty,ECons(Value 0,ENil))),
-                         Assign(res,Expr(k)))))
-
+                         Assign(res,Expr(k))))))
 
   let contract_automaton =
     PresburgerOfSmartCalculus.contract_to_automaton
