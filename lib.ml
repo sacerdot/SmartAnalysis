@@ -12,5 +12,18 @@ let rec map_skip f =
         None -> map_skip f xs
       | Some y -> y :: map_skip f xs
 
+let classify f =
+ let rec aux ~p ~np =
+  function
+     [] -> p,np
+   | hd::tl ->
+      let p,np =
+       match f hd with
+          `True x  -> x::p,np
+        | `False x -> p,x::np in
+      aux ~p ~np tl
+ in
+  aux ~p:[] ~np:[]
+
 let pp_unit () = ""
 let pp_bool = string_of_bool
