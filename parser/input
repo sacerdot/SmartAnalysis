@@ -1,1 +1,21 @@
-xabab
+Human citizen
+ (* campi *)
+ int balance = 0
+ int weight = 2
+
+ (* metodi *)
+ int dep(int x, bool b) {
+   (* test intelligente *)
+   if ((x > 0) == (true && !b)) || (x < -157) then
+     weight =  5 * max((weight + 1),(54 -4)) + 7
+   else
+     balance = 1
+ } return balance
+
+ int init(int x){
+     x = dep (3, true) 
+ }return x
+ 
+ (* chiamata iniziale*)
+ return init(0)
+
