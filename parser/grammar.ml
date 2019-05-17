@@ -3,8 +3,6 @@ open SmartCalculus
 open ParserCombinator
 open Genlex
 
-type any_expr = AnyExpr : 'a tag * 'a expr -> any_expr
-
 (*Utils*)
 
 let fst = (fun x _ -> x)
@@ -116,78 +114,40 @@ let base tag =
         const (Kwd "fail") (fun _ -> SmartCalculus.Fail);
     ]
 (* Int Expression
- * base_int_expr := int | "-" base_int_expr | varname
- * int_expr := base int_expr ("+" int_expr |  "*" int_expr | "-" int_expr) | "max" int_expr int_expr 
- * | "(" int_expr ")"
+ * atomic_int_expr :=
+    int | "-" atomic_int_expr | varname | "(" int_expr ")" | "max" int_expr int_expr 
+ * int_expr := atomic_int_expr cont_int_expr
+ * cont_int_expr ::= eoexpr | "+" int_expr | "*" int_expr | "-" int_expr |
+ * eoexpr ::= EOL | with lookahead ")"
  *)
-let int_expr = 
-    (*input è quello che ho già parsato, mentre s è quello che devo ancora parsare*)
-   (let rec rec_int_expr input s tbl =
-        let int_base =
-            choice_list [
-                (*Symbol*)
-                val_token (fun t -> match t with | String x -> Symbol(x) | _ -> raise Fail);
-                int; base Int;] in
-
-        let single_input f ast =
-            match input with
-            | None -> rec_int_expr (Some (f ast))
-            | _ -> raise Fail in
-
-        let double_input f ast =
-            match input with
-            | Some x -> rec_int_expr (Some (f x ast))
-            | _ -> raise Fail in
-
-        let pars_operator pars f s tbl =
-            let (ns,nast,ntbl) = pars s tbl in
-            single_input f nast ns ntbl in 
-
-        let single_operator tok f =
-            pars_operator (concat (const tok ignore)
-            (rec_int_expr None) scd) f in 
-
-
-        let double_operator tok f s tbl =
-            let (ns,nast,ntbl) = (concat (const tok ignore)
-            (rec_int_expr None) scd) s tbl in 
-            double_input f nast ns ntbl in
-
-        (try
-            choice_list [ 
-                (*mult int*)
-                pars_operator 
-                (concat int (concat (const (Kwd "*") ignore) 
-                (rec_int_expr None) scd) mult_int) identity; 
-                (*mult string*)
-                pars_operator (concat string (concat (const (Kwd "*") ignore) 
-                (rec_int_expr None) scd) mult_string) identity;
-                (*base*)
-                pars_operator int_base identity;
-                (*plus*)
-                double_operator (Kwd "+") plus;
-                (*minus*)
-                double_operator (Kwd "-") subtract;
-                (*single minus*)
-                single_operator (Kwd "-") minus;
-                (*max*)
-                pars_operator 
-                (concat (const (Kwd "max") ignore)
-                (concat (concat (const (Kwd "(") ignore) (concat (rec_int_expr None)
-                (const (Kwd ",") ignore) fst) scd) (concat (rec_int_expr None)
-                (const (Kwd ")") ignore) fst) max ) scd) identity;
-                (*brackets*)
-                pars_operator 
-                (concat (concat (const (Kwd "(") ignore) (rec_int_expr
-                    None) scd) (const (Kwd ")") ignore) fst) identity; 
-            ] s tbl
-            with Fail -> (match input with
-            | None -> raise Fail
-            | Some x -> (s,x,tbl)))
-        in rec_int_expr None)
+let rec atomic_int_expr s =
+ choice_list [
+   int ; concat (const (Kwd "-") ignore) atomic_int_expr (fun _ -> minus) ; base Int ;
+   concat (concat (const (Kwd "(") ignore) int_expr scd) (const (Kwd ")") ignore) fst ;
+   concat (concat (const (Kwd "max") ignore) int_expr scd) int_expr max
+ ] s
+and int_expr s =
+ concat atomic_int_expr cont_int_expr (fun x f -> f x) s
+and binop s =
+ choice_list [
+  const (Kwd "+") (fun _ -> plus) ;
+  const (Kwd "*") (fun _ -> mult_int) ;
+  const (Kwd "-") (fun _ -> subtract)
+ ] s
+and cont_int_expr s =
+ choice_list [
+  eoexpr identity ;
+  concat binop int_expr (fun f x -> f x)
+ ] s
+and eoexpr ast s =
+ choice_list [
+  eol ast ;
+  lookahead ast (Kwd ")")
+ ] s
+and eol ast s tbl = match s with [] -> [],ast,tbl | _ -> raise Fail
+and lookahead ast t s tbl = match s with t'::_ when t=t' -> s,ast,tbl | _ -> raise Fail
 
 let str_expr = (choice (base String) string)
-
         
 let bool_expr = 
         (*input è quello che ho già parsato, mentre s è quello che devo ancora parsare*)
@@ -268,23 +228,14 @@ let bool_expr =
         in rec_bool_expr None
 
 
-let expr_gr (AnyTag tag) s tbl =
-    let pars p = (let (s1, ast1, tbl1) = p s tbl in s1,(AnyExpr(tag,ast1)),tbl1) in
-    match tag with
-    | Int -> pars int_expr
-    | Bool -> pars bool_expr
-    | ContractAddress -> pars (choice (base ContractAddress) (const (Kwd "this")
-    (fun _ -> This)))
-    | String -> pars str_expr
-    | x -> pars (base x)
-
-let any_expr_gr = choice_list[
-    expr_gr (AnyTag Int);
-    expr_gr (AnyTag Bool);
-    expr_gr (AnyTag String);
-    expr_gr (AnyTag ContractAddress);
-    expr_gr (AnyTag HumanAddress);
-    ]
+let expr_gr : type a. a SmartCalculus.tag -> a SmartCalculus.expr parser
+ = fun tag ->
+  match tag with
+    | SmartCalculus.Int -> int_expr
+    | Bool -> bool_expr
+    | ContractAddress -> choice (base ContractAddress) (const (Kwd "this") (fun _ -> This))
+    | String -> str_expr
+    | x -> base x
 
 (*Method call*)
 

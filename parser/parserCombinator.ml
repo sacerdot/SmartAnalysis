@@ -23,6 +23,22 @@ type any_actor =
     | ActCon: a_contract -> any_actor
 exception Fail
 
+type any_meth = AnyMeth : ('a,'b) SmartCalculus.meth -> any_meth
+
+check_type : type a. a tag -> any_expr -> a expr
+
+concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser
+
+let parse_method_call : string -> any_expr parser =
+ fun m ->
+  let rec aux
+     [] -> assert false
+   | (AnyMeth (tag,tags,name))::_ when name = m ->
+       concat_list tags (fun el -> ... Call(...,el,))
+   | _::tl -> aux tl
+  in
+   aux tbl
+
 let rec npeek n stream =
  match n,stream with
     0,_ -> []
@@ -46,9 +62,7 @@ let rec nnext : int -> 'a t -> 'a t =
     fun n stream ->
      if n = 0 then stream else nnext (n-1) (junk stream)
 
-let rec print_list = function 
-    [] -> ()
-    | e::l -> print_string e;print_string " "; print_list l
+let print_list = String.concat " "
 
 (*table*)
 let get_vartag : vartable -> string -> any_tag option =
