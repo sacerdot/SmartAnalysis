@@ -1,4 +1,4 @@
-(*
+    (*
 stm ::= type varname | varname "=" rhs | "if " bexpr "then" stm "else" stm | 
         stm "+" stm | def_funct | type varname "()"| "{" stm "}" | "/*" stringc "*/"
         *)
@@ -13,37 +13,84 @@ type 'a t = 'a list
 type any_expr = AnyExpr : 'a tag * 'a expr -> any_expr
 type any_tag = AnyTag : 'a tag -> any_tag
 type any_field = AnyField: 'a SmartCalculus.field -> any_field
+type any_meth = AnyMeth : ('a,'b) SmartCalculus.meth -> any_meth
+type any_tag_list = AnyTagList : 'a SmartCalculus.tag_list -> any_tag_list
 type any_field_or_fun = 
-    | Field: any_field * string -> any_field_or_fun
-    | Fun:  any_tag * (any_tag list) * string -> any_field_or_fun
+    | Field: 'a tag * string * string -> any_field_or_fun
+    | Fun:  ('a, 'b) SmartCalculus.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
 type any_rhs = AnyRhs: 'a tag * 'a rhs -> any_rhs
 type any_actor = 
     | ActHum: a_human -> any_actor
     | ActCon: a_contract -> any_actor
+type 'ast parser = token t -> vartable -> token t * 'ast * vartable
 exception Fail
 
-type any_meth = AnyMeth : ('a,'b) SmartCalculus.meth -> any_meth
-
+(*
 check_type : type a. a tag -> any_expr -> a expr
+*)
+(*Utils*)
 
-concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser
+let fst = (fun x _ -> x)
+let scd = (fun _ x -> x)
 
-let parse_method_call : string -> any_expr parser =
- fun m ->
-  let rec aux
-     [] -> assert false
-   | (AnyMeth (tag,tags,name))::_ when name = m ->
-       concat_list tags (fun el -> ... Call(...,el,))
-   | _::tl -> aux tl
-  in
-   aux tbl
+let addel = (fun l el -> l@[el]) 
+let identity = (fun x -> x)
 
-let rec npeek n stream =
- match n,stream with
-    0,_ -> []
-  | _,[] -> []
-  | _,hd::tl -> hd::npeek (n-1) tl
+(*print*)
+let rec print_token_list l =
+    match l with
+    | (Kwd x)::l -> print_string "Kwd "; print_string x; print_endline ""; print_token_list l
+    | (Ident x)::l -> print_string "Ident "; print_string x; print_endline ""; print_token_list l
+    | (Int n)::l -> print_string "int "; print_int n; print_endline ""; print_token_list l
+    | (Char c)::l -> print_string "char "; print_char c; print_endline ""; print_token_list l
+    | (String s)::l -> print_string "string "; print_string s; print_endline ""; print_token_list l
+    | _ -> ()
+
+let rec print_table=
+    function
+    | [] -> print_endline
+    | Field (t,f,_)::tl -> print_endline (pp_field (t,f)); print_table tl
+    | Fun (meth)::tl -> print_endline(pp_meth meth); print_table tl
+
+
+(*Cast*)
+let check_type : type a. a tag -> any_expr -> a expr =
+    fun tag expr ->
+        match expr,tag with
+        | AnyExpr(_,Fail),_ -> Fail
+        | AnyExpr(Int,Symbol(s)),String -> Value(s)
+        | AnyExpr(String,Value(s)),Int -> Symbol(s)
+        | AnyExpr(t, e),_ -> 
+                match eq_tag tag t with 
+                | Some Refl -> e
+                | _ -> raise Fail 
+
+let value =
+    function
+    | Genlex.String x -> AnyExpr(String, Value x)
+    | Int x -> AnyExpr(Int,Value x)
+    | Kwd "true" -> AnyExpr(Bool,Value true)
+    | Kwd "false" -> AnyExpr(Bool,Value false)
+    | Kwd "this" -> AnyExpr(ContractAddress, This)
+    | _ -> raise Fail
+
+let rec remove_minspace =
+    function
+    | [] -> []
+    | (Genlex.Int x)::tl -> 
+            if (x < 0) then [(Kwd "-")]@[(Genlex.Int (-x))]@(remove_minspace tl) else
+                [(Genlex.Int x)]@(remove_minspace tl)
+    | hd::tl -> [hd]@(remove_minspace tl)
+
+let getopt: 'a option -> 'a =
+    function
+    | Some x -> x
+    | _ -> raise Fail
+
+let comb_parser: 'a parser -> ('a -> 'b) -> 'b parser =
+    fun pars f s tbl ->
+        let (ns,nast,nt) = pars s tbl in ns,(f nast),nt
 
 let junk =
  function
@@ -58,63 +105,46 @@ let of_token streamt =
             Stream.Failure -> acc
     in List.rev (aux [] streamt)
 
-let rec nnext : int -> 'a t -> 'a t =
-    fun n stream ->
-     if n = 0 then stream else nnext (n-1) (junk stream)
-
-let print_list = String.concat " "
-
 (*table*)
-let get_vartag : vartable -> string -> any_tag option =
-    fun tbl s -> 
-        match (List.find_opt (fun x -> match x with Field ((AnyField (_,var)),_)
-        -> var = s | _ -> false) tbl) with
-        | Some Field((AnyField (tag,_)),_) -> Some(AnyTag tag)
-        | _ -> None
+let rec get_field : vartable -> string -> any_field option =
+    fun tbl varname -> 
+        match tbl with
+        | [] -> None
+        | Field (tag, name, _ )::_ when varname=name -> Some (AnyField(tag, name))
+        | _::tl -> get_field tl varname
 
- let add_field_to_table : vartable -> 'a tag -> string -> string -> vartable =
-    fun tbl t fieldname funname -> 
-        match get_vartag tbl fieldname with
-        | None -> List.append tbl ([Field(AnyField(t,fieldname), funname)])
+let add_field_to_table : vartable -> any_field -> string -> vartable =
+    fun tbl (AnyField(t,fieldname)) funname -> 
+        match get_field tbl fieldname with
+        | None -> List.append ([Field(t,fieldname,funname)]) tbl 
         | _ -> raise Fail
 
-let get_funtag : vartable -> string -> (any_tag*(any_tag list)) option =
-    fun tbl s -> 
-        match (List.find_opt (fun x -> match x with Fun (_,_,name) -> name = s |
-        _ -> false) tbl) with
-        | Some Fun(itag, outtags,_) -> Some (itag,outtags)
-        | _ -> None
+let rec get_fun : vartable -> string -> any_meth option =
+    fun tbl funname -> 
+        match tbl with
+        | [] -> None
+        | Fun (rettag, tagl, name)::_ when funname=name -> Some (AnyMeth(rettag, tagl,
+        name))
+        | _::tl -> get_fun tl funname
 
- let add_fun_to_table : vartable -> 'a tag -> any_tag list -> string -> vartable =
-    fun tbl t l funname -> 
-        match get_funtag tbl funname with
-        | None -> List.append tbl ([Fun(AnyTag t,l,funname)])
+ let add_fun_to_table : vartable -> ('a,'b) meth -> vartable =
+    fun tbl (t,l,funname) -> 
+        match get_fun tbl funname with
+        | None -> List.append ([Fun(t,l,funname)]) tbl
         | _ -> raise Fail
 
  let remove_local_var: vartable -> string -> vartable =
      fun tbl funname -> List.filter (fun x -> 
          match x with
-         | Field(_, name) -> (name != funname)
+         | Field(_, _ , name) -> (name != funname)
          | _ -> true
         ) tbl
    
 (*parser*)
-type 'ast parser = token t -> vartable -> token t * 'ast * vartable
-
-let val_token : (token -> 'ast) -> 'ast parser =
-    fun f t2 tbl ->
-        match t2 with
-        | (Int x) :: l -> l, f (Int x), tbl
-        | (String x) :: l -> l, f (String x), tbl
-        | (Char x) :: l -> l, f (Char x), tbl
-        | (Kwd "true") :: l -> l, f (Kwd "true") , tbl
-        | (Kwd "false") :: l -> l, f (Kwd "false") , tbl
-        | _ -> raise Fail
-
 let const : token -> (token -> 'ast) -> 'ast parser =
     fun t1 f t2 tbl ->
         if (List.length t2 > 0) && (t1 = (List.hd t2)) then
-            (nnext 1 t2), f t1, tbl
+            (junk t2), f t1, tbl
         else
             raise Fail
 
@@ -142,10 +172,11 @@ let option : 'ast parser -> 'ast option parser =
   let next,res,ntbl = p s tbl in next,Some res,ntbl
  with Fail -> s,None,tbl
 
-
 let rec choice_list: 'ast parser list -> 'ast parser
 = fun l->
     match l with
         | [] -> raise Fail
         | hd :: [] -> hd
         | hd :: tl -> choice hd (choice_list tl)
+
+let kwd str = const (Kwd str) ignore
