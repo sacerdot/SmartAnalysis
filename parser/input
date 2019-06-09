@@ -6,13 +6,19 @@ int retval = 0
 
 dep: int*bool -> int =
 fun x b -> 
-    retval = "D"
+    {retval = D} + {retval = C}
     if b && x > 0 then
         weight = weight - 1
     else
         balance = fail
 return balance
-    
-retval = 1
+
+foo: string -> int =
+fun s ->
+    s = "ciao"
+    retval = dep 4 true
+return retval 
+
+retval = foo "prova"
 return 0
 

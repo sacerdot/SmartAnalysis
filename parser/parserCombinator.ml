@@ -16,14 +16,14 @@ type any_field = AnyField: 'a SmartCalculus.field -> any_field
 type any_meth = AnyMeth : ('a,'b) SmartCalculus.meth -> any_meth
 type any_tag_list = AnyTagList : 'a SmartCalculus.tag_list -> any_tag_list
 type any_field_or_fun = 
-    | Field: 'a tag * string * string -> any_field_or_fun
+    | Field: 'a tag * string * bool -> any_field_or_fun
     | Fun:  ('a, 'b) SmartCalculus.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
 type any_rhs = AnyRhs: 'a tag * 'a rhs -> any_rhs
 type any_actor = 
     | ActHum: a_human -> any_actor
     | ActCon: a_contract -> any_actor
-type 'ast parser = token t -> vartable -> token t * 'ast * vartable
+type 'ast parser = token t -> (vartable * bool) -> token t * 'ast * (vartable * bool)
 exception Fail
 
 (*
@@ -113,10 +113,10 @@ let rec get_field : vartable -> string -> any_field option =
         | Field (tag, name, _ )::_ when varname=name -> Some (AnyField(tag, name))
         | _::tl -> get_field tl varname
 
-let add_field_to_table : vartable -> any_field -> string -> vartable =
-    fun tbl (AnyField(t,fieldname)) funname -> 
+let add_field_to_table : vartable -> any_field -> bool -> vartable =
+    fun tbl (AnyField(t,fieldname)) is_local -> 
         match get_field tbl fieldname with
-        | None -> List.append ([Field(t,fieldname,funname)]) tbl 
+        | None -> List.append ([Field(t,fieldname,is_local)]) tbl 
         | _ -> raise Fail
 
 let rec get_fun : vartable -> string -> any_meth option =
@@ -133,10 +133,10 @@ let rec get_fun : vartable -> string -> any_meth option =
         | None -> List.append ([Fun(t,l,funname)]) tbl
         | _ -> raise Fail
 
- let remove_local_var: vartable -> string -> vartable =
-     fun tbl funname -> List.filter (fun x -> 
+ let remove_local_var: vartable -> vartable =
+     fun tbl  -> List.filter (fun x -> 
          match x with
-         | Field(_, _ , name) -> (name != funname)
+         | Field(_, _ , true) -> false
          | _ -> true
         ) tbl
    
