@@ -332,6 +332,4 @@ let tokens = remove_minspace (of_token(lexer file));;
 (*print_token_list tokens;;*)
 (*let empty_t = (Fun(Int,(TCons(Int,TCons(Int,TCons(String,TNil)))),"prova"));
 Field(Int,"ciao","main")];;*)
-let (s, l, (tbl,act)) = actor_pars tokens ([],false);;
-print_token_list s;;
-print_table tbl;;
+let (s, ast, (tbl,act)) = actor_pars tokens ([],false);;

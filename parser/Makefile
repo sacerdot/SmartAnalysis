@@ -1,5 +1,5 @@
-all: parser
-	./parser
+all: compiler 
+	./compiler
 
 lib.cmo lib.cmi: lib.ml
 	ocamlc -c lib.ml
@@ -10,12 +10,13 @@ smartCalculus.cmo smartCalculus.cmi: smartCalculus.ml lib.cmi
 parserCombinator.cmo parserCombinator.cmi: parserCombinator.ml smartCalculus.cmi
 	ocamlc -c parserCombinator.ml 
 
+grammar.cmo grammar.cmi: grammar.ml grammar.cmi smartCalculus.cmi parserCombinator.cmi
+	ocamlc -c grammar.ml
 
-parser: grammar.ml parserCombinator.cmo smartCalculus.cmo lib.cmo
-	ocamlc -g -o parser unix.cma lib.cmo smartCalculus.cmo parserCombinator.cmo grammar.ml
-
+compiler: compiler.ml grammar.cmo smartCalculus.cmo parserCombinator.cmo lib.cmo
+	ocamlc -g -o compiler unix.cma lib.cmo smartCalculus.cmo parserCombinator.cmo grammar.cmo compiler.ml
 
 clean:
-	rm -f *.cmi *.cmo parser
+	rm -f *.cmi *.cmo compiler
 
 
