@@ -11,9 +11,7 @@ and expression =
     | Leaf of string
     | BinOp of string * expression * expression
     | UnaryOp of string * expression
-and parameters =
-    | PNil
-    | PCons of (string * expression) * parameters
+and parameters = (string * string) list
 
 exception CompilationFail
 
@@ -75,24 +73,27 @@ and bool_expr : bool expr -> expression =
         | Or (e1, e2) -> BinOp ("||",(bool_expr e1),(bool_expr e2))
         | Not e -> UnaryOp ("!", (bool_expr e))
         | e -> comp_expr (AnyExpr(Bool,e))
-(*
-let rec get_parameters : 'a tag_list -> 'a expr_list -> parameters= 
-    fun tl par ->
-        match (tl,par) with
-        ((TCons(th,ttl)),(ECons(eh,etl))) -> 
-            PCons (((string_of_anytag(AnyTag th)),(comp_expr(AnyExpr (th,eh) ))),(get_parameters ttl etl))
-        | _,_ -> PNil
+
+let rec get_parameters : type a. any_tag_list -> a var_list -> parameters = 
+    fun tagl parlist ->
+        match (tagl,parlist) with
+        | (AnyTagList(TCons(taghead,tagtail))),(VCons((tagvar,var),vartail)) -> 
+            (match eq_tag taghead tagvar with
+            | Some _ -> 
+                (get_parameters (AnyTagList tagtail)
+                vartail)@[(string_of_anytag(AnyTag taghead)),var]
+            | None -> raise CompilationFail)
+        | _,_ -> []
     
 let comp_funct : any_method_decl -> ast = 
     function AnyMethodDecl((tagret, taglist, name),(parameters, stmlist, retexpr))
     -> Function 
         (name,
-        (get_parameters taglist parameters),
+        (get_parameters (AnyTagList taglist) parameters),
         "",
         "",
         Empty,
         Empty)
-*)
 
 let comp_decl :  assign -> ast =
     function Let ((t,name),v) -> Declaration((string_of_anytag (AnyTag t)),name,
