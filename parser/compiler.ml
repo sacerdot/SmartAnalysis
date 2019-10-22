@@ -2,17 +2,25 @@ open Grammar
 open SmartCalculus
 open ParserCombinator
 
-type ast =
-    | Empty
-    | Declaration of string * string * expression
-    | Function of string * parameters * string * string * ast * ast
-    (*name,parameters,visibility,view,outputs,stm*) 
-and expression =
+type expression =
     | Leaf of string
     | BinOp of string * expression * expression
     | UnaryOp of string * expression
-and parameters = (string * string) list
+    | Call of string * (expression list)
+type parameters = (string * string) list
+type declaration = Declaration of string * string * expression
+type statement = 
+    | IfElse of expression * statement * statement 
+    | Assignment of string * expression 
+    | Sequence of statement * statement
+    | StmList of statement list
+type funct =  Function of string * parameters * string * string * string * statement *
+    expression
+    (*name,parameters,visibility,view,outtype,stm,return*) 
 
+type ast =
+    | Empty
+    | Contract of string * (declaration list) * (funct list) 
 exception CompilationFail
 
 let get_varname : 'a ident -> string = function (_, name) -> name
@@ -74,6 +82,24 @@ and bool_expr : bool expr -> expression =
         | Not e -> UnaryOp ("!", (bool_expr e))
         | e -> comp_expr (AnyExpr(Bool,e))
 
+let comp_decl  =
+    function Let ((t,name),v) -> Declaration((string_of_anytag (AnyTag t)),name,
+    comp_expr (AnyExpr(t,(Value v))))
+
+let rec map_expr_list : type c. (any_expr -> 'a) -> c tag_list -> c expr_list-> 'a list =
+    fun f tlist elist ->
+        match tlist,elist with 
+        | (TCons(t,ttail)),(ECons(e,etail)) -> (f (AnyExpr(t,e)))::(map_expr_list
+        f ttail etail)
+        | _,_-> raise CompilationFail
+(*TODO: Verify function type*)
+let comp_rhs : any_rhs -> expression =
+    fun (AnyRhs (tag,rhs)) ->
+        match rhs with
+        | Expr e -> comp_expr (AnyExpr(tag,e))
+        | Call (opt, (funtag, tags, name), (elist)) -> Call (name,(map_expr_list comp_expr tags elist))
+
+
 let rec get_parameters : type a. any_tag_list -> a var_list -> parameters = 
     fun tagl parlist ->
         match (tagl,parlist) with
@@ -84,29 +110,68 @@ let rec get_parameters : type a. any_tag_list -> a var_list -> parameters =
                 vartail)@[(string_of_anytag(AnyTag taghead)),var]
             | None -> raise CompilationFail)
         | _,_ -> []
-    
-let comp_funct : any_method_decl -> ast = 
+ 
+let rec comp_stm : stm -> statement = 
+    function 
+        | Assign((tag, name),rhs) -> Assignment ((get_varname (tag,name)),(comp_rhs(AnyRhs(tag,rhs))))
+        | IfThenElse(expr,stm1,stm2) -> IfElse ((bool_expr expr),(comp_stm
+        stm1),(comp_stm stm2))
+        | Comp (stm1,stm2) -> Sequence((comp_stm stm1),(comp_stm stm2))
+        | _ -> raise CompilationFail
+
+let rec comp_stmlist  = 
+    fun stms stml ->
+        match stml with 
+        | (StmList l) -> (
+            match stms with  
+            | [] -> StmList l
+            | h::tl -> comp_stmlist tl (StmList (l@[(comp_stm h)])))
+        | _ -> raise CompilationFail
+
+let comp_funct = 
     function AnyMethodDecl((tagret, taglist, name),(parameters, stmlist, retexpr))
     -> Function 
         (name,
         (get_parameters (AnyTagList taglist) parameters),
         "",
         "",
-        Empty,
-        Empty)
+        (string_of_anytag (AnyTag tagret)),
+        (comp_stmlist stmlist (StmList [])),
+        (comp_expr (AnyExpr(tagret,retexpr))))
 
-let comp_decl :  assign -> ast =
-    function Let ((t,name),v) -> Declaration((string_of_anytag (AnyTag t)),name,
-    comp_expr (AnyExpr(t,(Value v))))
-        
-    (*
-let rec inorder_visit : ('a -> unit) -> 'a tree -> unit  = 
-    fun f t -> 
-        match t with 
-        | Node (s,(h::tl))-> (f s; inorder_visit f h; List.iter (inorder_visit f) tl)
-        | Node (s,_) -> f s
-        | Empty -> ()
+let comp_contract : a_contract -> ast =
+    function (add, meths, fields) ->
+        match add with
+        | Contract name -> Contract(name, (List.map comp_decl
+    fields), (List.map comp_funct meths))
+        | _ -> raise CompilationFail
 
-let expr1 = (AnyExpr(Int,Minus(Value(8))));;
-inorder_visit print_string (comp_expr expr1)
-*)
+(*Serialization*)
+let rec pp_expression : expression -> string =
+    function 
+        | Leaf s -> s
+        | BinOp (s,e1,e2) -> "(" ^ (pp_expression e1) ^ ")" ^ s ^ "(" ^ (pp_expression e2) ^ ")"
+        | UnaryOp (s,e) -> s ^ "(" ^ (pp_expression e) ^ ")"
+        | Call (s, l) -> s ^ "(" ^ (String.concat ", " (List.map pp_expression l)) ^ ")"
+
+let pp_declaration : declaration -> string =
+    function Declaration (t,name,e) -> t ^ " " ^ name ^ " = " ^ (pp_expression e) ^ ";"
+
+let rec pp_statement : statement -> string  = 
+    function
+        | IfElse (be, stm1, stm2) -> "if (" ^ pp_expression be ^ "){ " ^
+        (pp_statement stm1) ^ " } else { " ^ pp_statement stm2 ^ " }"
+        | Assignment (s, e) -> s ^ " = " ^ pp_expression e
+        | Sequence (stm1, stm2) -> pp_statement stm1 ^ "; " ^ pp_statement stm2
+        | StmList (stml) -> "{" ^ (String.concat "} {" (List.map pp_statement stml)) ^ "}"
+
+let rec pp_params : parameters -> string =
+    function l -> "(" ^ (String.concat ", " (List.map (fun (s1,s2) -> s1 ^ " " ^
+    s2) l)) ^ ")"
+
+let rec pp_funct : funct -> string =
+    function Function (name, params, vis, view, outtype, stm, return) ->
+        "function " ^ name ^ pp_params params ^ " " ^ vis ^ " " ^ view ^ "
+        returns (" ^ outtype ^ ")" ^ "{" ^ pp_statement stm ^ "return " ^
+        pp_expression return ^ ";}" 
+
