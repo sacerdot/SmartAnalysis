@@ -1,4 +1,4 @@
-Human citizen
+Contract c
 
 int balance = 0
 int weight = 2
@@ -6,12 +6,12 @@ int retval = 0
 
 dep: int*bool -> int =
 fun x b -> 
-    {retval = D} + {retval = C}
+    retval = max 4 3
     if b && x > 0 then
         weight = weight - 1
     else
-        balance = fail
-return balance
+        balance = 1
+return 1 
 
 foo: string -> int =
 fun s ->
@@ -19,6 +19,4 @@ fun s ->
     retval = dep 4 true
 return retval 
 
-retval = foo "prova"
-return 0
 
