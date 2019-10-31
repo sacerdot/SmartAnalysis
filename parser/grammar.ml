@@ -11,9 +11,9 @@ let plus e1 e2 =
   
 let minus e = match e with AnyExpr(Int,e) -> AnyExpr(Int,Minus(e)) | _ -> raise Fail
 
-let subtract e1 e2 = plus e1 (minus e2)
+let subtract e2 e1 = plus e1 (minus e2)
 
-let mult c e = 
+let mult e c = 
     match c,e with 
     | AnyExpr(Int,Value v),AnyExpr(Int,expr) -> AnyExpr(Int,Mult(Numeric(v),expr)) 
     | AnyExpr(Int,(Symbol v)),AnyExpr(Int,expr) -> AnyExpr(Int,Mult(Symbolic(v),expr)) 
@@ -25,17 +25,17 @@ let max e1 e2 =
     | _ -> raise Fail
   
 
-let gt e1 e2 =
+let gt e2 e1 =
     match e1,e2 with
     | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Gt(v1,v2))
     | _ -> raise Fail
 
-let ge e1 e2 =
+let ge e2 e1 =
     match e1,e2 with
     | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Geq(v1,v2))
     | _ -> raise Fail
 
-let eq e1 e2 = 
+let eq e2 e1 = 
     match e1,e2 with
     | AnyExpr(t1,v1),AnyExpr(t2,v2) ->
             (match eq_tag t1 t2 with
@@ -46,13 +46,13 @@ let lt e1 e2 = gt e2 e1
 
 let le e1 e2 = ge e2 e1
 
-let andb e1 e2 =
+let andb e2 e1 =
     match e1,e2 with
     | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,And(v1,v2))
     | _ -> raise Fail
 
 
-let orb e1 e2 =
+let orb e2 e1 =
     match e1,e2 with
     | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,Or(v1,v2))
     | _ -> raise Fail
@@ -72,7 +72,7 @@ let varname s t = match s with | (Ident x) :: tl -> tl,x,t | _ -> raise Fail
 
 let symbol_pars s t = 
     match s with
-    | (Ident var)::tl -> tl,AnyExpr(Int,Symbol(var)),t
+    | (String s)::tl -> tl,AnyExpr(Int,Symbol(s)),t
     | _ -> raise Fail
 
 let var_pars s t = 
@@ -84,13 +84,19 @@ let value_pars s t = (junk s),(value (List.hd s)),t
 
 let fail_pars perm =
     const (Kwd "fail") (fun _ -> if perm then AnyExpr(Int,Fail) else raise Fail)
+
+let this_pars =
+    const (Kwd "this") (fun _ -> AnyExpr(ContractAddress,SmartCalculus.This))
+
 (*variable | value | fail*)
 let base s (tbl,act) =
     choice_list[
         comb_parser var_pars (fun (AnyField(tag,name)) -> AnyExpr(tag,Var(tag,name)));
         value_pars;
         fail_pars act;
+        this_pars;
     ] s (tbl,act)
+
 (* Int Expression
  * atomic_int_expr :=
     base Int | "-" atomic_int_expr | varname | "(" int_expr ")" | "max" int_expr
@@ -131,15 +137,19 @@ let rec atomic_bool_expr s =
         concat (concat (kwd "(") bool_expr scd) (kwd ")") fst ;
         concat (kwd "!") atomic_bool_expr (fun _ -> notb) ;
         concat int_expr (concat cmpop int_expr (fun f x -> f x)) (fun x f -> f x);
+        concat int_expr (concat eqop int_expr (fun f x -> f x)) (fun x f -> f x);
  ] s
  and cmpop s =  
     choice_list [
       const (Kwd ">") (fun _ -> gt) ;
       const (Kwd ">=") (fun _ -> ge) ;
-      const (Kwd "==") (fun _ -> eq); 
-      const (Kwd "!=") (fun _ -> neq);
       const (Kwd "<") (fun _ -> lt);
       const (Kwd "<=") (fun _ -> le) ;
+    ] s
+and eqop s =
+    choice_list [
+      const (Kwd "==") (fun _ -> eq); 
+      const (Kwd "!=") (fun _ -> neq);
     ] s
 and bool_expr s =
  concat atomic_bool_expr (option cont_bool_expr) (fun x f -> match f with Some y ->
@@ -148,10 +158,11 @@ and bin_bool_op s =
  choice_list [
   const (Kwd "&&") (fun _ -> andb) ;
   const (Kwd "||") (fun _ -> orb) ;
+  eqop;
  ] s
 and cont_bool_expr s = concat bin_bool_op bool_expr (fun f x -> f x) s
 
-let expr_pars s = choice_list[int_expr; bool_expr; base] s
+and expr_pars s = choice_list[int_expr; bool_expr; base] s
 
 let type_pars =
     let tag_pars str tag = const (Kwd str) (fun _ -> AnyTag tag) in
@@ -172,8 +183,9 @@ let field_add_pars s t =
 let store_pars =
     let assign = fun f exp -> 
         match f with 
-            | AnyField(t1,name) -> match check_type t1 exp with Value v -> Let((t1,name),v) 
-            | _ -> raise Fail in
+            | AnyField(t1,name) -> match check_type t1 exp with 
+                | Value v -> Let((t1,name),v) 
+                | _ -> raise Fail in
     kleenestar (concat field_add_pars (concat (kwd "=") value_pars
     scd) assign) [] addel
 
@@ -191,20 +203,29 @@ let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser =
         in comb_parser (aux tl) f
 
 
-let parse_method_call : string -> any_rhs parser =
- fun m s (tbl,act) ->
+let  parse_method_call : string -> (contract address) expr option -> any_rhs parser =
+ fun m c s (tbl,act) ->
   let rec aux = function
      [] -> raise Fail
    | (Fun (tag,tags,name))::_ when name = m ->
        concat_list tags 
-       (fun el -> AnyRhs(tag,Call(None,(tag,tags,name),el)))
-   | _::tl -> aux tl
+       (fun el -> AnyRhs(tag,Call(c,(tag,tags,name),el)))
+      | _::tl -> aux tl
   in
        (aux tbl) s (tbl,act)
 
+let opt_expr : any_expr -> (contract address ) expr option=
+    fun expr-> 
+        (match expr with 
+        | AnyExpr(ContractAddress,e) -> (Some e) 
+        | _ -> None) 
+
+
 let call_pars s t = 
-    let (ns,str,nt) = varname s t in 
-    parse_method_call str ns nt
+    let (ns1, contr, nt1) = try comb_parser (concat expr_pars (kwd ".") fst)
+    opt_expr s t with Fail -> s,None,t in
+    let (ns2,str,nt2) = varname ns1 nt1 in 
+    parse_method_call str contr ns2 nt2
 
 (* parameter_pars = (unit | comb)
  * comb_parameters = type ?( * comb)
@@ -311,25 +332,35 @@ let hum_or_con = function
  * Contract | Human varname store
  * *)
 let actor_pars s t =
-    let (ns, atag, (tbl,cond)) = type_pars s t in
+    let (ns, atag, (_,cond)) = type_pars s t in
     let is_hum = hum_or_con atag in
-    concat (concat varname store_pars (fun actname assls -> actname,assls))
-    (concat methods_pars (option hum_stack_pars)
-    (fun meths se -> meths,se)) (fun (actname,assls) (meths,se) ->
+    concat (concat (concat varname (kwd "{") fst) store_pars (fun actname assls -> actname,assls))
+    (concat methods_pars (concat (option hum_stack_pars)(kwd "}") fst)
+    (fun meths se -> meths,se) ) (fun (actname,assls) (meths,se) ->
         match is_hum,se with
         | false,None -> ActCon((Contract actname),meths,assls)
         | true,(Some stack) ->  ActHum((Human actname),meths,assls,stack)
-        | _,_ -> raise Fail) ns (tbl, is_hum)
-       
+    | _,_ -> raise Fail) ns ([], is_hum)
+
+let add_act : configuration -> any_actor -> configuration =
+    fun conf act ->
+        match act,conf with
+            | ActCon c, {contracts = cl; humans = hl} -> {contracts = cl@[c]; humans = hl}
+            | ActHum h, {contracts = cl; humans = hl} -> {contracts = cl; humans
+            = hl@[h]}
+
+let configuration_pars =  
+    kleenestar actor_pars {contracts = []; humans = []} add_act
 (*testing*)
 let in_channel = open_in "input"
 let file = Stream.of_channel(in_channel)
 let lexer = make_lexer["+"; "-"; "*"; "max"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "string"; "bool"; 
 "="; ","; "fail"; "if"; "then"; "else"; "{"; "fun";
-"}";"choice";"return";"Human";"Contract";":";"unit";"->"]
+"}";"choice";"return";"Human";"Contract";":";"unit";"->";"this";"."]
 let tokens = remove_minspace (of_token(lexer file));;
 (*print_token_list tokens;;*)
 (*let empty_t = (Fun(Int,(TCons(Int,TCons(Int,TCons(String,TNil)))),"prova"));
 Field(Int,"ciao","main")];;*)
-let (s, actor, (tbl,act)) = actor_pars tokens ([],false);;
+let (s, conf, (tbl,act)) = configuration_pars tokens ([],false);;
+print_token_list s;;

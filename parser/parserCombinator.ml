@@ -25,10 +25,8 @@ type any_actor =
     | ActCon: a_contract -> any_actor
 type 'ast parser = token t -> (vartable * bool) -> token t * 'ast * (vartable * bool)
 exception Fail
+exception TypeFail
 
-(*
-check_type : type a. a tag -> any_expr -> a expr
-*)
 (*Utils*)
 
 let fst = (fun x _ -> x)
@@ -69,12 +67,13 @@ let check_type : type a. a tag -> any_expr -> a expr =
 let value =
     function
     | Genlex.String x -> AnyExpr(String, Value x)
+    | Kwd "this" -> AnyExpr(ContractAddress, This)
+    | Ident v -> AnyExpr(ContractAddress, Value(Contract v))
     | Int x -> AnyExpr(Int,Value x)
     | Kwd "true" -> AnyExpr(Bool,Value true)
     | Kwd "false" -> AnyExpr(Bool,Value false)
-    | Kwd "this" -> AnyExpr(ContractAddress, This)
     | _ -> raise Fail
-
+   
 let rec remove_minspace =
     function
     | [] -> []
@@ -110,7 +109,7 @@ let rec get_field : vartable -> string -> any_field option =
     fun tbl varname -> 
         match tbl with
         | [] -> None
-        | Field (tag, name, _ )::_ when varname=name -> Some (AnyField(tag, name))
+        | Field (tag, name, _ )::_ when varname=name ->  Some (AnyField(tag, name))
         | _::tl -> get_field tl varname
 
 let add_field_to_table : vartable -> any_field -> bool -> vartable =
