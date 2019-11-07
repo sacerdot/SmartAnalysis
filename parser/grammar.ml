@@ -77,6 +77,8 @@ let symbol_pars s t =
 
 let var_pars s t = 
     match s,t with
+    | (Kwd "value")::tl,(tbl,_) -> tl,(AnyField(Int,"value")),t
+    | (Kwd "balance")::tl,(tbl,_) -> tl,(AnyField(Int,"balance")),t
     | (Ident var)::tl,(tbl,_) -> tl,getopt (get_field tbl var),t
     | _ -> raise Fail
 
@@ -110,7 +112,7 @@ let rec atomic_int_expr s =
    concat (kwd "-") atomic_int_expr (fun _ -> minus) ;
    concat (concat (kwd "(") int_expr scd) (kwd ")") fst ;
    concat (concat (kwd "max") int_expr scd) int_expr max;
-   symbol_pars;
+   concat (kwd "symbol") symbol_pars scd;
  ] s
 and int_expr s =
  concat atomic_int_expr (option cont_int_expr) (fun x f -> match f with Some funct
@@ -214,18 +216,29 @@ let  parse_method_call : string -> (contract address) expr option -> any_rhs par
   in
        (aux tbl) s (tbl,act)
 
-let opt_expr : any_expr -> (contract address ) expr option=
-    fun expr-> 
-        (match expr with 
-        | AnyExpr(ContractAddress,e) -> (Some e) 
-        | _ -> None) 
-
+let opt_expr : type a .a tag -> any_expr -> a expr option=
+    fun t expr-> 
+        match expr with 
+        | AnyExpr(texp,e) -> 
+                (match eq_tag texp t with 
+                | Some Refl -> Some e
+                | None -> None )
 
 let call_pars s t = 
     let (ns1, contr, nt1) = try comb_parser (concat expr_pars (kwd ".") fst)
-    opt_expr s t with Fail -> s,None,t in
+    (opt_expr ContractAddress) s t with Fail -> s,None,t in
     let (ns2,str,nt2) = varname ns1 nt1 in 
-    parse_method_call str contr ns2 nt2
+    let (ns3,value,nt3) = try comb_parser (concat (concat (concat (kwd ".") (kwd "(") scd)
+    (concat (kwd "value") int_expr scd) scd) (kwd ")") fst) (opt_expr Int) ns2 nt2
+    with Fail -> (ns2,None,nt2) in
+    comb_parser (parse_method_call str contr)
+    (function 
+        | AnyRhs(tag,Call(c,meth,el)) ->
+                (match value with 
+                | Some v -> 
+                    AnyRhs(tag,CallWithValue(c,meth,el,v))
+                | None -> AnyRhs(tag,Call(c,meth,el)))
+        | _ -> raise Fail) ns3 nt3
 
 (* parameter_pars = (unit | comb)
  * comb_parameters = type ?( * comb)
@@ -255,6 +268,8 @@ let check_rhs_type: type b. b tag -> any_rhs -> b rhs =
         match rhs with
         | AnyRhs(t,Call(x,y,z)) -> (match eq_tag t tag with Some Refl ->
                 Call(x,y,z) | None -> raise Fail)
+        | AnyRhs(t,CallWithValue(x,y,z,v)) -> (match eq_tag t tag with Some Refl ->
+                CallWithValue(x,y,z,v) | None -> raise Fail)
         | AnyRhs(t,Expr(expr)) -> Expr(check_type tag (AnyExpr(t,expr)))
 
 let rec atomic_stm s =
@@ -296,11 +311,11 @@ let rec hum_stack_pars s =
  * program = fun local_var -> stm_list return expr
  *)
 let rec local_var_pars: type b. b tag_list -> b var_list parser =
-    fun tl s t ->
+    fun tl s (t,a) ->
         match tl with
-        | TNil -> s,VNil,t
+        | TNil -> s,VNil,(t,a)
         | TCons (x,tail) -> 
-                match varname s t with
+                match varname s (t,a) with
                 | ns,var,(tbl,act) -> comb_parser (local_var_pars tail) (fun
                 tl -> VCons((x,var),tl)) ns ((add_field_to_table tbl
                 (AnyField(x,var)) true),act)
@@ -332,7 +347,7 @@ let hum_or_con = function
  * Contract | Human varname store
  * *)
 let actor_pars s t =
-    let (ns, atag, (_,cond)) = type_pars s t in
+    let (ns, atag, (nt,cond)) = type_pars s ([],false)  in
     let is_hum = hum_or_con atag in
     concat (concat (concat varname (kwd "{") fst) store_pars (fun actname assls -> actname,assls))
     (concat methods_pars (concat (option hum_stack_pars)(kwd "}") fst)
@@ -340,7 +355,9 @@ let actor_pars s t =
         match is_hum,se with
         | false,None -> ActCon((Contract actname),meths,assls)
         | true,(Some stack) ->  ActHum((Human actname),meths,assls,stack)
-    | _,_ -> raise Fail) ns ([], is_hum)
+    | _,_ -> raise Fail) 
+    ns 
+    (nt, is_hum)
 
 let add_act : configuration -> any_actor -> configuration =
     fun conf act ->
@@ -357,10 +374,13 @@ let file = Stream.of_channel(in_channel)
 let lexer = make_lexer["+"; "-"; "*"; "max"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "string"; "bool"; 
 "="; ","; "fail"; "if"; "then"; "else"; "{"; "fun";
-"}";"choice";"return";"Human";"Contract";":";"unit";"->";"this";"."]
+"}"; "choice"; "return"; "Human"; "Contract"; ":"; "unit"; "->"; "this"; ".";
+"value"; "balance"; "symbol"]
 let tokens = remove_minspace (of_token(lexer file));;
 (*print_token_list tokens;;*)
 (*let empty_t = (Fun(Int,(TCons(Int,TCons(Int,TCons(String,TNil)))),"prova"));
 Field(Int,"ciao","main")];;*)
 let (s, conf, (tbl,act)) = configuration_pars tokens ([],false);;
+(*
 print_token_list s;;
+print_table tbl;;*)

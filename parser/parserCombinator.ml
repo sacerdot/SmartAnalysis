@@ -1,8 +1,3 @@
-    (*
-stm ::= type varname | varname "=" rhs | "if " bexpr "then" stm "else" stm | 
-        stm "+" stm | def_funct | type varname "()"| "{" stm "}" | "/*" stringc "*/"
-        *)
-
 open String
 open Char
 open Genlex
@@ -25,7 +20,6 @@ type any_actor =
     | ActCon: a_contract -> any_actor
 type 'ast parser = token t -> (vartable * bool) -> token t * 'ast * (vartable * bool)
 exception Fail
-exception TypeFail
 
 (*Utils*)
 

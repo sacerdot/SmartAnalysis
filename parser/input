@@ -1,6 +1,5 @@
 Contract c {
 
-    int balance = 0
     int weight = 2
     int retval = 0
     bool cond = true
@@ -8,37 +7,36 @@ Contract c {
     Contract r = cianca 
     dep: int*bool -> int =
     fun x b -> 
-        p = r
-        balance = max 5*weight 4
+        retval = balance + max 5*weight 4
+        weight = symbol "a"
         if  x == 0 then
             weight = weight - 1
         else
-            balance = 1
+            weight = balance + value
     return 1 
-
     foo: string -> int =
     fun s ->
         s = "ciao"
         cond = (retval == 9)
-        retval = dep 4 true
+        retval = c.dep.(value 4) 4 true 
     return retval 
 }
 (*
 Contract d {
 
-    int balance = 0
-    int weight = 2
-    int retval = 0
+    int w = 2
+    int r = 0
     dep: int*bool -> int =
     fun x b -> 
-            weight = weight - 1
+        if true then
+            w = w - 1
         else
-            balance = 1
+            w = balance + 1
     return 1 
 
     foo: string -> int =
     fun s ->
         s = "ciao"
-        retval = dep 4 true
-    return retval 
+        r = dep 4 true
+    return r 
 }*)
