@@ -381,6 +381,6 @@ let tokens = remove_minspace (of_token(lexer file));;
 (*let empty_t = (Fun(Int,(TCons(Int,TCons(Int,TCons(String,TNil)))),"prova"));
 Field(Int,"ciao","main")];;*)
 let (s, conf, (tbl,act)) = configuration_pars tokens ([],false);;
-(*
 print_token_list s;;
+(*
 print_table tbl;;*)
