@@ -55,7 +55,7 @@ type field = Field : ('a var * bool) -> field
 type contr_info = Contr : (string * string option * meth option * interface) ->
     contr_info
 type symbol = Symbol : string -> symbol
-type table = (field list *  contr_info list * meth list * symbol list)
+type table = (field list *  contr_info list * symbol list)
 type contract_ast = Contract of string *  statement option * (declaration list) * (any_funct list) 
 type ('a,'b) pars = table -> 'a -> 'b *table 
 type ast = contract_ast list
@@ -90,7 +90,7 @@ let rec is_matching_meths =
     fun meth1 meth2 -> match (meth1,meth2) with
     |(Some(Funct(name1,params1,(out1,stg1),view1,vis1))),(Some(Funct(name2,params2,(out2,stg2),view2,vis2))) -> 
         name1=name2 && is_same_params params1 params2 &&
-        is_same_type out1 out2 && stg1=stg2 && view1 = view2 && vis1=vis2
+        is_same_type out1 out2 && stg1=stg2 && view1 = view2 
     | None,None -> true
     | _,_ -> false
 
@@ -115,21 +115,18 @@ let rec is_var_in_params : type a b. a param_list -> b var -> bool =
 
 
 let apply_to_first =
-    fun f (fst,scd,thd,fth) -> (f fst),scd,thd,fth
+    fun f (fst,scd,thd) -> (f fst),scd,thd
 
 let apply_to_second =
-    fun f (fst,scd,thd,fth) -> fst,(f scd),thd,fth
+    fun f (fst,scd,thd) -> fst,(f scd),thd
 
 let apply_to_third =
-    fun f (fst,scd,thd,fth) -> fst,scd,(f thd),fth
-
-let apply_to_fourth =
-    fun f (fst,scd,thd,fth) -> fst,scd,thd,(f fth)
+    fun f (fst,scd,thd) -> fst,scd,(f thd)
 
 
 (*Symbol*)
 let rec is_symbol_in_table = 
-    fun (_,_,_,tbl) s -> 
+    fun (_,_,tbl) s -> 
     let rec aux stbl = match stbl with
         | [] -> false
         | Symbol(name)::_  when name = s -> true
@@ -140,10 +137,10 @@ let rec is_symbol_in_table =
 let rec add_symbol =
     fun tbl s -> 
         if (is_symbol_in_table tbl s) then tbl 
-        else apply_to_fourth (fun sl -> [Symbol s]@sl) tbl
+        else apply_to_third (fun sl -> [Symbol s]@sl) tbl
 
 let rec get_symbols =
-    fun (_,_,_,tbl) -> 
+    fun (_,_,tbl) -> 
         let rec aux stbl = match stbl with
             | [] -> []
             | Symbol s :: tl -> [s]@aux tl 
@@ -151,8 +148,19 @@ let rec get_symbols =
 
 (*Type Table*)
 
+let rec get_interface_list =
+    function
+        | [] -> []
+        | (Contr(_,_,_,i))::tl -> [i]@(get_interface_list tl)
+let rec get_interface =
+    fun name par meth contrl -> match contrl with
+        | [] -> None
+        | (Contr(n,p,f,i)):: tl when n = name && p=par && is_matching_meths meth f -> Some i
+        | h::tl -> get_interface name par meth tl
+
+
 let rec is_var_in_table =
-    fun (tbl,_,_,_) (t,name) ->
+    fun (tbl,_,_) (t,name) ->
         let rec aux ftbl =
            match ftbl with
             | [] -> false 
@@ -162,14 +170,15 @@ let rec is_var_in_table =
         in aux tbl
 
 let rec is_fun_in_table =
-    fun (_,_,tbl,_) (name, params, (outtype,stor)) ->
+    fun (_,tbl,_) (name, params, (outtype,stor)) ->
         let rec aux ftbl =
            match ftbl with
             | [] -> false
             | Funct (name_fun, params_fun, (outtype_fun,_), _, _) ::_ when name_fun=name -> 
                 (is_same_params params_fun params) && (is_same_type outtype outtype_fun)
             | _::tl -> aux tl
-        in aux tbl
+        in match get_interface this_str None None tbl with 
+        Some (Interface(_,funct_tbl,_)) -> aux funct_tbl | None -> false
 
 
 let apply_to_contr : string  -> meth option -> (contr_info ->
@@ -191,7 +200,7 @@ let change_interface_name =
 
 let add_field_in_table =
     fun var islocal tbl -> match tbl with 
-    fl,il,funl,sl -> ([Field(var,islocal)]@fl),il,funl,sl
+    fl,il,sl -> ([Field(var,islocal)]@fl),il,sl
 
 let add_interface_in_table =
     fun interface_name contr_name f implemented ->
@@ -206,14 +215,20 @@ let add_funct_to_contract_meths : meth -> string -> meth option -> contr_info li
             match i with Interface(interface_name, fl, impl) ->
                 if (List.exists (fun f -> is_matching_meths (Some f) (Some meth)) fl) then 
                     Contr(n,p,f,i)
-                else 
-                    Contr(n,p,f,(Interface(interface_name,([meth]@fl),impl)))
+                else
+                    if (List.filter 
+                        (fun (Interface(name, flist, impl)) -> 
+                            name = interface_name && n != this_str && impl &&
+                             not(List.exists (fun f -> is_matching_meths (Some f)
+                            (Some meth)) flist))
+                    (get_interface_list tbl) = []) then
+                            Contr(n,p,f,(Interface(interface_name,([meth]@fl),impl)))
+                    else raise CompilationFail
         ) tbl
 
 let add_function_in_table : meth -> string -> table -> table =
     fun f contr_name tbl-> 
-        apply_to_second (add_funct_to_contract_meths f contr_name None) 
-        (apply_to_third (fun funl ->[f]@funl) tbl)
+        apply_to_second (add_funct_to_contract_meths f contr_name None) tbl
 
 let name_interface =
         let rec aux n i_list = match i_list with
@@ -231,18 +246,7 @@ let remove_local_var =
 
 let delete_empty_interface =
         (List.filter 
-        (fun (Interface(name,f,i)) -> f <> [] || name <> ""))
-
-let rec get_interface_list =
-    function
-        | [] -> []
-        | (Contr(_,_,_,i))::tl -> [i]@(get_interface_list tl)
-let rec get_interface =
-    fun name par meth contrl -> match contrl with
-        | [] -> None
-        | (Contr(n,p,f,i)):: tl when n = name && p=par && is_matching_meths meth f -> Some i
-        | h::tl -> get_interface name par meth tl
-
+        (fun (Interface(name,f,i)) -> f <> []))
 
 let rec set_parent_name_contract =
     fun name contr_list -> match contr_list with
@@ -287,9 +291,8 @@ let rec pp_table_symbol  =
         | [] -> ""
 
 let pp_table = 
-    fun (f, i, func, s) ->
-        pp_table_fields f ^ nl ^ pp_table_contract i ^ nl ^ pp_table_function
-        func ^ nl ^ pp_table_symbol s
+    fun (f, i, s) ->
+        pp_table_fields f ^ nl ^ pp_table_contract i  ^ nl ^ pp_table_symbol s
 
 (*Parsing*)
 let pars_unary =
@@ -425,12 +428,12 @@ let rec get_type_list : type a. a tag_list -> a param_list =
                 PCons((((pars_typename tag), ""),(get_storage
         (pars_typename tag))), get_type_list tl)
 
-let pars_meth : type a b. (a, b) SmartCalculus.meth -> meth =
-    fun (tagret, taglist, name) ->
+let pars_meth : type a b. (a, b) SmartCalculus.meth -> visibility list-> meth =
+    fun (tagret, taglist, name) vis ->
         let t = (pars_typename tagret) in 
         let outtype = t,(get_storage t) in 
         let params = (get_type_list taglist) in
-        Funct(name,params,outtype,[Payable],[Public])
+        Funct(name,params,outtype,[Payable],vis)
 
 let rec pars_rhs : 'a typename -> meth -> ('a rhs, 'a expression) pars =
     fun t m tbl rhs ->
@@ -447,7 +450,7 @@ let rec pars_rhs : 'a typename -> meth -> ('a rhs, 'a expression) pars =
                 let (expr,ntbl1) = pars_expression_list tbl tags elist in
                 let (con,ntbl2) = pars_contract_ref ntbl1 opt in
                 Call(con,name,expr,None),
-                (match pars_meth (funtag,tags,name) with 
+                (match pars_meth (funtag,tags,name) [External] with 
                  f ->(add_interf_opt f (get_contract_name con) ntbl2)) 
             | CallWithValue (opt, (funtag, tags, name), elist, vexpr) ->
                 let value,ntbl1 = pars_expression Int tbl vexpr in
@@ -501,7 +504,7 @@ let pars_funct: (any_method_decl, any_funct) pars =
     fun tbl meth ->
         match meth with 
         AnyMethodDecl((tagret, taglist, name),(param_list, stmlist, retexpr)) -> 
-            let m = pars_meth (tagret, taglist, name) in
+            let m = pars_meth (tagret, taglist, name) [Public] in
             match m with Funct (meth_name,p,outtype,payable,public) ->
             let params = (get_param_list param_list) in
             let tbl_with_fun = add_params_in_tbl m params (add_function_in_table
@@ -517,7 +520,7 @@ let pars_funct: (any_method_decl, any_funct) pars =
 let rec assign_symbol : string list -> int -> statement =
     fun l n -> match l with
         | [] -> Empty
-        | h::tl -> Sequence((Assignment((Int, "symbol[" ^ h ^ "]"), Value(n)),
+        | h::tl -> Sequence((Assignment((Int, symb_array ^ "['" ^ h ^ "']"), Value(n)),
         assign_symbol tl (n + 1)))
 
 
@@ -546,14 +549,14 @@ let rec pars_contract_list =
     fun tbl l -> match l with 
         | [] -> print_endline (pp_table tbl);[],tbl
         | h::tl -> 
-                let (contr, (fl,il,funl,sl)) = pars_contract tbl h in
-                let (contr_list, ntbl2) = pars_contract_list ([],il,[],[]) tl in
+                let (contr, (fl,il,sl)) = pars_contract tbl h in
+                let (contr_list, ntbl2) = pars_contract_list ([],il,[]) tl in
                 ([contr]@contr_list, ntbl2)
         
 let rec pars_configuration =
     function
        {contracts = cl; _} -> 
-            (pars_contract_list ([],[],[],[]) cl)
+            (pars_contract_list ([],[],[]) cl)
 
 (*From ast to string*)
 let rec pp_typename : type a. a typename -> string =
@@ -598,7 +601,7 @@ let rec pp_expression : type a. string option -> meth option -> contr_info list 
         c p m tbl ^ ")."  ^ s ^ pp_opt (fun e -> ".value((uint)(" ^ pp_expr_info Int e ^ "))")
         value ^ "(" ^ (String.concat ", " (string_list_of_expression
         p m tbl exprl)) ^ ")" 
-        | _,(Symbol s) -> symb_array ^ "[" ^ "'" ^ s ^ "'" ^ "]"
+        | _,(Symbol s) -> symb_array ^ "['" ^ s ^ "']"
  and string_list_of_expression : type a. string option -> meth option ->
      contr_info list  -> a expression_list -> string list =
     fun p m tbl el -> match el with
@@ -606,9 +609,9 @@ let rec pp_expression : type a. string option -> meth option -> contr_info list 
         | ExprCons ((t,e), tl) -> [(pp_expression p m tbl t e)]@(string_list_of_expression p m tbl tl) 
 and pp_contract_ref =
     fun contr p f ctbl -> match contr with
-        | Var(_, name) -> "(" ^ pp_opt pp_interface_name (get_interface name p
-        f ctbl) ^ ")" ^ name
-        | Value v -> "new " ^ pp_value ContractAddress v ^ "()"
+        | Var(_, name) -> pp_opt pp_interface_name (get_interface name p
+        f ctbl) ^ "(" ^ name ^ ")" 
+        | Value (Contract v) -> "new " ^ v ^ "()"
         | This -> "this"
         | _ -> pp_expression p f ctbl ContractAddress contr 
       
@@ -662,7 +665,7 @@ let pp_visibility =
         | Internal -> "internal "
         | Private -> "private "
 
-let declare_simbols =
+let declare_symbols =
     "mapping (" ^ pp_typename String ^ " => " ^ pp_typename Int ^ ") " ^ symb_array
     ^ ";"
 let rec pp_meth =
@@ -690,21 +693,21 @@ let pp_constructor  =
 let rec pp_contract =
     fun tbl c -> match c with
     Contract (name, constructor, fields, meths) ->  "contract " ^ name ^ " {" ^ nl ^
-    (match constructor with None -> "" | _ -> declare_simbols ^ nl) ^
+    (match constructor with None -> "" | _ -> declare_symbols ^ nl) ^
     (String.concat nl (List.map (pp_declaration (Some name) tbl)fields)) ^ nl ^
     pp_opt (pp_constructor (Some name) tbl) constructor ^ nl ^ (String.concat nl (List.map
     (pp_funct (Some name) tbl) meths)) ^ nl ^ "}"
 
 let rec pp_actor =
     fun tbl act -> match act with
-        | ActCon c -> pp_contract tbl ((fun (x,_) -> x) (pars_contract ([],[],[],[]) c))
+        | ActCon c -> pp_contract tbl ((fun (x,_) -> x) (pars_contract ([],[],[]) c))
         | ActHum h -> raise CompilationFail
 
 let pp_interface : interface -> string = 
     function 
         | Interface (name,funct_list,false) -> 
-                "interface " ^ name ^ "{" ^ nl ^ String.concat (";" ^ nl) (List.map pp_meth
-            funct_list) ^ nl ^ "}"
+                "interface " ^ name ^ "{" ^ nl ^ String.concat nl
+                (List.map (fun m -> pp_meth m ^ ";") funct_list) ^ nl ^ "}"
         | _ -> ""
 
 let rec divide_by_func =
@@ -736,12 +739,11 @@ let rec unify_funct =
         (divide_by_func int_list)
 
 let rec pp_ast : ast * table -> string =
-    fun (cl,(_,il,_,_)) -> 
-        let int_list = name_interface il
-        in
+    fun (cl,(_,il,_)) -> 
+        let int_list = name_interface il in
         "pragma solidity 0.5.11;" ^ nl ^ 
-        String.concat nl  (List.map pp_interface  (unify_funct
-        (get_interface_list (int_list)))) ^ nl ^
+        String.concat nl  (List.map pp_interface  (delete_empty_interface(unify_funct
+        (get_interface_list (int_list))))) ^ nl ^
         String.concat nl (List.map (pp_contract int_list) cl)
 ;;
 let outstr = (pp_ast (pars_configuration (Grammar.conf)));;

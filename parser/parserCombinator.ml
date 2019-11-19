@@ -10,6 +10,7 @@ type any_tag = AnyTag : 'a tag -> any_tag
 type any_field = AnyField: 'a SmartCalculus.field -> any_field
 type any_meth = AnyMeth : ('a,'b) SmartCalculus.meth -> any_meth
 type any_tag_list = AnyTagList : 'a SmartCalculus.tag_list -> any_tag_list
+type any_expr_list = AnyExprList : 'a SmartCalculus.expr_list -> any_expr_list
 type any_field_or_fun = 
     | Field: 'a tag * string * bool -> any_field_or_fun
     | Fun:  ('a, 'b) SmartCalculus.meth -> any_field_or_fun

@@ -6,6 +6,7 @@ Contract c {
     Contract p = banca
     Contract r = cianca 
     Contract w = branca 
+
     dep: int*bool -> int =
     fun x b -> 
         retval = balance + max 5*weight 4
@@ -16,12 +17,13 @@ Contract c {
         else
             weight = balance + value
     return 1 
+
     foo: string*Contract ->  int =
     fun s k->
         k = banca
         s = "ciao"
         cond = (retval == 9)
-        retval = k.dep.(value 4) 4 true 
+        retval = k.fie.(value 4) 4 true 
     return retval 
 }
 Contract d {
@@ -30,7 +32,8 @@ Contract d {
     int r = 0
     Contract f = c
     Contract e = banca
-    dep: int*bool -> int =
+
+    dep2: int*bool -> int =
     fun x b -> 
         if true then
             w = w - 1
@@ -39,9 +42,9 @@ Contract d {
     return 1 
 
     foo: string*Contract -> int =
-    fun s c ->
-        c = banca
+    fun s con ->
+        con = c 
         s = "ciao"
-        r = c.foo s f 
+        r = con.foo s f 
     return r 
 }

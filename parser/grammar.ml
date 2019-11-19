@@ -205,13 +205,29 @@ let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser =
         in comb_parser (aux tl) f
 
 
-let  parse_method_call : string -> (contract address) expr option -> any_rhs parser =
- fun m c s (tbl,act) ->
+let parse_any_expr_list =
+    kleenestar expr_pars [] (fun el expr -> el@[expr]) 
+
+let get_rhs_from_expr_list = 
+    fun m c typ el -> 
+        let rec aux el rhs =
+            match el with
+            | [] -> rhs
+            | AnyExpr (t,expr) :: tl -> 
+                    (match rhs with 
+                    | Call(c,(tag,tags,name),elist) -> 
+                        aux tl
+                        (Call(c,(tag,TCons(t,tags),name),ECons(expr,elist)))
+                    | _ -> raise Fail)
+        in aux (List.rev el) (Call(c,(typ,TNil,m),ENil))
+
+let  parse_method_call : string  -> any_rhs parser =
+ fun m s (tbl,act) ->
   let rec aux = function
      [] -> raise Fail
    | (Fun (tag,tags,name))::_ when name = m ->
-       concat_list tags 
-       (fun el -> AnyRhs(tag,Call(c,(tag,tags,name),el)))
+       concat_list tags
+       (fun el -> AnyRhs(tag,Call(None,(tag,tags,name),el)))
       | _::tl -> aux tl
   in
        (aux tbl) s (tbl,act)
@@ -224,21 +240,34 @@ let opt_expr : type a .a tag -> any_expr -> a expr option=
                 | Some Refl -> Some e
                 | None -> None )
 
+let pars_mesg_value s t= try comb_parser (concat (concat (concat (kwd ".") (kwd "(") scd)
+    (concat (kwd "value") int_expr scd) scd) (kwd ")") fst) (opt_expr Int) s t
+    with Fail -> (s,None,t)
+
+
+let call_with_contr tag s t =
+    let (ns1, (contr,funname), nt1) = 
+        concat (comb_parser (concat expr_pars (kwd ".") fst)
+        (opt_expr ContractAddress)) (varname) (fun x1 x2 -> x1,x2) s t in
+    let (ns2,value,nt2) = pars_mesg_value ns1 nt1 in
+    comb_parser parse_any_expr_list ((fun el -> (fun rhs -> match rhs,value with
+    Call(c,meth,el),Some v -> CallWithValue (c,meth,el,v) | _,_ -> rhs) (get_rhs_from_expr_list funname
+    contr tag el))) ns2 nt2
+
+
 let call_pars s t = 
-    let (ns1, contr, nt1) = try comb_parser (concat expr_pars (kwd ".") fst)
-    (opt_expr ContractAddress) s t with Fail -> s,None,t in
-    let (ns2,str,nt2) = varname ns1 nt1 in 
-    let (ns3,value,nt3) = try comb_parser (concat (concat (concat (kwd ".") (kwd "(") scd)
-    (concat (kwd "value") int_expr scd) scd) (kwd ")") fst) (opt_expr Int) ns2 nt2
-    with Fail -> (ns2,None,nt2) in
-    comb_parser (parse_method_call str contr)
+    (*let (ns1, contr, nt1) = try comb_parser (concat expr_pars (kwd ".") fst)
+    (opt_expr ContractAddress) s t with Fail -> s,None,t in*)
+    let (ns1,str,nt1) = varname s t in 
+    let (ns2,value,nt2) = pars_mesg_value ns1 nt1 in
+    comb_parser (parse_method_call str)
     (function 
         | AnyRhs(tag,Call(c,meth,el)) ->
                 (match value with 
                 | Some v -> 
                     AnyRhs(tag,CallWithValue(c,meth,el,v))
                 | None -> AnyRhs(tag,Call(c,meth,el)))
-        | _ -> raise Fail) ns3 nt3
+        | _ -> raise Fail) ns2 nt2
 
 (* parameter_pars = (unit | comb)
  * comb_parameters = type ?( * comb)
@@ -272,14 +301,19 @@ let check_rhs_type: type b. b tag -> any_rhs -> b rhs =
                 CallWithValue(x,y,z,v) | None -> raise Fail)
         | AnyRhs(t,Expr(expr)) -> Expr(check_type tag (AnyExpr(t,expr)))
 
+let assign_contr s tbl =
+    let (ns,(AnyField(t,v)),nt) = concat var_pars (kwd "=") fst s tbl in
+    comb_parser (call_with_contr t) (fun rhs -> Assign((t,v),rhs)) ns nt
+
 let rec atomic_stm s =
     choice_list[
         (*assign*)
-        concat 
+        choice assign_contr
+        (concat 
         (concat var_pars (kwd "=") fst)
         (choice call_pars (comb_parser expr_pars (fun (AnyExpr(et,expr)) -> AnyRhs(et,Expr(expr)))))
         (fun (AnyField(et,varname)) any_rhs -> 
-            Assign((et,varname),(check_rhs_type et any_rhs)));
+            Assign((et,varname),(check_rhs_type et any_rhs))));
         (*if then else*)
         concat 
         (concat (concat (concat (kwd "if") bool_expr scd) (kwd "then") fst ) 
