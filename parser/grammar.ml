@@ -5,19 +5,19 @@ open Genlex
 
 (*Expression *)
 let plus e1 e2 = 
-    match e1,e2 with
-    | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Plus(v1,v2))
-    | _ -> raise Fail
+ match e1,e2 with
+ | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Plus(v1,v2))
+ | _ -> raise Fail
   
 let minus e = match e with AnyExpr(Int,e) -> AnyExpr(Int,Minus(e)) | _ -> raise Fail
 
 let subtract e2 e1 = plus e1 (minus e2)
 
 let mult e c = 
-    match c,e with 
-    | AnyExpr(Int,Value v),AnyExpr(Int,expr) -> AnyExpr(Int,Mult(Numeric(v),expr)) 
-    | AnyExpr(Int,(Symbol v)),AnyExpr(Int,expr) -> AnyExpr(Int,Mult(Symbolic(v),expr)) 
-    | _-> raise Fail
+ match c,e with 
+ | AnyExpr(Int,Value v),AnyExpr(Int,expr) -> AnyExpr(Int,Mult(Numeric(v),expr)) 
+ | AnyExpr(Int,(Symbol v)),AnyExpr(Int,expr) -> AnyExpr(Int,Mult(Symbolic(v),expr)) 
+ | _-> raise Fail
 
 let max e1 e2 =
    match e1,e2 with
@@ -71,32 +71,38 @@ let neq e1 e2 = notb (eq e1 e2)
 let varname s t = match s with | (Ident x) :: tl -> tl,x,t | _ -> raise Fail
 
 let symbol_pars s t = 
-    match s with
-    | (String s)::tl -> tl,AnyExpr(Int,Symbol(s)),t
-    | _ -> raise Fail
+ match s with
+ | (String s)::tl -> tl,AnyExpr(Int,Symbol(s)),t
+ | _ -> raise Fail
 
-let var_pars s t = 
-    match s,t with
-    | (Kwd "value")::tl,(tbl,_) -> tl,(AnyField(Int,"value")),t
-    | (Kwd "balance")::tl,(tbl,_) -> tl,(AnyField(Int,"balance")),t
-    | (Ident var)::tl,(tbl,_) -> tl,getopt (get_field tbl var),t
-    | _ -> raise Fail
+let var_pars: type a. a tag -> (a expr) parser = fun tag s t ->
+    match tag,s,t with
+    | Int,(Kwd "value")::tl,_ -> tl,(Var(Int,"value")),t
+    | Int,(Kwd "balance")::tl,_ -> tl,(Field(Int,"balance")),t
+    | _,(Ident var)::tl,(tbl,act) -> 
+            (match get_field tbl var with
+            | Some (AnyField(tagfield,name),islocal) ->
+                    (match (eq_tag tagfield tag),islocal with
+                    | (Some Refl),false -> tl,(Field(tagfield,name)),t
+                    | (Some Refl),true -> tl,(Var(tagfield,name)),t
+                    | None,_ -> raise Fail)
+            | None -> tl,Var(tag,var),t)
+     | _ -> raise Fail
 
-let value_pars s t = (junk s),(value (List.hd s)),t
+let value_pars tag s t = (junk s),(value tag (List.hd s)),t
 
-let fail_pars perm =
-    const (Kwd "fail") (fun _ -> if perm then AnyExpr(Int,Fail) else raise Fail)
+let fail_pars : type a . a tag -> bool -> (a expr) parser = fun tag perm ->
+    const (Kwd "fail") (fun _ -> if perm then SmartCalculus.Fail else raise Fail)
 
 let this_pars =
-    const (Kwd "this") (fun _ -> AnyExpr(ContractAddress,SmartCalculus.This))
+    const (Kwd "this") (fun _ -> SmartCalculus.This)
 
 (*variable | value | fail*)
-let base s (tbl,act) =
+let base tag s (tbl,act) =
     choice_list[
-        comb_parser var_pars (fun (AnyField(tag,name)) -> AnyExpr(tag,Var(tag,name)));
-        value_pars;
-        fail_pars act;
-        this_pars;
+        var_pars tag;
+        value_pars tag ;
+        fail_pars tag act;
     ] s (tbl,act)
 
 (* Int Expression
@@ -108,7 +114,7 @@ let base s (tbl,act) =
  *)
 let rec atomic_int_expr s = 
  choice_list [
-   comb_parser base (fun expr -> AnyExpr(Int,(check_type Int expr)));
+   comb_parser (base Int) (fun expr -> AnyExpr(Int,expr));
    concat (kwd "-") atomic_int_expr (fun _ -> minus) ;
    concat (concat (kwd "(") int_expr scd) (kwd ")") fst ;
    concat (concat (kwd "max") int_expr scd) int_expr max;
@@ -135,7 +141,7 @@ and cont_int_expr s = concat binop int_expr (fun f x -> f x) s
  *)
 let rec atomic_bool_expr s =
     choice_list[
-        comb_parser base (fun expr -> AnyExpr(Bool,(check_type Bool expr)));
+        comb_parser (base Bool) (fun expr -> AnyExpr(Bool,expr));
         concat (concat (kwd "(") bool_expr scd) (kwd ")") fst ;
         concat (kwd "!") atomic_bool_expr (fun _ -> notb) ;
         concat int_expr (concat cmpop int_expr (fun f x -> f x)) (fun x f -> f x);
@@ -164,7 +170,23 @@ and bin_bool_op s =
  ] s
 and cont_bool_expr s = concat bin_bool_op bool_expr (fun f x -> f x) s
 
-and expr_pars s = choice_list[int_expr; bool_expr; base] s
+and contract_expr s = comb_parser (choice (base ContractAddress) this_pars) (fun
+    expr -> AnyExpr(ContractAddress, expr)) s
+and string_expr s = 
+    comb_parser (base String) (fun expr -> AnyExpr(String,expr)) s
+and human_expr s = 
+    comb_parser (base HumanAddress) (fun expr -> AnyExpr(HumanAddress,expr)) s
+
+and expr_pars s = choice_list[int_expr; bool_expr; contract_expr; string_expr;
+human_expr] s
+
+let get_null_value : type a. a tag -> a =
+function
+    | Int ->  0
+    | String ->  ""
+    | Bool ->  false
+    | ContractAddress -> Contract ""
+    | HumanAddress -> Human ""
 
 let type_pars =
     let tag_pars str tag = const (Kwd str) (fun _ -> AnyTag tag) in
@@ -176,20 +198,24 @@ let type_pars =
         tag_pars "Human" HumanAddress;
 ]
 
-let field_pars = concat type_pars varname (fun (AnyTag t) v -> AnyField (t,v))
+let pars_this = concat (kwd "this") (kwd ".") (fun _ _ -> This)
 
-let field_add_pars s t = 
-    let (ns,field,(tbl,act)) = field_pars s t in 
+let field_pars s t = 
+    let (ns,field,(tbl,act)) =
+        concat type_pars varname (fun (AnyTag t) v -> AnyField (t,v)) s t in 
     ns,field,((add_field_to_table tbl field false),act)
 
+let decl_pars s t = 
+    let (ns,(AnyField(tag,name)),nt) = field_pars s t in
+    comb_parser (option (concat (kwd "=") (value_pars tag) scd)) 
+    (fun opt_exp -> match opt_exp with 
+            | Some (Value v) -> Let ((tag,name),v)
+            | None -> Let ((tag,name),(get_null_value tag))
+            | _ -> raise Fail) ns nt 
+
+
 let store_pars =
-    let assign = fun f exp -> 
-        match f with 
-            | AnyField(t1,name) -> match check_type t1 exp with 
-                | Value v -> Let((t1,name),v) 
-                | _ -> raise Fail in
-    kleenestar (concat field_add_pars (concat (kwd "=") value_pars
-    scd) assign) [] addel
+        kleenestar decl_pars [] addel
 
 let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser =
     fun tl f ->
@@ -232,13 +258,12 @@ let  parse_method_call : string  -> any_rhs parser =
   in
        (aux tbl) s (tbl,act)
 
-let opt_expr : type a .a tag -> any_expr -> a expr option=
-    fun t expr-> 
-        match expr with 
-        | AnyExpr(texp,e) -> 
-                (match eq_tag texp t with 
-                | Some Refl -> Some e
-                | None -> None )
+let opt_expr : type a .a tag -> any_expr -> a expr option = fun t -> 
+ function
+  | AnyExpr(texp,e) -> 
+    match eq_tag texp t with 
+     | Some Refl -> Some e
+     | None -> None 
 
 let pars_mesg_value s t= try comb_parser (concat (concat (concat (kwd ".") (kwd "(") scd)
     (concat (kwd "value") int_expr scd) scd) (kwd ")") fst) (opt_expr Int) s t
@@ -247,7 +272,7 @@ let pars_mesg_value s t= try comb_parser (concat (concat (concat (kwd ".") (kwd 
 
 let call_with_contr tag s t =
     let (ns1, (contr,funname), nt1) = 
-        concat (comb_parser (concat expr_pars (kwd ".") fst)
+        concat (comb_parser (concat contract_expr (kwd ".") fst)
         (opt_expr ContractAddress)) (varname) (fun x1 x2 -> x1,x2) s t in
     let (ns2,value,nt2) = pars_mesg_value ns1 nt1 in
     comb_parser parse_any_expr_list ((fun el -> (fun rhs -> match rhs,value with
@@ -301,19 +326,34 @@ let check_rhs_type: type b. b tag -> any_rhs -> b rhs =
                 CallWithValue(x,y,z,v) | None -> raise Fail)
         | AnyRhs(t,Expr(expr)) -> Expr(check_type tag (AnyExpr(t,expr)))
 
-let assign_contr s tbl =
-    let (ns,(AnyField(t,v)),nt) = concat var_pars (kwd "=") fst s tbl in
-    comb_parser (call_with_contr t) (fun rhs -> Assign((t,v),rhs)) ns nt
+let assign_pars : stm parser = fun s tbl ->
+    let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") fst) s tbl in
+    let (ns1,varname, (ntbl1,act)) = concat varname (kwd "=") fst ns0 ntbl0 in
+    let rhs_pars = choice 
+     (comb_parser expr_pars (fun (AnyExpr(et,expr)) -> AnyRhs(et,Expr(expr))))
+     call_pars in
+    (match get_field ntbl1 varname with
+     | Some (AnyField (tag,_),_) -> 
+         choice 
+         (comb_parser (call_with_contr tag) (fun rhs -> Assign((tag,varname),rhs))) 
+         (comb_parser rhs_pars
+         (fun any_rhs -> match any_rhs with AnyRhs(ft,_) ->
+             Assign((tag,varname),(check_rhs_type tag any_rhs)))) ns1
+             (ntbl1,act)
+     | None ->
+         let (ns2,any_rhs, (ntbl2,act)) = rhs_pars ns1 (ntbl1,act) in
+         let islocal = match this_opt with Some _ -> false | _ -> true in
+         match any_rhs with AnyRhs(et,_) ->
+         ns2,(Assign((et,varname),(check_rhs_type et any_rhs))),
+         ((add_field_to_table ntbl2 (AnyField(et,varname)) islocal),act)
+    )
+
 
 let rec atomic_stm s =
     choice_list[
         (*assign*)
-        choice assign_contr
-        (concat 
-        (concat var_pars (kwd "=") fst)
-        (choice call_pars (comb_parser expr_pars (fun (AnyExpr(et,expr)) -> AnyRhs(et,Expr(expr)))))
-        (fun (AnyField(et,varname)) any_rhs -> 
-            Assign((et,varname),(check_rhs_type et any_rhs))));
+        assign_pars;
+        comb_parser decl_pars (fun (Let (f,v)) -> Assign(f,Expr(Value v)));
         (*if then else*)
         concat 
         (concat (concat (concat (kwd "if") bool_expr scd) (kwd "then") fst ) 
@@ -322,7 +362,7 @@ let rec atomic_stm s =
         (fun (bexpr,stm1) stm2 -> IfThenElse((check_type Bool bexpr),stm1,stm2));
 
         concat (kwd "{") (concat stm_pars (kwd "}") fst) scd;
-    ] s
+    ] s 
 and stm_pars s =
     concat atomic_stm (option double_stm) (fun x funct -> match funct with Some
     f -> f x | _ -> x ) s
@@ -341,7 +381,7 @@ let rec hum_stack_pars s =
     concat (option stack_entry_pars) (concat (kwd "return") expr_pars (fun _ (AnyExpr(t,e)) -> Return(t,e)))
     (fun entry ret -> match entry with None -> ret | Some st -> SComp(st,ret)) s
 (*
- * local_var = varname*
+ * local_var = varname *
  * program = fun local_var -> stm_list return expr
  *)
 let rec local_var_pars: type b. b tag_list -> b var_list parser =
@@ -361,7 +401,7 @@ let program_pars: type a b. (a,b) meth -> (a,b) program parser =
                 let (ns, prg, (tbl,act)) =
                 concat (concat (concat (kwd "fun") (local_var_pars taglist)
                 scd) (kwd "->") fst) (concat stm_list_pars (concat
-                (kwd "return") (choice expr_pars (fail_pars true)) scd) (fun stml expr -> stml,expr))
+                (kwd "return") expr_pars scd) (fun stml expr -> stml,expr))
                 (fun vl (stml,expr) -> vl,stml,(check_type rettag expr)) s t
                 in ns,prg,((remove_local_var tbl ),act)
 
@@ -377,15 +417,30 @@ let hum_or_con = function
     | AnyTag HumanAddress -> true
     | _ -> raise Fail
 
+
+let parse_init_balance =
+    concat 
+    (concat (kwd "(") (value_pars Int)
+        (fun _ expr -> match expr with
+        Value v -> Let((Int,"balance"),v) | _ -> raise Fail)) 
+    (kwd ")") fst
+
+let couple el1 el2 = el1,el2
+
 (*
- * Contract | Human varname store
- * *)
+ * Contract (value_pars)| Human varname store
+ *)
 let actor_pars s t =
     let (ns, atag, (nt,cond)) = type_pars s ([],false)  in
     let is_hum = hum_or_con atag in
-    concat (concat (concat varname (kwd "{") fst) store_pars (fun actname assls -> actname,assls))
-    (concat methods_pars (concat (option hum_stack_pars)(kwd "}") fst)
-    (fun meths se -> meths,se) ) (fun (actname,assls) (meths,se) ->
+    concat (concat (concat (concat varname (option parse_init_balance) couple) 
+    (kwd "{") fst) store_pars 
+    (fun (actname,bal) assls -> 
+        match bal with 
+        Some b -> (actname,([b]@assls)) 
+    | _ -> (actname,assls))) 
+    (concat methods_pars (concat (option hum_stack_pars)(kwd "}") fst) couple) 
+    (fun (actname,assls) (meths,se) ->
         match is_hum,se with
         | false,None -> ActCon((Contract actname),meths,assls)
         | true,(Some stack) ->  ActHum((Human actname),meths,assls,stack)
@@ -416,5 +471,4 @@ let tokens = remove_minspace (of_token(lexer file));;
 Field(Int,"ciao","main")];;*)
 let (s, conf, (tbl,act)) = configuration_pars tokens ([],false);;
 print_token_list s;;
-(*
-print_table tbl;;*)
+print_table tbl;;

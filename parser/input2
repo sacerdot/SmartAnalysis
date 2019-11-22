@@ -2,20 +2,18 @@ Contract c (10) {   (* 10 ̀e il balance iniziale *)
 
     int weight = 2
     Contract p
-    Contract q
 
     foo: string*Contract ->  int =
     fun s k->
-        int retval
         this.q = d
         retval = k.dep.(value 4) 4 true p q
-    return retval
+    return retval 
 }
+
 Contract d (3) {   (* 3 ̀e il balance iniziale *)
 
     foo: string*Contract -> int =
-    fun s con ->
-        int r
-        r = c.foo s this
-    return r
+    fun s con -> r = c.foo s this
+    return r 
 }
+

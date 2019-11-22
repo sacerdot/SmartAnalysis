@@ -1,59 +1,55 @@
 pragma solidity 0.5.11;
+interface Interf0{
 
-interface banca{
-function fie(int , bool ) payable external returns (int );
 }
+interface Interf1{
 
+}
+interface Interf2{
+
+}
+interface Interf3{
+function dep(int , bool , address , address ) payable external returns (int );
+}
+interface Interf4{
+function foo(string calldata , address ) payable external returns (int );
+}
+interface Interf5{
+
+}
 contract c {
-mapping (string => int) symbol;
+Interf2 q;
+Interf1 p;
 int weight = 2;
+Interf0 d;
 int retval = 0;
-bool cond = true;
-address p ;
-address r ;
-address w ;
-constructor() public{
-symbol['a'] = 0;
-}
-function dep(int x, bool b) payable public returns (int ){
-retval = ((((5 * weight) > 4) ? (5 * weight) : 4) + (int)(address(this).balance));
-weight = symbol['a'];
+bool initialize = false;
 
-if ((x == 0)){
-weight = (weight - 1);
+function init(address _d) public {
+if (!initialize){
+d = Interf0(_d);
 }
-else {
-weight = ((int)(msg.value) + (int)(address(this).balance));
-}
-return 1;
 }
 function foo(string memory s, address k) payable public returns (int ){
-
-s = 'ciao';
-cond = (retval == 9);
-retval = (banca(k)).fie.value((uint)(4))(4, true);
+retval = 0;
+q = Interf2(address(d));
+retval = (Interf3(k)).dep.value((uint)(4))(4, true, address(p), address(q));
 return retval;
 }
 }
 contract d {
-int w = 2;
+Interf4 c;
 int r = 0;
-address f ;
-address e ;
+bool initialize = false;
 
-function dep2(int x, bool b) payable public returns (int ){
-if (true){
-w = (w - 1);
+function init(address _c) public {
+if (!initialize){
+c = Interf4(_c);
 }
-else {
-w = (1 + (int)(address(this).balance));
-}
-return 1;
 }
 function foo(string memory s, address con) payable public returns (int ){
-
-s = 'ciao';
-r = (c(con)).foo(s, f);
+r = 0;
+r = (c).foo(s, address(this));
 return r;
 }
 }
