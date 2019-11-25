@@ -50,6 +50,8 @@ type _ expr_list =
 type _ rhs =
  | Expr : 'a expr -> 'a rhs
  | Call : (contract address) expr option * ('a,'b) meth * 'b expr_list -> 'a rhs
+ | CallWithValue : (contract address) expr option * ('a,'b) meth * 'b expr_list
+ * int expr -> 'a rhs
 type stm =
  | Assign : 'a field * 'a rhs -> stm
  | IfThenElse : bool expr * stm * stm -> stm
@@ -171,12 +173,13 @@ let rec pp_tag_list : type a. a tag_list -> string list =
 
 let pp_meth (rtag,tags,id) =
  id ^ ":(" ^ String.concat "*" (pp_tag_list tags) ^ " -> " ^ pp_tag rtag ^ ")"
-let pp_rhs tag =
+let rec pp_rhs tag =
  function
   | Expr e -> pp_expr tag e
   | Call(addr,meth,exprl) ->
      (match addr with None -> "this" | Some a -> pp_expr ContractAddress a)^     pp_meth meth ^ "(" ^ String.concat "," (pp_expr_list (snd3 meth) exprl) ^ ")"
-
+  | CallWithValue(addr,meth,expr,value) -> pp_rhs tag (Call(addr,meth,expr)) ^
+  ".value(" ^ pp_expr Int value ^ ")"
 let rec pp_stm =
  function
   | Assign(f,rhs) -> pp_field f ^ " := " ^ pp_rhs (fst f) rhs

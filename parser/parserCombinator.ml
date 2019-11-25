@@ -1,8 +1,3 @@
-    (*
-stm ::= type varname | varname "=" rhs | "if " bexpr "then" stm "else" stm | 
-        stm "+" stm | def_funct | type varname "()"| "{" stm "}" | "/*" stringc "*/"
-        *)
-
 open String
 open Char
 open Genlex
@@ -15,6 +10,7 @@ type any_tag = AnyTag : 'a tag -> any_tag
 type any_field = AnyField: 'a SmartCalculus.field -> any_field
 type any_meth = AnyMeth : ('a,'b) SmartCalculus.meth -> any_meth
 type any_tag_list = AnyTagList : 'a SmartCalculus.tag_list -> any_tag_list
+type any_expr_list = AnyExprList : 'a SmartCalculus.expr_list -> any_expr_list
 type any_field_or_fun = 
     | Field: 'a tag * string * bool -> any_field_or_fun
     | Fun:  ('a, 'b) SmartCalculus.meth -> any_field_or_fun
@@ -26,9 +22,6 @@ type any_actor =
 type 'ast parser = token t -> (vartable * bool) -> token t * 'ast * (vartable * bool)
 exception Fail
 
-(*
-check_type : type a. a tag -> any_expr -> a expr
-*)
 (*Utils*)
 
 let fst = (fun x _ -> x)
@@ -61,20 +54,22 @@ let check_type : type a. a tag -> any_expr -> a expr =
         | AnyExpr(_,Fail),_ -> Fail
         | AnyExpr(Int,Symbol(s)),String -> Value(s)
         | AnyExpr(String,Value(s)),Int -> Symbol(s)
+        | AnyExpr(_,Var(t,var)),t2 -> Var(t2,var)
         | AnyExpr(t, e),_ -> 
                 match eq_tag tag t with 
                 | Some Refl -> e
                 | _ -> raise Fail 
 
-let value =
-    function
-    | Genlex.String x -> AnyExpr(String, Value x)
-    | Int x -> AnyExpr(Int,Value x)
-    | Kwd "true" -> AnyExpr(Bool,Value true)
-    | Kwd "false" -> AnyExpr(Bool,Value false)
-    | Kwd "this" -> AnyExpr(ContractAddress, This)
+let value : type a. a tag -> token -> a expr = fun tag tok ->
+    match tag,tok with
+    | String,Genlex.String x -> Value x
+    | ContractAddress,Kwd "this" -> This
+    | ContractAddress,Genlex.String v -> Value(Contract v)
+    | Int,Int x -> Value x
+    | Bool,Kwd "true" -> Value true
+    | Bool,Kwd "false" -> Value false
     | _ -> raise Fail
-
+   
 let rec remove_minspace =
     function
     | [] -> []
@@ -106,18 +101,22 @@ let of_token streamt =
     in List.rev (aux [] streamt)
 
 (*table*)
-let rec get_field : vartable -> string -> any_field option =
+let rec get_field : vartable -> string -> (any_field  * bool) option =
     fun tbl varname -> 
         match tbl with
         | [] -> None
-        | Field (tag, name, _ )::_ when varname=name -> Some (AnyField(tag, name))
+        | Field (tag, name, islocal )::_ when varname=name ->  Some (AnyField(tag,
+        name),islocal)
         | _::tl -> get_field tl varname
 
 let add_field_to_table : vartable -> any_field -> bool -> vartable =
     fun tbl (AnyField(t,fieldname)) is_local -> 
         match get_field tbl fieldname with
         | None -> List.append ([Field(t,fieldname,is_local)]) tbl 
-        | _ -> raise Fail
+        | Some(AnyField(tag,name),_) -> 
+                (match eq_tag tag t with
+                | Some Refl -> tbl
+                | None -> raise Fail)
 
 let rec get_fun : vartable -> string -> any_meth option =
     fun tbl funname -> 
