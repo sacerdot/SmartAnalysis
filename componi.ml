@@ -1000,6 +1000,8 @@ end
   ; "basictruck_bin",basictruck_bin
   ; "basiccitizen_basictruck_bin",basiccitizen_basictruck_bin
       ;*) "basiccitizen_bin",pp_automaton pp_bool basiccitizen_bin
+    ; "basiccitizen",pp_automaton pp_bool BasicCitizen.automaton
+    ; "basicbin",pp_automaton pp_bool Bin.automaton
     ; "test",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.test_automaton
     ; "simple_citizen",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.automaton
      ; "simple_citizen_notau",pp_automaton PresburgerOfSmartCalculus.pp_any_stack_backtrack CalculusTest.notau_automaton
