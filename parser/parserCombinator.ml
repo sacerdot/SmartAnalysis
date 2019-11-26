@@ -42,7 +42,7 @@ let rec print_token_list l =
 
 let rec print_table=
     function
-    | [] -> print_endline
+    | [] -> print_endline "";
     | Field (t,f,_)::tl -> print_endline (pp_field (t,f)); print_table tl
     | Fun (meth)::tl -> print_endline(pp_meth meth); print_table tl
 
@@ -52,8 +52,6 @@ let check_type : type a. a tag -> any_expr -> a expr =
     fun tag expr ->
         match expr,tag with
         | AnyExpr(_,Fail),_ -> Fail
-        | AnyExpr(Int,Symbol(s)),String -> Value(s)
-        | AnyExpr(String,Value(s)),Int -> Symbol(s)
         | AnyExpr(_,Var(t,var)),t2 -> Var(t2,var)
         | AnyExpr(t, e),_ -> 
                 match eq_tag tag t with 
@@ -64,7 +62,6 @@ let value : type a. a tag -> token -> a expr = fun tag tok ->
     match tag,tok with
     | String,Genlex.String x -> Value x
     | ContractAddress,Kwd "this" -> This
-    | ContractAddress,Genlex.String v -> Value(Contract v)
     | Int,Int x -> Value x
     | Bool,Kwd "true" -> Value true
     | Bool,Kwd "false" -> Value false
@@ -126,8 +123,8 @@ let rec get_fun : vartable -> string -> any_meth option =
         name))
         | _::tl -> get_fun tl funname
 
- let add_fun_to_table : vartable -> ('a,'b) meth -> vartable =
-    fun tbl (t,l,funname) -> 
+ let add_fun_to_table : vartable -> any_meth -> vartable =
+    fun tbl (AnyMeth(t,l,funname)) -> 
         match get_fun tbl funname with
         | None -> List.append ([Fun(t,l,funname)]) tbl
         | _ -> raise Fail
@@ -141,30 +138,30 @@ let rec get_fun : vartable -> string -> any_meth option =
    
 (*parser*)
 let const : token -> (token -> 'ast) -> 'ast parser =
-    fun t1 f t2 tbl ->
-        if (List.length t2 > 0) && (t1 = (List.hd t2)) then
-            (junk t2), f t1, tbl
-        else
-            raise Fail
+ fun t1 f t2 tbl ->
+  if (List.length t2 > 0) && (t1 = (List.hd t2)) then
+   (junk t2), f t1, tbl
+  else
+   raise Fail
 
 let choice : 'ast parser -> 'ast parser -> 'ast parser
 = fun p1 p2 s tbl -> 
-        try p1 s tbl with Fail -> p2 s tbl
+ try p1 s tbl with Fail -> p2 s tbl
 
 let concat : 'ast1 parser -> 'ast2 parser -> ('ast1 -> 'ast2 -> 'ast3) -> 'ast3 parser
-    = fun p1 p2 f s tbl ->
-        let rest1,ast1,tbl1 = p1 s tbl in
-        let rest2,ast2,tbl2 = p2 rest1 tbl1 in
-        rest2,f ast1 ast2,tbl2
+ = fun p1 p2 f s tbl ->
+  let rest1,ast1,tbl1 = p1 s tbl in
+  let rest2,ast2,tbl2 = p2 rest1 tbl1 in
+  rest2,f ast1 ast2,tbl2
 
 let kleenestar : 'ast2 parser -> 'ast1 -> ('ast1 -> 'ast2 -> 'ast1) -> 'ast1 parser = 
-    fun p empty_ast f s t ->
-        let rec aux p1 s1 acc tbl=
-        try
-            let (rest1, ast1, ntbl) = p1 s1 tbl in
-            aux p1 rest1 (f acc ast1) ntbl
-        with Fail -> (s1, acc, tbl)
-        in aux p s empty_ast t
+ fun p empty_ast f s t ->
+  let rec aux p1 s1 acc tbl=
+  try
+   let (rest1, ast1, ntbl) = p1 s1 tbl in
+   aux p1 rest1 (f acc ast1) ntbl
+  with Fail -> (s1, acc, tbl)
+  in aux p s empty_ast t
 
 let option : 'ast parser -> 'ast option parser =
  fun p s tbl -> try 
@@ -173,9 +170,9 @@ let option : 'ast parser -> 'ast option parser =
 
 let rec choice_list: 'ast parser list -> 'ast parser
 = fun l->
-    match l with
-        | [] -> raise Fail
-        | hd :: [] -> hd
-        | hd :: tl -> choice hd (choice_list tl)
+ match l with
+  | [] -> raise Fail
+  | hd :: [] -> hd
+  | hd :: tl -> choice hd (choice_list tl)
 
 let kwd str = const (Kwd str) ignore

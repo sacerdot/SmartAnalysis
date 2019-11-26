@@ -7,6 +7,7 @@ let symb_array = "symbol"
 let balance = "balance"
 let msg_value = "value"
 let initialize = "initialize"
+let sol_filename = "out.sol"
 
 type 'a typename = 
  | Int : int typename 
@@ -60,7 +61,8 @@ type any_funct=  Function: ('a, 'b) funct * statement * ('b expression option)->
 type field = Field : ('a var * ('a option) * bool) -> field
 type symbol = Symbol : string -> symbol
 type table = (field list *  interface list * symbol list)
-type contract_ast = Contract of string *  statement option * (declaration list) * (any_funct list) 
+type contract_ast = Contract of string * (declaration list) * (any_funct list) *
+int
 type ('a,'b) trans = table -> 'a -> 'b *table 
 type ast = contract_ast list
 type ('a, 'b) mapping = Mapping of 'a expression * 'b expression 
@@ -120,7 +122,6 @@ let rec is_matching_meths =
     | Some (out1,stg1), Some (out2,stg2) -> is_same_type out1 out2 && stg1=stg2 
     | None,None -> true
     | _,_ -> false)
-
 
 let pp_opt f = 
  function
@@ -207,9 +208,7 @@ let get_addr_interface conname tbl =
  match get_field Address conname (get_field_list tbl) with
   | Some Field ((Address,_),Some (AddrInt (InterfaceId int_name)),_) -> 
     Some (get_interface int_name (get_interface_list tbl))
-  | _ -> 
-           print_endline ("Non trovato " ^ conname); None
-
+  | _ -> None
 
 let get_interface_id = function Interface(id,_) -> id
 
@@ -496,7 +495,6 @@ let rec trans_stm : (stm, statement) trans = fun tbl ->
        let aux tbl =
         let (Expr(typ,expr), ntbl) = 
          trans_rhs tag tbl rhs in
-         print_endline (pp_table  ntbl);
          Assignment ((t,name),
         (match t,typ with
          | Interf,Interf -> 
@@ -601,13 +599,13 @@ let uniq_cons x xs =
 let remove_duplicates xs = List.fold_right uniq_cons xs []
 
 let extract_balance dl = 
- let rec aux bl acc = 
+ let rec aux (bl:int) acc = 
   function 
   | [] -> bl,acc
-  | Declaration ((Int,var),(Some (Value value))) :: tl when var = balance ->
-    aux bl acc tl
+  | Declaration ((Int,var),(Some (Value v))) :: tl when var = balance ->
+    aux v acc tl
   | h::tl -> aux bl ([h]@acc) tl
-  in aux None [] dl
+  in aux 0 [] dl
 
 let rec get_decl_list =
  function 
@@ -647,15 +645,13 @@ let trans_contract : a_contract list -> (a_contract, contract_ast) trans =
   | Contract name -> 
    let (decl_others, ntbl0) = add_decl_list tbl others in
    let (decl_expl, ntbl1) = trans_list trans_decl fields ntbl0 [] in 
-   print_endline (pp_table ntbl1);
    let (flist, ntbl2) = trans_list trans_funct meths ntbl1 [] in 
    let (bal,decls) = extract_balance (remove_duplicates ([decl_initialize]@(get_decl_list (fst
    ntbl2))@(decl_others@decl_expl))) in
    let constructor = 
-    match assign_symbol (get_symbols ntbl2) 0 with 
-     | Empty -> None 
-     | s -> Some s in  
-   (Contract(name, constructor, decls, [get_init_funct ntbl2 others]@flist)), ntbl2
+    Function (("constructor",PNil,None,[Payable],[Public]),(assign_symbol 
+    (get_symbols ntbl2) 0),None) in
+   (Contract(name, decls, [constructor]@[get_init_funct ntbl2 others]@flist, bal)), ntbl2
 
 let rec trans_contract_list tbl l = 
  function 
@@ -767,8 +763,8 @@ let declare_symbols =
 let rec pp_meth =
  function 
  Funct (name, params,out, view, vis) ->
-  "function " ^ name ^ pp_params params ^ " " ^ (String.concat " " (List.map pp_view view)) ^ 
-  (String.concat " " (List.map pp_visibility vis)) ^  
+  (if (name = "constructor") then name else "function " ^ name) ^ pp_params params 
+  ^ " " ^ (String.concat " " (List.map pp_view view)) ^ (String.concat " " (List.map pp_visibility vis)) ^  
   (match out with 
   | Some (outtype,storage) -> 
     "returns (" ^ pp_typename outtype ^ " " ^ (pp_opt pp_storage storage) ^ ")"
@@ -782,16 +778,11 @@ let rec pp_funct =
    (match return,m with Some r,(_,_,Some(outtype,_),_,_) ->
    "return " ^ pp_expression tbl outtype r ^ ";" ^ nl | _ -> "")  ^ "}" 
 
-let pp_constructor  =
- fun p tbl s -> "constructor() public{" ^ nl ^ pp_statement tbl s ^ "}"
-
 let rec pp_contract =
  fun tbl c -> match c with
- Contract (name, constructor, fields, meths) ->  "contract " ^ name ^ " {" ^ nl ^
- (match constructor with None -> "" | _ -> declare_symbols ^ nl) ^
+ Contract (name, fields, meths,_) ->  "contract " ^ name ^ " {" ^ nl ^ (declare_symbols ^ nl) ^
  (String.concat nl (List.map (pp_declaration tbl)fields)) ^ nl ^
- pp_opt (pp_constructor (Some name) tbl) constructor ^ nl ^ (String.concat nl (List.map
- (pp_funct tbl) meths)) ^ nl ^ "}"
+  (String.concat nl (List.map (pp_funct tbl) meths)) ^ nl ^ "}"
 
 let pp_interface : interface -> string = 
  function 
@@ -801,12 +792,13 @@ let pp_interface : interface -> string =
 
 let rec pp_ast : ast * table -> string =
  fun (cl,(fl,il,ml)) -> 
-  "pragma solidity 0.5.11;" ^ nl ^ 
+  "pragma solidity 0.4.25;" ^ nl ^ 
   String.concat nl  (List.map pp_interface  (List.rev il)) ^ nl ^
   String.concat nl (List.map (pp_contract (fl,il,ml)) cl)
 ;;
 
-let outstr = (pp_ast (trans_configuration (Grammar.conf)));;
+let sol_ast = trans_configuration (Grammar.conf);;
+let outstr = (pp_ast sol_ast);;
 print_string outstr;;
-let out_channel = open_out "out.sol";;
+let out_channel = open_out sol_filename;;
 Printf.fprintf out_channel "%s" outstr;

@@ -1,4 +1,4 @@
-pragma solidity 0.5.11;
+pragma solidity 0.4.25;
 interface Interf0{
 
 }
@@ -18,13 +18,16 @@ interface Interf5{
 
 }
 contract c {
+mapping (string => int) symbol;
 Interf2 q;
 Interf1 p;
 int weight = 2;
 Interf0 d;
 int retval = 0;
 bool initialize = false;
+constructor() payable public {
 
+}
 function init(address _d) public {
 if (!initialize){
 d = Interf0(_d);
@@ -34,14 +37,18 @@ function foo(string memory s, address k) payable public returns (int ){
 retval = 0;
 q = Interf2(address(d));
 retval = (Interf3(k)).dep.value((uint)(4))(4, true, address(p), address(q));
+retval = (this).foo('ciao', k);
 return retval;
 }
 }
 contract d {
+mapping (string => int) symbol;
 Interf4 c;
 int r = 0;
 bool initialize = false;
+constructor() payable public {
 
+}
 function init(address _c) public {
 if (!initialize){
 c = Interf4(_c);

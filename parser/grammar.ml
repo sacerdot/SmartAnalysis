@@ -145,7 +145,7 @@ let rec atomic_bool_expr s =
         concat (concat (kwd "(") bool_expr scd) (kwd ")") fst ;
         concat (kwd "!") atomic_bool_expr (fun _ -> notb) ;
         concat int_expr (concat cmpop int_expr (fun f x -> f x)) (fun x f -> f x);
-        concat int_expr (concat eqop int_expr (fun f x -> f x)) (fun x f -> f x);
+        concat (choice_list[int_expr; string_expr; contract_expr; human_expr]) (concat eqop expr_pars (fun f x -> f x)) (fun x f -> f x);
  ] s
  and cmpop s =  
     choice_list [
@@ -168,14 +168,25 @@ and bin_bool_op s =
   const (Kwd "||") (fun _ -> orb) ;
   eqop;
  ] s
-and cont_bool_expr s = concat bin_bool_op bool_expr (fun f x -> f x) s
+and cont_bool_expr s = concat (choice bin_bool_op eqop) bool_expr (fun f x -> f x) s
 
-and contract_expr s = comb_parser (choice (base ContractAddress) this_pars) (fun
+and contract_expr s = 
+    comb_parser (
+        choice_list [
+            base ContractAddress; 
+            this_pars;
+            concat (kwd "contr_addr") 
+            (value_pars String) (fun _ -> function Value s -> Value (Contract s) | _ -> raise Fail)]) (fun
     expr -> AnyExpr(ContractAddress, expr)) s
 and string_expr s = 
     comb_parser (base String) (fun expr -> AnyExpr(String,expr)) s
 and human_expr s = 
-    comb_parser (base HumanAddress) (fun expr -> AnyExpr(HumanAddress,expr)) s
+    comb_parser (
+        choice_list 
+        [base HumanAddress;
+        concat (kwd "hum_addr")
+        (value_pars String) (fun _ -> function Value s -> Value (Human s) | _ -> raise Fail)
+        ]) (fun expr -> AnyExpr(HumanAddress,expr)) s
 
 and expr_pars s = choice_list[int_expr; bool_expr; contract_expr; string_expr;
 human_expr] s
@@ -214,38 +225,34 @@ let decl_pars s t =
             | _ -> raise Fail) ns nt 
 
 
-let store_pars =
-        kleenestar decl_pars [] addel
+let store_pars = kleenestar decl_pars [] addel
 
 let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser =
-    fun tl f ->
-        let rec aux: type b. b tag_list -> b expr_list parser =
-            fun  tl s t->
-            match tl with
-            | TNil -> (s,ENil,t)
-            | TCons(x,tail) ->
-                    match expr_pars s t with
-                    | ns,expr,nt -> 
-                        comb_parser (aux tail) (fun el -> ECons((check_type x
-                        expr),el)) ns nt
-        in comb_parser (aux tl) f
+ fun tl f ->
+  let rec aux: type b. b tag_list -> b expr_list parser =
+   fun  tl s t->
+   match tl with
+   | TNil -> (s,ENil,t)
+   | TCons(x,tail) ->
+    match expr_pars s t with
+    | ns,expr,nt -> 
+      comb_parser (aux tail) (fun el -> ECons((check_type x expr),el)) ns nt
+  in comb_parser (aux tl) f
 
-
-let parse_any_expr_list =
-    kleenestar expr_pars [] (fun el expr -> el@[expr]) 
+let parse_any_expr_list = kleenestar expr_pars [] (fun el expr -> el@[expr]) 
 
 let get_rhs_from_expr_list = 
-    fun m c typ el -> 
-        let rec aux el rhs =
-            match el with
-            | [] -> rhs
-            | AnyExpr (t,expr) :: tl -> 
-                    (match rhs with 
-                    | Call(c,(tag,tags,name),elist) -> 
-                        aux tl
-                        (Call(c,(tag,TCons(t,tags),name),ECons(expr,elist)))
-                    | _ -> raise Fail)
-        in aux (List.rev el) (Call(c,(typ,TNil,m),ENil))
+ fun m c typ el -> 
+  let rec aux el rhs =
+   match el with
+   | [] -> rhs
+   | AnyExpr (t,expr) :: tl -> 
+    (match rhs with 
+    | Call(c,(tag,tags,name),elist) -> 
+        aux tl
+        (Call(c,(tag,TCons(t,tags),name),ECons(expr,elist)))
+    | _ -> raise Fail)
+  in aux (List.rev el) (Call(c,(typ,TNil,m),ENil))
 
 let  parse_method_call : string  -> any_rhs parser =
  fun m s (tbl,act) ->
@@ -280,10 +287,12 @@ let call_with_contr tag s t =
     contr tag el))) ns2 nt2
 
 
+let funname s (tbl,act) = 
+    comb_parser varname (fun var -> match get_fun tbl var with Some _ ->
+        var | None -> raise Fail) s (tbl,act)
+
 let call_pars s t = 
-    (*let (ns1, contr, nt1) = try comb_parser (concat expr_pars (kwd ".") fst)
-    (opt_expr ContractAddress) s t with Fail -> s,None,t in*)
-    let (ns1,str,nt1) = varname s t in 
+    let (ns1,str,nt1) = funname s t in 
     let (ns2,value,nt2) = pars_mesg_value ns1 nt1 in
     comb_parser (parse_method_call str)
     (function 
@@ -307,11 +316,11 @@ and comb_parameters s =
         | Some (AnyTagList ls) -> AnyTagList (TCons(t,ls))
         | None ->  AnyTagList (TCons(t,TNil))) s 
 let meth_pars s t = 
-    let (ns, (AnyMeth ast), (tbl,act)) = 
+    let (ns, ast, (tbl,act)) = 
         concat (concat varname (kwd ":") fst) 
         (concat (concat parameter_pars (kwd "->") fst) type_pars (fun e1 e2 -> e1,e2)) 
         (fun name ((AnyTagList tlist),(AnyTag t))-> AnyMeth(t,tlist,name)) s t 
-    in (ns,(AnyMeth ast),((add_fun_to_table tbl ast),act))
+    in (ns,ast,((add_fun_to_table tbl ast),act))
 
 (*
  * atomic_stm = assign | if bool_expr then stm else stm | { stm } 
@@ -326,29 +335,35 @@ let check_rhs_type: type b. b tag -> any_rhs -> b rhs =
                 CallWithValue(x,y,z,v) | None -> raise Fail)
         | AnyRhs(t,Expr(expr)) -> Expr(check_type tag (AnyExpr(t,expr)))
 
-let assign_pars : stm parser = fun s tbl ->
-    let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") fst) s tbl in
-    let (ns1,varname, (ntbl1,act)) = concat varname (kwd "=") fst ns0 ntbl0 in
-    let rhs_pars = choice 
-     (comb_parser expr_pars (fun (AnyExpr(et,expr)) -> AnyRhs(et,Expr(expr))))
-     call_pars in
-    (match get_field ntbl1 varname with
+let rhs = fun this_opt varname s (tbl,act) ->
+    let expr_call_pars = choice call_pars 
+        (comb_parser expr_pars (fun (AnyExpr(et,expr)) -> AnyRhs(et,Expr(expr))))
+    in
+    (match get_field tbl varname with
      | Some (AnyField (tag,_),_) -> 
          choice 
          (comb_parser (call_with_contr tag) (fun rhs -> Assign((tag,varname),rhs))) 
-         (comb_parser rhs_pars
+         (comb_parser expr_call_pars
          (fun any_rhs -> match any_rhs with AnyRhs(ft,_) ->
-             Assign((tag,varname),(check_rhs_type tag any_rhs)))) ns1
-             (ntbl1,act)
+             Assign((tag,varname),(check_rhs_type tag any_rhs)))) s
+             (tbl,act)
      | None ->
-         let (ns2,any_rhs, (ntbl2,act)) = rhs_pars ns1 (ntbl1,act) in
+         let (ns1,any_rhs, (ntbl1,act)) = expr_call_pars s (tbl,act) in
          let islocal = match this_opt with Some _ -> false | _ -> true in
          match any_rhs with AnyRhs(et,_) ->
-         ns2,(Assign((et,varname),(check_rhs_type et any_rhs))),
-         ((add_field_to_table ntbl2 (AnyField(et,varname)) islocal),act)
+         ns1,(Assign((et,varname),(check_rhs_type et any_rhs))),
+         ((add_field_to_table ntbl1 (AnyField(et,varname)) islocal),act)
     )
+let rec atomic_rhs this_opt varname s = choice (concat (concat (kwd "(")
+(rhs_pars this_opt varname) scd) (kwd ")") fst) (rhs this_opt varname) s
 
+and rhs_pars this_opt varname s = atomic_rhs this_opt varname s
 
+let assign_pars s tbl =
+    let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") fst) s tbl in
+    let (ns1,varname, (ntbl1,act)) = concat varname (kwd "=") fst ns0 ntbl0 in
+    rhs_pars this_opt varname ns1 (ntbl1,act)
+    
 let rec atomic_stm s =
     choice_list[
         (*assign*)
@@ -407,6 +422,7 @@ let program_pars: type a b. (a,b) meth -> (a,b) program parser =
 
 let any_meth_pars s t =
     let (ns, (AnyMeth meth), nt) = (concat meth_pars (kwd "=") fst) s t in 
+    print_table ((fun (t,_) -> t) nt); 
     comb_parser (program_pars meth) (fun prg -> AnyMethodDecl(meth, prg)) ns
     (nt)
 
@@ -464,7 +480,7 @@ let lexer = make_lexer["+"; "-"; "*"; "max"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "string"; "bool"; 
 "="; ","; "fail"; "if"; "then"; "else"; "{"; "fun";
 "}"; "choice"; "return"; "Human"; "Contract"; ":"; "unit"; "->"; "this"; ".";
-"value"; "balance"; "symbol"]
+"value"; "balance"; "symbol"; "contr_addr"; "hum_addr"]
 let tokens = remove_minspace (of_token(lexer file));;
 (*print_token_list tokens;;*)
 (*let empty_t = (Fun(Int,(TCons(Int,TCons(Int,TCons(String,TNil)))),"prova"));

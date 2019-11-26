@@ -1,22 +1,30 @@
-all: compiler 
-	./compiler
+SOURCES = lib.ml smartCalculus.ml parserCombinator.ml grammar.ml compiler.ml pythonDeploy.ml
+EXEC = compiler
+CAMLC = ocamlc
+CAMLDEP = ocamldep
+LIBS=$(WITHUNIX)
+WITHUNIX =unix.cma -cclib -lunix
+all: depend $(EXEC)
+OBJS = $(SOURCES:.ml=.cmo)
 
-lib.cmo lib.cmi: lib.ml
-	ocamlc -c lib.ml
+$(EXEC): $(OBJS)
+	$(CAMLC) $(CUSTOM) -o $(EXEC) $(LIBS) $(OBJS)
+	./$(EXEC)
 
-smartCalculus.cmo smartCalculus.cmi: smartCalculus.ml lib.cmi
-	ocamlc -c smartCalculus.ml
+.SUFFIXES:
+.SUFFIXES: .ml .mli .cmo .cmi .cmx .mll .mly
 
-parserCombinator.cmo parserCombinator.cmi: parserCombinator.ml smartCalculus.cmi
-	ocamlc -c parserCombinator.ml 
+.ml.cmo:
+	$(CAMLC) -c $<
 
-grammar.cmo grammar.cmi: grammar.ml grammar.cmi smartCalculus.cmi parserCombinator.cmi
-	ocamlc -c grammar.ml
-
-compiler: compiler.ml grammar.cmo smartCalculus.cmo parserCombinator.cmo lib.cmo
-	ocamlc -g -o compiler unix.cma lib.cmo smartCalculus.cmo parserCombinator.cmo grammar.cmo compiler.ml
+.mli.cmi:
+	$(CAMLC) -c $<
 
 clean:
-	rm -f *.cmi *.cmo compiler
+	rm -f $(EXEC)
+	rm -f *.cmo *.cmi
 
+depend: $(SOURCES)
+	$(CAMLDEP) *.mli *.ml > .depend
 
+include .depend
