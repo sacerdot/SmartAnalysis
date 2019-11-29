@@ -526,14 +526,14 @@ let rec trans_stm : (stm, statement) trans = fun tbl ->
 
 
 let rec trans_stmlist : (stm list, statement) trans = 
-    fun tbl stml ->
-        match stml with
-        | h::[] -> trans_stm tbl h
-        | h::tl ->
-                let (stm,ntbl) = trans_stm  tbl h in 
-                trans_unary (fun v -> Sequence(stm,v)) 
-                trans_stmlist ntbl tl
-        | [] -> Empty,tbl
+ fun tbl stml ->
+  match stml with
+  | h::[] -> trans_stm tbl h
+  | h::tl ->
+   let (stm,ntbl) = trans_stm  tbl h in 
+   trans_unary (fun v -> Sequence(stm,v)) 
+   trans_stmlist ntbl tl
+  | [] -> Empty,tbl
 
 let rec add_params_in_tbl : type a. meth -> a param_list -> table -> table =
  fun m par_list tbl -> match par_list with 
@@ -569,13 +569,13 @@ let rec assign_symbol : string list -> int -> statement =
 
 
 let rec trans_list : type a b. (a,b) trans -> a list ->
-    table -> b list -> b list * table =
-    fun f l1 tbl l2 ->
-        match l1 with 
-        | [] -> l2,tbl
-        | h::tl -> 
-                let (nel,ntbl) = f tbl h in 
-                trans_list f tl ntbl (l2@[nel])
+ table -> b list -> b list * table =
+ fun f l1 tbl l2 ->
+  match l1 with 
+  | [] -> l2,tbl
+  | h::tl -> 
+   let (nel,ntbl) = f tbl h in 
+   trans_list f tl ntbl (l2@[nel])
 
 let rec add_actorlist_to_table tbl = 
  function
@@ -629,8 +629,9 @@ let get_other_contrlist_assign tbl cl =
     | (SmartCalculus.Contract name,_,_)::tl -> 
       let interface = match (get_contr_interface name tbl) with Some i -> i | None
       -> raise CompilationFail in
-      Assignment
-      ((Interf,name),(CastInterf((get_interface_id interface),Var(Address,"_" ^ name))))
+      Sequence (Assignment
+      ((Interf,name),(CastInterf((get_interface_id interface),Var(Address,"_" ^
+      name)))),aux tl)
   in IfElse (Not(Var(Bool,initialize)),(aux cl),Empty)
 
 let get_init_funct : table -> a_contract list -> any_funct = fun tbl cl ->
@@ -703,7 +704,7 @@ let rec pp_expression : type a. table -> a typename ->
   | _,(Or(e1,e2)) -> "(" ^ pp_expr_info Bool e1 ^ " || " ^ pp_expr_info Bool e2 ^ ")"
   | _,(Not e) -> "(!" ^ pp_expr_info Bool e ^ ")" 
   | _,(Call(c,(s,_,_,_,_),exprl,value)) ->  
-          "(" ^ pp_expr_info Interf c ^ ")."  ^ s ^ pp_opt (fun e -> ".value((uint)(" ^ pp_expr_info Int e ^ "))")
+          pp_expr_info Interf c ^ "."  ^ s ^ pp_opt (fun e -> ".value((uint)(" ^ pp_expr_info Int e ^ "))")
   value ^ "(" ^ (String.concat ", " (string_list_of_expression tbl exprl)) ^ ")" 
   | _,(Symbol s) -> symb_array ^ "['" ^ s ^ "']"
  and string_list_of_expression : type a. table  -> a expression_list -> string list =

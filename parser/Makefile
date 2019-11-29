@@ -4,8 +4,9 @@ CAMLC = ocamlc
 CAMLDEP = ocamldep
 LIBS=$(WITHUNIX)
 WITHUNIX =unix.cma -cclib -lunix
-all: depend $(EXEC)
 OBJS = $(SOURCES:.ml=.cmo)
+
+all: depend $(EXEC)
 
 $(EXEC): $(OBJS)
 	$(CAMLC) $(CUSTOM) -o $(EXEC) $(LIBS) $(OBJS)
@@ -21,7 +22,6 @@ $(EXEC): $(OBJS)
 	$(CAMLC) -c $<
 
 clean:
-	rm -f $(EXEC)
 	rm -f *.cmo *.cmi
 
 depend: $(SOURCES)

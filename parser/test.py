@@ -2,6 +2,7 @@
 import sys
 import time
 import pprint
+import json 
 
 from web3 import Web3, HTTPProvider
 from solc import compile_source
@@ -23,6 +24,10 @@ def deploy_contract(w3, contract_interface, balance):
     address = w3.eth.waitForTransactionReceipt(tx_hash)
     return address
 
+def dump_abi(path, abi):
+    with open(path, 'w') as f:
+        json.dump(abi, f)
+
 w3 = Web3(HTTPProvider('http://localhost:8545'))
 w3.eth.defaultAccount = w3.eth.accounts[0]
 
@@ -43,9 +48,17 @@ c_contract = (w3.eth.contract(
         abi=c_contract_interface['abi']
     ))
 
+c_abi_path = 'c_abi.json'
+dump_abi(c_abi_path, c_contract_interface['abi'])
+d_abi_path = 'd_abi.json'
+dump_abi(d_abi_path, d_contract_interface['abi'])
+
 c_contract.functions.init(d_address).call()
 d_contract.functions.init(c_address).call()
 
 print('c = ' + c_address)
 print('d = ' + d_address)
+
+print('cabi path = ' + c_abi_path)
+print('dabi path = ' + d_abi_path)
 
