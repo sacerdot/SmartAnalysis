@@ -1,0 +1,45 @@
+Contract a (100) {
+
+    int x = 0
+
+    function addbalance () : int {
+        return value
+    }
+
+    function getbalance () : int {
+        return balance
+    }
+
+    function transf_tob (int v) : int {
+        int x = 0
+        
+        if (v <= balance) then 
+            x = b.addbalance.value(v)()
+        else 
+            x = 0
+        return x
+    }
+}
+
+Contract b (100) {
+
+
+    int x = 0
+    function addbalance () : int {
+        return value
+    }
+
+    function getbalance () : int {
+        return balance
+    }
+
+    function transf_toa (int v) : int {
+        int x = 0
+        if (v <= balance) then 
+               x = a.addbalance.value(v)()
+        else 
+            x = 0
+        return x
+    }
+
+}

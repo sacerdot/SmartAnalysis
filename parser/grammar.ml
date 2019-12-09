@@ -96,7 +96,7 @@ const (List.hd s) (fun _ ->
     | _ -> raise Fail))
    | _ -> raise Fail) in aux) s t
 
-let value_pars tag s t = (junk s),(value tag (List.hd s)),t
+let value_pars tag s = const (List.hd s) (value tag) s
 
 let fail_pars : type a . a tag -> bool -> (a expr) parser = fun tag perm ->
  const (Kwd "fail") (fun _ -> if perm then SmartCalculus.Fail else raise Fail)
@@ -332,7 +332,7 @@ let call_with_contr tag s t =
  * atomic_stm = assign | if bool_expr then stm else stm | { stm } 
  * stm_pars =  atomic_stm ?stm | atomic_stm + stm    
  *)
-let rec atomic_rhs this_opt varname s = 
+let rec rhs_toassign_pars this_opt varname s = 
  let aux = fun this_opt varname s (tbl,act) ->
  let expr_call_pars = choice call_pars 
   (comb_parser expr_pars (fun (AnyExpr(et,expr)) -> AnyRhs(et,Expr(expr))))
@@ -352,14 +352,13 @@ let rec atomic_rhs this_opt varname s =
    ns1,(Assign((et,varname),(check_rhs_type et any_rhs))),
    ((add_field_to_table ntbl1 (AnyField(et,varname)) islocal),act)) in
  choice (concat (concat (kwd "(")
-(rhs_pars this_opt varname) scd) (kwd ")") fst) (aux this_opt varname) s
+(rhs_toassign_pars this_opt varname) scd) (kwd ")") fst) (aux this_opt varname) s
 
-and rhs_pars this_opt varname s = atomic_rhs this_opt varname s
 
 let assign_pars s tbl =
  let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") fst) s tbl in
  let (ns1,varname, (ntbl1,act)) = concat varname (kwd "=") fst ns0 ntbl0 in
- rhs_pars this_opt varname ns1 (ntbl1,act)
+ rhs_toassign_pars this_opt varname ns1 (ntbl1,act)
     
 let rec atomic_stm s =
  choice_list[
@@ -492,7 +491,7 @@ let lexer = make_lexer["+"; "-"; "*"; "max"; "("; ")"; ">"; ">="; "=="; "<";
 "value"; "balance"; "symbol"; "contr_addr"; "hum_addr"]
 let get_tokens file = remove_minspace (of_token(lexer file));;
 
-let in_channel = open_in "input"
+    let in_channel = open_in "transf-example"
 let file = Stream.of_channel(in_channel)
 let (s, conf, (tbl,act)) = configuration_pars (get_tokens file) ([],false);;
 print_token_list s;;

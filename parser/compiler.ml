@@ -108,9 +108,9 @@ let rec match_exprlist_with_params: type a b. a param_list -> b expression_list 
    | PCons(((t1,_),_),ptail),ExprCons((t2,_),etail) -> 
     (match eq_type t1 t2 with 
     | Some Refl ->
-        (match match_exprlist_with_params ptail etail with
-        | Some Refl -> Some Refl
-        | None -> None)
+     (match match_exprlist_with_params ptail etail with
+     | Some Refl -> Some Refl
+     | None -> None)
     | None -> None)
    | _,_ -> None
 
@@ -221,7 +221,6 @@ let add_address_to_table name tbl islocal =
   add_interface i ((add_field_in_table (Address,name)
   (Some(AddrInt(get_interface_id i))) islocal) tbl)
 
-
 let add_funct_to_contr_interf conname f tbl =
  apply_to_second
  (List.map (fun i ->
@@ -236,7 +235,6 @@ let add_funct_to_addr_interf conname f tbl =
     Some c_int -> if (i = c_int) then add_funct_to_interface c_int f else i
    | None -> i)) tbl
 
-
 let remove_local_var = apply_to_first (List.filter (fun (Field(_,_,islocal)) -> not islocal))
 
 let rec pp_typename : type a. a typename -> string =
@@ -246,7 +244,6 @@ let rec pp_typename : type a. a typename -> string =
   | String -> "string"
   | Interf -> "interface"
   | Address -> "address"
-
 
 let rec pp_table_fields =
  function 
@@ -524,7 +521,6 @@ let rec trans_stm : (stm, statement) trans = fun tbl ->
   trans_stm tbl stm1 stm2
   | _ -> raise CompilationFail
 
-
 let rec trans_stmlist : (stm list, statement) trans = 
  fun tbl stml ->
   match stml with
@@ -562,11 +558,10 @@ let trans_funct: (any_method_decl, any_funct) trans =
    | None -> raise CompilationFail
 
 let rec assign_symbol : string list -> int -> statement =
-    fun l n -> match l with
-        | [] -> Empty
-        | h::tl -> Sequence((Assignment((Int, symb_array ^ "['" ^ h ^ "']"), Value(n)),
-        assign_symbol tl (n + 1)))
-
+ fun l n -> match l with
+  | [] -> Empty
+  | h::tl -> Sequence((Assignment((Int, symb_array ^ "['" ^ h ^ "']"), Value(n)),
+  assign_symbol tl (n + 1)))
 
 let rec trans_list : type a b. (a,b) trans -> a list ->
  table -> b list -> b list * table =
@@ -677,7 +672,7 @@ let pp_value : type a. a typename -> a -> string =
  | Interf,(InterfaceId name) -> name 
  | Address,AddrInt(InterfaceId name) -> name 
 
-let pp_cast_type t = "(" ^ pp_typename t ^ ")"
+let pp_cast_type t s = pp_typename t ^ "(" ^ s ^ ")"
 let cast_interf =
     function Interface(InterfaceId name,_) -> "(" ^ name ^ ")" 
 let rec pp_expression : type a. table -> a typename ->
@@ -685,9 +680,10 @@ let rec pp_expression : type a. table -> a typename ->
  fun  tbl t expr->
   let pp_expr_info tag e = (pp_expression tbl tag e) in
   match t,expr with 
-  | Int,Balance ->  pp_cast_type Int ^ pp_expr_info Interf This ^ ".balance"
-  | Int,MsgValue -> pp_cast_type Int ^ "(msg.value)"
-  | Interf,CastInterf ((InterfaceId name),expr) -> name ^ "(" ^ pp_expr_info Address expr ^ ")"
+  | Int,Balance ->  pp_cast_type Int ((pp_expr_info Interf This) ^
+      ".balance" )
+          | Int,MsgValue -> pp_cast_type Int "msg.value"
+      | Interf,CastInterf ((InterfaceId name),expr) -> name ^ "(" ^ pp_expr_info Address expr ^ ")"
   | t,Var(_, name) -> name
   | Interf,This -> "this"
   | Address,Addr (expr) -> "address(" ^ pp_expr_info Interf expr ^ ")"
@@ -704,7 +700,7 @@ let rec pp_expression : type a. table -> a typename ->
   | _,(Or(e1,e2)) -> "(" ^ pp_expr_info Bool e1 ^ " || " ^ pp_expr_info Bool e2 ^ ")"
   | _,(Not e) -> "(!" ^ pp_expr_info Bool e ^ ")" 
   | _,(Call(c,(s,_,_,_,_),exprl,value)) ->  
-          pp_expr_info Interf c ^ "."  ^ s ^ pp_opt (fun e -> ".value((uint)(" ^ pp_expr_info Int e ^ "))")
+              pp_expr_info Interf c ^ "."  ^ s ^ pp_opt (fun e -> ".value(uint(" ^ pp_expr_info Int e ^ "))")
   value ^ "(" ^ (String.concat ", " (string_list_of_expression tbl exprl)) ^ ")" 
   | _,(Symbol s) -> symb_array ^ "['" ^ s ^ "']"
  and string_list_of_expression : type a. table  -> a expression_list -> string list =

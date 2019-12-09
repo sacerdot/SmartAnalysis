@@ -56,9 +56,11 @@ let pp_deploy_contract =
 let pp_call_init others = 
  function 
   | Contract (name,_,_,_) ->
+    "tx_hash = " ^
     contract name ^ ".functions.init(" ^ 
     String.concat "," (List.map (fun (Contract(n,_,_,_)) -> address n) others) ^
-    ").call()"
+    ").transact()\n" ^
+    "tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)"
 
 let pp_print_address =
  function 
@@ -74,7 +76,7 @@ let pp_save_abi =
 let pp_print_abi =
  function
   | Contract (name,_,_,_) -> 
-    "print('" ^ name ^ "abi path = ' + " ^ abi_path name ^ ")"
+    "print('" ^ name ^ " abi path = ' + " ^ abi_path name ^ ")"
 
 
 let get_python ast =

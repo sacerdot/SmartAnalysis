@@ -1,84 +1,84 @@
 Human test {
-    int x
-    int r
-    int b
-    int d
+ int x
+ int r
+ int b
+ int d
 
-    function id (int w) : int { 
-        return w
-    }
+ function id (int w) : int { 
+ return w
+ }
 
-    function loop() : int {
-        int z 
-        
-        x = 3
-        r = id(x)
-        
-        if (x > z) then b = 1
-        else b = 2
+ function loop() : int {
+ int z 
 
-        {
-            b = 0
-            res = loop()
-        } + 
-        {
-            d = foo.foo(3) 
-            x = symbol("y")
-        }
-        return res
-    }
-        
-    
-    res = loop()
-    return res
-    
+ x = 3
+ r = id(x)
+
+ if (x > z) then b = 1
+ else b = 2
+
+ {
+ b = 0
+     res = loop()
+ } + 
+ {
+     d = foo.tofoo(3) 
+         x = symbol("y")
+ }
+ return res
+ }
+
+
+ res = loop()
+     return res
+
 }
 
 Contract bin {
     int h
-    int a
+        int a
 
-    function dep (int x) : int {
-        int res
-        int k
-        int tmp
-        if (x == 0) then {
-            h = 1
-            res = a - k
+        function dep (int x) : int {
+            int res
+                int k
+                int tmp
+                if (x == 0) then {
+                    h = 1
+                        res = a - k
+                }
+                else {
+                    tmp = banca.save(a + k)
+                        s = tmp
+                        tmp = truck.empty(0)
+                        res = k
+                }
+            return res
         }
-        else {
-            tmp = banca.save(a + k)
-            s = tmp
-            tmp = truck.empty(0)
-            res = k
-        }
-        return res
-    }
 }
 
 Human simple_citizen {
     int v1
-    int v2
-    int tmp
+        int v2
+        int tmp
 
-    function loop() : int{
-        {v1 = bin.dep(1)} + {v1 = 0} 
-        {v2 = bin.dep(1)} + {v2 = 0}
+        function loop() : int{
+            {v1 = bin.dep(1)} + {v1 = 0} 
+            {v2 = bin.dep(1)} + {v2 = 0}
 
-        tmp = banca.save(v1 + v2)
-        v1 = 0
-        v2 = 0
+            tmp = banca.save(v1 + v2)
+                v1 = 0
+                v2 = 0
 
-        tmp = loop()
-        v2 = 0
-        return tmp
-    }
+                tmp = loop()
+                v2 = 0
+                return tmp
+        }
     tmp = loop()
-    return tmp
+        return tmp
 }
 
 Contract foo {
-    function foo(int x) : int{
+    function tofoo(int x) : int{
         return x
     }
 }
@@ -90,7 +90,9 @@ Contract banca {
 }
 
 Contract truck {
-    function truck (int x): int{
+    function empty (int x): int{
         return x
     }
 }
+
+

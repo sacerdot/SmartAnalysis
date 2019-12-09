@@ -35,30 +35,36 @@ contract_source_path = 'out.sol'
 compiled_sol = compile_source_file(contract_source_path)
 
 
-d_contract_id, d_contract_interface = compiled_sol.popitem()
-d_address = deploy_contract(w3, d_contract_interface, 3).contractAddress
-d_contract = (w3.eth.contract(
-        address=d_address,
-        abi=d_contract_interface['abi']
+b_contract_id, b_contract_interface = compiled_sol.popitem()
+b_address = deploy_contract(w3, b_contract_interface, 100).contractAddress
+b_contract = (w3.eth.contract(
+        address=b_address,
+        abi=b_contract_interface['abi']
     ))
-c_contract_id, c_contract_interface = compiled_sol.popitem()
-c_address = deploy_contract(w3, c_contract_interface, 10).contractAddress
-c_contract = (w3.eth.contract(
-        address=c_address,
-        abi=c_contract_interface['abi']
+a_contract_id, a_contract_interface = compiled_sol.popitem()
+a_address = deploy_contract(w3, a_contract_interface, 100).contractAddress
+a_contract = (w3.eth.contract(
+        address=a_address,
+        abi=a_contract_interface['abi']
     ))
 
-c_abi_path = 'c_abi.json'
-dump_abi(c_abi_path, c_contract_interface['abi'])
-d_abi_path = 'd_abi.json'
-dump_abi(d_abi_path, d_contract_interface['abi'])
+a_abi_path = 'a_abi.json'
+dump_abi(a_abi_path, a_contract_interface['abi'])
+b_abi_path = 'b_abi.json'
+dump_abi(b_abi_path, b_contract_interface['abi'])
 
-c_contract.functions.init(d_address).call()
-d_contract.functions.init(c_address).call()
+tx_hash = a_contract.functions.init(b_address).transact()
+tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+tx_hash = b_contract.functions.init(a_address).transact()
+tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
 
-print('c = ' + c_address)
-print('d = ' + d_address)
+tx_hash = a_contract.functions.transf_tob(10).transact()
+tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+print('a = ' + a_address)
+print('b = ' + b_address)
 
-print('cabi path = ' + c_abi_path)
-print('dabi path = ' + d_abi_path)
+print('a abi path = ' + a_abi_path)
+print('b abi path = ' + b_abi_path)
 
+print('a balance = ' + str(a_contract.functions.getbalance().call()))
+print('b balance = ' + str(b_contract.functions.getbalance().call()))

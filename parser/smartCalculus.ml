@@ -1,4 +1,4 @@
-open Lib
+    open Lib
 
 type contract = [`Contract]
 type human = [`Human]

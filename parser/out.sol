@@ -1,66 +1,73 @@
 pragma solidity 0.4.25;
 interface Interf0{
-
+function addbalance() payable external returns (int );
 }
 interface Interf1{
-
+function addbalance() payable external returns (int );
 }
-interface Interf2{
-function foo(string calldata , address ) payable external returns (int );
-}
-interface Interf3{
-
-}
-contract c {
+contract a {
 mapping (string => int) symbol;
-Interf1 p;
-int weight = 2;
-Interf0 d;
+int x = 0;
+Interf0 b;
 bool initialize = false;
 constructor() payable public {
 
 }
-function init(address _d) public {
+function init(address _b) public {
 if (!initialize){
-d = Interf0(_d);
+b = Interf0(_b);
 initialize = true;
 }
 }
-function foo(int r, bool b) payable public returns (int ){
-weight = 2;
-weight = 3;
-return weight;
-}
-function fie() payable public returns (string memory ){
+function addbalance() payable public returns (int ){
 
-return 'Catched!';
+return int(msg.value);
+}
+function getbalance() payable public returns (int ){
+
+return int(this.balance);
+}
+function transf_tob(int v) payable public returns (int ){
+x = 0;
+if (int(this.balance) >= v){
+x = b.addbalance.value(uint(v))();
+}
+else {
+x = 0;
+}
+return x;
 }
 }
-contract d {
+contract b {
 mapping (string => int) symbol;
-Interf2 c;
-int r = 0;
+int x = 0;
+Interf1 a;
 bool initialize = false;
 constructor() payable public {
-symbol['a'] = 0;
 
 }
-function init(address _c) public {
+function init(address _a) public {
 if (!initialize){
-c = Interf2(_c);
+a = Interf1(_a);
 initialize = true;
 }
 }
-function loop() payable public returns (int ){
+function addbalance() payable public returns (int ){
 
-return 5;
+return int(msg.value);
 }
-function foo(string memory s, address con) payable public returns (int ){
-r = 0;
-r = ((8 > 9) ? 8 : 9);
-r = symbol['a'];
-r = this.loop();
-r = c.foo(s, address(this));
-return r;
+function getbalance() payable public returns (int ){
+
+return int(this.balance);
+}
+function transf_toa(int v) payable public returns (int ){
+x = 0;
+if (int(this.balance) >= v){
+x = a.addbalance.value(uint(v))();
+}
+else {
+x = 0;
+}
+return x;
 }
 }
