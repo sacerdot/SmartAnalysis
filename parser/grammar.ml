@@ -491,7 +491,7 @@ let lexer = make_lexer["+"; "-"; "*"; "max"; "("; ")"; ">"; ">="; "=="; "<";
 "value"; "balance"; "symbol"; "contr_addr"; "hum_addr"]
 let get_tokens file = remove_minspace (of_token(lexer file));;
 
-    let in_channel = open_in "transf-example"
+let in_channel = open_in "demo/transf-example"
 let file = Stream.of_channel(in_channel)
 let (s, conf, (tbl,act)) = configuration_pars (get_tokens file) ([],false);;
 print_token_list s;;

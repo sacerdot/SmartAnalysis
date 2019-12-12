@@ -58,13 +58,9 @@ tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
 tx_hash = b_contract.functions.init(a_address).transact()
 tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
 
-tx_hash = a_contract.functions.transf_tob(10).transact()
-tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
 print('a = ' + a_address)
 print('b = ' + b_address)
 
 print('a abi path = ' + a_abi_path)
 print('b abi path = ' + b_abi_path)
 
-print('a balance = ' + str(a_contract.functions.getbalance().call()))
-print('b balance = ' + str(b_contract.functions.getbalance().call()))

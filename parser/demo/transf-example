@@ -20,7 +20,6 @@ Contract a (100) {
         return x
     }
 }
-
 Contract b (100) {
 
 
