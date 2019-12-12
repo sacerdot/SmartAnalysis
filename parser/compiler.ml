@@ -7,7 +7,7 @@ let symb_array = "symbol"
 let balance = "balance"
 let msg_value = "value"
 let initialize = "initialize"
-let sol_filename = "out.sol"
+let sol_filename = "demo/out.sol"
 
 type 'a typename = 
  | Int : int typename 

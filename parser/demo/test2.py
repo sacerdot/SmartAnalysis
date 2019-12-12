@@ -4,11 +4,11 @@ w3 = Web3(HTTPProvider('http://localhost:8545'))
 
 w3.eth.defaultAccount = w3.eth.accounts[0]
 
-a_address = "0x3326bdD3DdA0ae46a18B1f888c48c17bcB26A8C3"
+a_address = "0xc878011D952ccd7D85e52F3912A6f37Ad66E6c4b"
 a_abi_path = "a_abi.json"
 
 
-b_address = "0xcaeCa8C1c737B30280a76Eae60592adD33CB528b"
+b_address = "0x4c6D601c00B11deE40E76D6ce6B917d7FaBF5768"
 b_abi_path = "b_abi.json"
 
 file = open(a_abi_path, 'r')

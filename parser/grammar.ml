@@ -105,7 +105,7 @@ let this_pars = const (Kwd "this") (fun _ -> SmartCalculus.This)
 
 let brackets_pars pars = concat (concat (kwd "(") pars scd) (kwd ")") fst
 
-(*variable | value | fail*)
+(*Variable | value | fail*)
 let base tag s (tbl,act) =
     choice_list[
         var_pars tag;
@@ -115,10 +115,10 @@ let base tag s (tbl,act) =
 
 (* Int Expression
  * atomic_int_expr :=
-    base Int | "-" atomic_int_expr | varname | "(" int_expr ")" | "max" int_expr
+    base Int | - atomic_int_expr | varname | ( int_expr ) | max( int_expr,
     int_expr | string
  * int_expr := atomic_int_expr ?cont_int_expr
- * cont_int_expr ::=  "+" int_expr | "*" int_expr | "-" int_expr 
+ * cont_int_expr ::=  + int_expr | * int_expr | - int_expr 
  *)
 let rec atomic_int_expr s = 
  choice_list [
@@ -142,11 +142,11 @@ and cont_int_expr s = concat binop int_expr (fun f x -> f x) s
 
  (* Bool Expression
  * atomic_bool_expr :=
-    bool | int_expr ">" int_expr  | int_expr ">=" int_expr  | int_expr "<"
-    int_expr | int_expr "<=" int_expr | expr "==" expr | varname | "(" bool_expr
-    ")" | "!" bool_expr
+    bool | int_expr > int_expr  | int_expr >= int_expr  | int_expr <
+    int_expr | int_expr <= int_expr | expr == expr | varname | ( bool_expr
+    ) | ! bool_expr
  * bool_expr := atomic_int_expr ?cont_int_expr
- * cont_bool_expr ::=  "&&" bool_expr | "||" bool_expr 
+ * cont_bool_expr ::=  && bool_expr | || bool_expr 
  *)
 let rec atomic_bool_expr s =
  choice_list[
@@ -179,6 +179,9 @@ and bin_bool_op s =
  ] s
 and cont_bool_expr s = concat (choice bin_bool_op eqop) bool_expr (fun f x -> f x) s
 
+(*
+ * contr_expr ::= this | Var | fail | contr_addr ( String )
+ *)
 and contract_expr s = 
  let rec aux s =
   choice_list [
@@ -189,11 +192,15 @@ and contract_expr s =
    (fun _ -> function Value s -> Value (Contract s) | _ -> raise Fail)] s
  in 
  comb_parser aux (fun expr -> AnyExpr(ContractAddress, expr)) s
-
+(*
+ * str_expr ::= String | Var | fail 
+ *)
 and string_expr s = 
  let rec aux s = choice (base String) (brackets_pars aux) s in
  comb_parser aux (fun expr -> AnyExpr(String,expr)) s
-
+(*
+ * hum_expr ::= Var | fail | hum_addr ( String )
+ *)
 and human_expr s = 
  let rec aux s =
   choice_list [
@@ -214,7 +221,9 @@ function
  | Bool ->  false
  | ContractAddress -> Contract ""
  | HumanAddress -> Human ""
-
+(*
+* t ::= int | bool | string | Contract | Human
+*)
 let type_pars =
  let tag_pars str tag = const (Kwd str) (fun _ -> AnyTag tag) in
  choice_list[
@@ -225,13 +234,14 @@ let type_pars =
   tag_pars "Human" HumanAddress;
 ]
 
-let pars_this = concat (kwd "this") (kwd ".") (fun _ _ -> This)
-
 let field_pars islocal s t = 
  let (ns,field,(tbl,act)) =
   concat type_pars varname (fun (AnyTag t) v -> AnyField (t,v)) s t in 
  ns,field,((add_field_to_table tbl field islocal),act)
 
+ (*
+  * decl ::= t Var (= v)?
+  *)
 let decl_pars islocal s t = 
  let (ns,(AnyField(tag,name)),nt) = field_pars islocal s t in
  comb_parser (option (concat (kwd "=") (value_pars tag) scd)) 
@@ -240,6 +250,9 @@ let decl_pars islocal s t =
   | None -> Let ((tag,name),(get_null_value tag))
   | _ -> raise Fail) ns nt 
 
+(*
+ * store ::= decl*
+ *)
 let store_pars = kleenestar (decl_pars false) [] addel
 
 let parse_any_expr_list = 
@@ -303,7 +316,9 @@ let pars_mesg_value s t= try comb_parser (concat (kwd ".")
 let funname s (tbl,act) = 
  comb_parser varname (fun var -> match get_fun tbl var with Some _ ->
   var | None -> raise Fail) s (tbl,act)
-
+(*
+* call_contr ::= contr_expr.varname (.value)? (( (e (, e)* ? )
+*)
 let call_pars s t = 
  let (ns1,str,nt1) = funname s t in 
  let (ns2,value,nt2) = pars_mesg_value ns1 nt1 in
@@ -315,7 +330,9 @@ let call_pars s t =
    | None -> AnyRhs(tag,Call(c,meth,el)))
   | _ -> raise Fail) ns2 nt2
 
-
+(*
+ * call_contr ::= contr_expr.varname (.value)? (( (e (, e)* ? )
+ *)
 let call_with_contr tag s t =
  let (ns0, contr, nt0) = comb_parser (concat contract_expr (kwd ".") fst)
   (opt_expr ContractAddress) s t in
@@ -329,8 +346,8 @@ let call_with_contr tag s t =
  contr tag el))) ns2 nt2
 
 (*
- * atomic_stm = assign | if bool_expr then stm else stm | { stm } 
- * stm_pars =  atomic_stm ?stm | atomic_stm + stm    
+ * atomic_stm ::= assign | if bool_expr then stm else stm | { stm } 
+ * stm_pars ::=  atomic_stm ?stm | atomic_stm + stm    
  *)
 let rec rhs_toassign_pars this_opt varname s = 
  let aux = fun this_opt varname s (tbl,act) ->
@@ -354,7 +371,7 @@ let rec rhs_toassign_pars this_opt varname s =
  choice (concat (concat (kwd "(")
 (rhs_toassign_pars this_opt varname) scd) (kwd ")") fst) (aux this_opt varname) s
 
-
+(*assign ::= Var = rhs*)
 let assign_pars s tbl =
  let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") fst) s tbl in
  let (ns1,varname, (ntbl1,act)) = concat varname (kwd "=") fst ns0 ntbl0 in
@@ -372,6 +389,7 @@ let rec atomic_stm s =
   (fun (bexpr,stm1) stm2 -> IfThenElse((check_type Bool bexpr),stm1,stm2));
   concat (kwd "{") (concat stm_pars (kwd "}") fst) scd;
  ] s 
+(* stm ::= decl | assign | if be then stm else stm | stm stm | stm + stm | { stm }*)
 and stm_pars s =
  concat atomic_stm (option double_stm) (fun x funct -> match funct with Some
  f -> f x | _ -> x ) s
@@ -384,15 +402,13 @@ and double_stm s (tbl,act) =
 let stm_list_pars s = kleenestar stm_pars [] addel s
 
 let stack_entry_pars = comb_parser stm_pars (fun stm -> Stm stm)
-
+(*
+ * hum_stack ::= stm? return expr
+ *)
 let rec hum_stack_pars s =
  concat (option stack_entry_pars) (concat (kwd "return") expr_pars (fun _ (AnyExpr(t,e)) -> Return(t,e)))
  (fun entry ret -> match entry with None -> ret | Some st -> SComp(st,ret)) s
 
- (* parameter_pars = (void | comb)
- * comb_parameters = type ?( * comb)
- * meth_pars = name: parameter_pars -> type
- * *)
 let rec add_local_var tbl =
   function 
    | AnyVarList (VNil) -> tbl
@@ -417,7 +433,10 @@ let rec varlist_append l1 l2 =
  | AnyVarList(VCons(hd,tl)) -> 
    let AnyVarList l = varlist_append (AnyVarList tl) l2 in
    AnyVarList(VCons(hd,l))
- 
+
+(*
+* parameters ::= t Var (, t Var)* ?
+*)
 let rec parameter_pars s t = 
  let pars_varlist_singleton = concat type_pars varname 
  (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil)))) in
@@ -427,7 +446,10 @@ let rec parameter_pars s t =
   (AnyVarList(VNil)) varlist_append) varlist_append))) 
   (function | Some s -> s | None -> AnyVarList(VNil)) s t in
  ns,vl,((add_local_var nt vl),act)
- 
+
+(*
+ * meth ::= function Var parameters:t { stm return e }
+ *)
 let any_meth_pars s t =
  let (ns1,(name,((AnyVarList vl),(AnyTag t1))),(nt1,act)) =
   concat (concat (kwd "function") varname scd) 
@@ -449,6 +471,10 @@ let hum_or_con =
  | AnyTag HumanAddress -> true
  | _ -> raise Fail
 
+(*
+ * bal ::= (value_pars)
+ *)
+
 let parse_init_balance =
  concat (concat (kwd "(") (value_pars Int)
   (fun _ expr -> 
@@ -457,7 +483,7 @@ let parse_init_balance =
     | _ -> raise Fail)) (kwd ")") fst
 
 (*
- * Contract (value_pars)| Human varname store
+ * act ::= Contract | Human bal? varname { store meths* hum_stack? }
  *)
 let actor_pars s t =
  let (ns, atag, (nt,cond)) = type_pars s ([],false)  in

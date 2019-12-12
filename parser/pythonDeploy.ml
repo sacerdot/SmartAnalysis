@@ -33,7 +33,7 @@ def dump_abi(path, abi):
 w3 = Web3(HTTPProvider('http://localhost:8545'))
 w3.eth.defaultAccount = w3.eth.accounts[0]
 
-contract_source_path = '" ^ Compiler.sol_filename ^ "'
+contract_source_path = 'out.sol'
 compiled_sol = compile_source_file(contract_source_path)\n
 "
 
@@ -105,5 +105,5 @@ in python_code ^ "\n" ^ pp_depl_list (List.rev ast) ^ pp_save_abi_list ast ^
  pp_init_list ast ast ^ pp_address_list ast ^ pp_abi_list ast;;
 
 let outstr =  get_python ((fun (x,_) -> x) Compiler.sol_ast);;
-let out_ch = open_out "test.py";;
+let out_ch = open_out "demo/test.py";;
 Printf.fprintf out_ch "%s" outstr;;

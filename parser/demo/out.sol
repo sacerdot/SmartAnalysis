@@ -28,7 +28,6 @@ function getbalance() payable public returns (int ){
 return int(this.balance);
 }
 function transf_tob(int v) payable public returns (int ){
-x = 0;
 if (int(this.balance) >= v){
 x = b.addbalance.value(uint(v))();
 }

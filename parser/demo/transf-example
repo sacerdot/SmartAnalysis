@@ -11,7 +11,6 @@ Contract a (100) {
     }
 
     function transf_tob (int v) : int {
-        int x = 0
         
         if (v <= balance) then 
             x = b.addbalance.value(v)()
