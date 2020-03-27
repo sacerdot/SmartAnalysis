@@ -469,18 +469,22 @@ let any_meth_pars s t =
 
 let methods_pars s = kleenestar any_meth_pars [] addel s
 
+let fallback_pars s t =
+ raise (Fail (`Typing "XXX TODO"))
+
 (*
  * act ::= contract varname { field* meth* }
  *)
 let actor_pars : a_contract parser =
- comb_parser (concat (concat (concat (concat (concat
+ comb_parser (concat (concat (concat (concat (concat (concat
   (kwd "contract")
   varname scd)
   (kwd "{") fst)
   store_pars couple)
   methods_pars couple)
+  (option fallback_pars) couple)
   (kwd "}") fst)
- (fun ((name,fields),methods) -> AContract(assert false (*name*),methods,assert false,fields))
+ (fun (((name,fields),methods),fallback) -> AContract(name,methods,fallback,fields))
 
 let configuration_pars : configuration parser =
  concat (kleenestar actor_pars [] addel) eof fst
@@ -488,7 +492,7 @@ let configuration_pars : configuration parser =
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
 "="; ","; "fail"; "if"; "then"; "else"; "{"; "function";
-"}"; "return"; ":"; "this"; "."; "value"; "balance"; "msg"; "sender" ]
+"}"; "return"; ":"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ]
 
 let get_tokens file = remove_minspace (of_token(lexer file));;
 

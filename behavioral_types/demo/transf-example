@@ -22,10 +22,10 @@ contract a {
 *)
 }
 
-(*
 contract b {
 
 
+(*
     int x = 0
     function addbalance () : int {
         return value
@@ -43,6 +43,6 @@ contract b {
             x = 0
         return x
     }
+*)
 
 }
-*)

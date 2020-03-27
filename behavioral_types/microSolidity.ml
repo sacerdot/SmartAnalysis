@@ -127,6 +127,8 @@ let pp_value (type a) (tag : a tag) (v : a) =
   | Bool -> string_of_bool v
   | Address -> pp_address v
 let pp_field = pp_ident
+let pp_any_field (AnyField f) = pp_field f
+let pp_fields l = String.concat "" (List.map (fun f -> pp_any_field f ^ "\n") l)
 
 let rec pp_expr : type a. a tag -> a expr -> string =
  fun tag ->
@@ -195,11 +197,34 @@ let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
      pp_stm tag stm3
   | Revert -> "revert"
 
-let pp_a_contract _ =
- "TODO"
+let pp_block payable tag (Block (vl,lvl,stm)) =
+ "(" ^ String.concat "," (pp_var_list vl) ^ ") " ^
+ (if payable then "payable " else "") ^
+ "{\n" ^
+ String.concat "" (List.map (fun s -> s ^ ";\n") (pp_var_list lvl)) ^
+ pp_stm tag stm ^
+ "}\n"
+
+let pp_any_method_decl (AnyMethodDecl(m,b,payable)) =
+ pp_meth m ^ " " ^ pp_block payable (fst3 m) b
+
+let pp_methods l =
+ String.concat "\n" (List.map pp_any_method_decl l)
+
+let pp_fallback =
+ function
+    None -> ""
+  | Some b -> "function " ^ pp_block true Int b
+
+let pp_a_contract (AContract (addr,methods,fallback,fields)) =
+ "contract " ^ addr ^ " {\n" ^
+ pp_fields fields ^
+ pp_methods methods ^
+ pp_fallback fallback ^
+ "}\n"
 
 let pp_configuration l =
- String.concat "\n\n"
+ String.concat "\n"
   (List.map pp_a_contract l)
 
 (*
