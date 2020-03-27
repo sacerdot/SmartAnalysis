@@ -195,8 +195,12 @@ let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
      pp_stm tag stm3
   | Revert -> "revert"
 
-let pp_configuration _ =
- "XXX TODO"
+let pp_a_contract _ =
+ "TODO"
+
+let pp_configuration l =
+ String.concat "\n\n"
+  (List.map pp_a_contract l)
 
 (*
 type ('a,'b,'c) block = 'b var_list * 'c var_list * ('a,[`Return]) stm

@@ -1,6 +1,6 @@
 SOURCES = lib.ml microSolidity.ml parserCombinator.ml grammar.ml analyzer.ml
 EXEC = analyzer
-CAMLC = ocamlc
+CAMLC = ocamlc -g
 CAMLDEP = ocamldep
 LIBS=$(WITHUNIX)
 WITHUNIX =unix.cma -cclib -lunix
@@ -8,9 +8,11 @@ OBJS = $(SOURCES:.ml=.cmo)
 
 all: depend $(EXEC)
 
+exec: $(EXEC)
+	./$(EXEC)
+
 $(EXEC): $(OBJS)
 	$(CAMLC) $(CUSTOM) -o $(EXEC) $(LIBS) $(OBJS)
-	./$(EXEC)
 
 .SUFFIXES:
 .SUFFIXES: .ml .mli .cmo .cmi .cmx .mll .mly

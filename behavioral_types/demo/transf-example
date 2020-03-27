@@ -1,4 +1,5 @@
 contract a {
+(*
 
     int x = 0
 
@@ -18,8 +19,10 @@ contract a {
             x = 0
         return x
     }
+*)
 }
 
+(*
 contract b {
 
 
@@ -42,3 +45,4 @@ contract b {
     }
 
 }
+*)

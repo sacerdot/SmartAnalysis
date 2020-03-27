@@ -9,8 +9,8 @@ type any_field_or_fun =
     | Fun:  _ MicroSolidity.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
 type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
-type 'ast parser = Genlex.token t -> vartable -> Genlex.token t * 'ast * (vartable)
-exception Fail
+type 'ast parser = Genlex.token t -> vartable -> Genlex.token t * 'ast * vartable
+exception Fail of [`Syntax of Genlex.token t | `Typing of string ]
 
 (*Utils*)
 
@@ -44,14 +44,14 @@ let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr
  fun tag (AnyExpr(t, e)) ->
    match MicroSolidity.eq_tag tag t with 
    | Some Refl -> e
-   | _ -> raise Fail 
+   | _ -> raise (Fail (`Typing (MicroSolidity.pp_expr t e ^ " should have type " ^ MicroSolidity.pp_tag tag)))
 
 let value : type a. a MicroSolidity.tag -> Genlex.token -> a MicroSolidity.expr = fun tag tok ->
  match tag,tok with
  | Int,Int x -> Value x
  | Bool,Kwd "true" -> Value true
  | Bool,Kwd "false" -> Value false
- | _ -> raise Fail
+ | _ -> raise (Fail (`Syntax [tok]))
    
 let rec remove_minspace =
  function
@@ -90,7 +90,7 @@ let add_field_to_table : vartable -> MicroSolidity.any_field -> bool -> vartable
   | Some(AnyField(tag,name),_) -> 
    (match MicroSolidity.eq_tag tag t with
    | Some Refl -> tbl
-   | None -> raise Fail)
+   | None -> raise (Fail (`Typing (MicroSolidity.pp_tag tag ^ " vs " ^ MicroSolidity.pp_tag t))))
 
 let rec get_fun : vartable -> string -> any_meth option =
  fun tbl funname -> 
@@ -104,7 +104,7 @@ let add_fun_to_table : vartable -> any_meth -> vartable =
  fun tbl (AnyMeth(t,l,funname)) -> 
   match get_fun tbl funname with
   | None -> List.append ([Fun(t,l,funname)]) tbl
-  | _ -> raise Fail
+  | _ -> raise (Fail (`Typing (funname ^ "(..) not found")))
 
 let remove_local_vars: vartable -> vartable =
  fun tbl  -> List.filter (function
@@ -117,11 +117,11 @@ let const : Genlex.token -> (Genlex.token -> 'ast) -> 'ast parser =
   if (List.length t2 > 0) && (t1 = (List.hd t2)) then
    (junk t2), f t1, tbl
   else
-   raise Fail
+   raise (Fail (`Syntax t2))
 
 let choice : 'ast parser -> 'ast parser -> 'ast parser
 = fun p1 p2 s tbl -> 
- try p1 s tbl with Fail -> p2 s tbl
+ try p1 s tbl with Fail _ -> p2 s tbl
 
 let concat : 'ast1 parser -> 'ast2 parser -> ('ast1 -> 'ast2 -> 'ast3) -> 'ast3 parser
  = fun p1 p2 f s tbl ->
@@ -135,19 +135,25 @@ let kleenestar : 'ast2 parser -> 'ast1 -> ('ast1 -> 'ast2 -> 'ast1) -> 'ast1 par
   try
    let (rest1, ast1, ntbl) = p1 s1 tbl in
    aux p1 rest1 (f acc ast1) ntbl
-  with Fail -> (s1, acc, tbl)
+  with Fail _ -> (s1, acc, tbl)
   in aux p s empty_ast t
 
 let option : 'ast parser -> 'ast option parser =
  fun p s tbl -> try 
   let next,res,ntbl = p s tbl in next,Some res,ntbl
- with Fail -> s,None,tbl
+ with Fail _ -> s,None,tbl
 
 let rec choice_list: 'ast parser list -> 'ast parser
-= fun l->
+= fun l ->
  match l with
-  | [] -> raise Fail
+  | [] -> assert false
   | hd :: [] -> hd
   | hd :: tl -> choice hd (choice_list tl)
 
 let kwd str = const (Kwd str) ignore
+
+let eof : unit parser =
+ fun l t ->
+  match l with
+   | [] -> l,(),t
+   | _ -> raise (Fail (`Syntax l))

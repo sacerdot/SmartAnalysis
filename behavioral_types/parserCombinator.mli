@@ -12,7 +12,7 @@ type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
 type 'ast parser =
     Genlex.token t ->
     vartable -> Genlex.token t * 'ast * vartable
-exception Fail
+exception Fail of [`Syntax of Genlex.token t | `Typing of string ]
 val fst : 'a -> 'b -> 'a
 val scd : 'a -> 'b -> 'b
 val addel : 'a list -> 'a -> 'a list
@@ -41,3 +41,4 @@ val kleenestar :
 val option : 'ast parser -> 'ast option parser
 val choice_list : 'ast parser list -> 'ast parser
 val kwd : string -> unit parser
+val eof : unit parser

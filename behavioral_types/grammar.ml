@@ -2,47 +2,50 @@ open MicroSolidity
 open ParserCombinator
 open Genlex
 
+let pp_any_expr (AnyExpr (t,e)) = pp_expr t e
+
 (*Expression *)
 let plus e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Plus(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " + " ^ pp_any_expr e2)))
   
 let uminus e =
  match e with
-  | AnyExpr(Int,e) -> AnyExpr(Int,UMinus(e)) | _ -> raise Fail
+  | AnyExpr(Int,e) -> AnyExpr(Int,UMinus(e))
+  | _ -> raise (Fail (`Typing ("-" ^ pp_any_expr e)))
 
 let minus e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Minus(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " - " ^ pp_any_expr e2)))
 
 let mult e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Mult(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " * " ^ pp_any_expr e2)))
 
 let div e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Div(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " / " ^ pp_any_expr e2)))
 
 let gt e2 e1 =
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Gt(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " > " ^ pp_any_expr e2)))
 
 let ge e2 e1 =
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Geq(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " >= " ^ pp_any_expr e2)))
 
 let eq e2 e1 = 
  match e1,e2 with
  | AnyExpr(t1,v1),AnyExpr(t2,v2) ->
   (match eq_tag t1 t2 with
   | Some Refl -> AnyExpr(Bool,Eq(t1,v1,v2))
-  | _ -> raise Fail)
+  | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " == " ^ pp_any_expr e2))))
 
 let lt e1 e2 = gt e2 e1
 
@@ -51,25 +54,28 @@ let le e1 e2 = ge e2 e1
 let andb e2 e1 =
  match e1,e2 with
  | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,And(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " && " ^ pp_any_expr e2)))
 
 
 let orb e2 e1 =
  match e1,e2 with
  | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,Or(v1,v2))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " || " ^ pp_any_expr e2)))
 
 
 let notb e = 
  match e with
  | AnyExpr(Bool, v) -> AnyExpr(Bool, Not(v))
- | _ -> raise Fail
+ | _ -> raise (Fail (`Typing ("!" ^ pp_any_expr e)))
 
 let scd_notb _ e = notb e
 
 let neq e1 e2 = notb (eq e1 e2)
 
-let varname s t = match s with | (Ident x) :: tl -> tl,x,t | _ -> raise Fail
+let varname s t =
+ match s with
+  | (Ident x) :: tl -> tl,x,t
+  | _ -> raise (Fail (`Syntax s))
 
 let couple el1 el2 = el1,el2
 
@@ -82,16 +88,16 @@ const (List.hd s) (fun _ ->
  | _,(Ident var)::tl,tbl -> 
   (match get_field tbl var with
     | Some (AnyField(tagfield,name),islocal) ->
-       (match (eq_tag tagfield tag),islocal with
+       (match eq_tag tagfield tag,islocal with
          | Some Refl,false -> MicroSolidity.Field(tagfield,name)
          | Some Refl,true -> Var(tagfield,name)
-         | None,_ -> raise Fail)
+         | None,_ -> raise (Fail (`Typing (pp_tag tagfield ^ " vs " ^ pp_tag tag))))
     | None -> 
 (*XXX qua dovrei parsare i nomi dei contratti in indirizzi!
     (match tag with 
     | Address -> Value var
-    | _ -> raise Fail)) *) raise Fail)
- | _ -> raise Fail) in aux) s t
+    | _ -> raise Fail)) *) raise (Fail (`Typing (var ^ " not found"))))
+ | _ -> raise (Fail (`Syntax s))) in aux) s t
 
 let value_pars tag s = const (List.hd s) (value tag) s
 
@@ -235,7 +241,8 @@ let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list
   | TNil,[] -> ENil
   | TCons(t,ttail),(h::etail) -> 
     ECons(check_type t h,check_expr_list_type ttail etail)
-  | _,_ -> raise Fail
+  | TNil,_ -> raise (Fail (`Typing "too many args"))
+  | _,[] -> raise (Fail (`Typing "not enough args"))
 
 let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser =
  fun tl f ->
@@ -251,7 +258,7 @@ let get_rhs_from_expr_list =
     | Call(c,(tag,tags,name),value,elist) -> 
         aux tl
         (Call(c,(tag,TCons(t,tags),name),value,ECons(expr,elist)))
-    | _ -> raise Fail)
+    | _ -> raise (Fail (`Typing "not a function call")))
   in aux (List.rev el) (Call(c,(typ,TNil,m),value,ENil))
 
 (*
@@ -277,15 +284,20 @@ let check_rhs_type: type a. a tag -> any_rhs -> a rhs =
  fun tag rhs ->
   match rhs with
   | AnyRhs(t,r) -> 
-    (match eq_tag t tag with Some Refl -> r | None -> raise Fail)
+    (match eq_tag t tag with
+        Some Refl -> r
+      | None -> raise (Fail (`Typing (pp_tag t ^ " vs " ^ pp_tag tag))))
 
 let pars_mesg_value s t= try comb_parser (concat (kwd ".") 
     (concat (kwd "value") (brackets_pars int_expr) scd) scd) (opt_expr Int) s t
-    with Fail -> (s,None,t)
+    with Fail _ -> (s,None,t)
 
 let funname s tbl = 
- comb_parser varname (fun var -> match get_fun tbl var with Some _ ->
-  var | None -> raise Fail) s tbl
+ comb_parser varname
+  (fun var ->
+    match get_fun tbl var with
+       Some _ -> var
+     | None -> raise (Fail (`Typing (var ^ "(..) not found ")))) s tbl
 
 (*
 (*
@@ -359,7 +371,7 @@ let revert_pars : 'b rettag -> ('a,'b) stm parser = fun tag -> const (Kwd "rever
 let epsilon_pars : type b. b rettag -> ('a,b) stm parser =
  function
     RTEpsilon -> fun s t -> s,MicroSolidity.Epsilon,t 
-  | RTReturn -> raise Fail
+  | RTReturn -> raise (Fail (`Typing "epsilon not allowed here"))
 
 let if_then_else bexpr stm1 stm2 stm3 =
  IfThenElse(check_type Bool bexpr,stm1,stm2,stm3)
@@ -470,7 +482,8 @@ let actor_pars : a_contract parser =
   (kwd "}") fst)
  (fun ((name,fields),methods) -> AContract(assert false (*name*),methods,assert false,fields))
 
-let configuration_pars : configuration parser = kleenestar actor_pars [] addel
+let configuration_pars : configuration parser =
+ concat (kleenestar actor_pars [] addel) eof fst
 
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
@@ -480,11 +493,19 @@ let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 let get_tokens file = remove_minspace (of_token(lexer file));;
 
 let test filename =
- let in_channel = open_in filename in
- let file = Stream.of_channel(in_channel) in
- let (s, conf, tbl) = configuration_pars (get_tokens file) [] in
- print_token_list s;
- print_table tbl;
- pp_configuration conf
-
-let _ = test "demo/transf-example"
+ try
+  let in_channel = open_in filename in
+  let file = Stream.of_channel(in_channel) in
+  let (s, conf, tbl) = configuration_pars (get_tokens file) [] in
+  print_token_list s;
+  print_table tbl;
+  pp_configuration conf
+ with
+  | Fail (`Syntax l) ->
+     prerr_endline "######## SYNTAX ERROR #######" ;
+     print_token_list l ;
+     "error"
+  | Fail (`Typing msg) ->
+     prerr_endline "######## TYPING ERROR #######" ;
+     prerr_endline msg ;
+     "error"
