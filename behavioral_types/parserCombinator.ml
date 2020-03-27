@@ -138,6 +138,15 @@ let kleenestar : 'ast2 parser -> 'ast1 -> ('ast1 -> 'ast2 -> 'ast1) -> 'ast1 par
   with Fail _ -> (s1, acc, tbl)
   in aux p s empty_ast t
 
+let kleenestar_eof : 'ast2 parser -> 'ast1 -> ('ast1 -> 'ast2 -> 'ast1) -> 'ast1 parser = 
+ fun p empty_ast f s t ->
+  let rec aux p1 s1 acc tbl=
+   if s1 = [] then s1,acc,tbl
+   else
+    let (rest1, ast1, ntbl) = p1 s1 tbl in
+    aux p1 rest1 (f acc ast1) ntbl
+  in aux p s empty_ast t
+
 let option : 'ast parser -> 'ast option parser =
  fun p s tbl -> try 
   let next,res,ntbl = p s tbl in next,Some res,ntbl

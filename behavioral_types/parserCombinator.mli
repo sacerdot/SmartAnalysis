@@ -38,6 +38,8 @@ val concat :
   'ast1 parser -> 'ast2 parser -> ('ast1 -> 'ast2 -> 'ast3) -> 'ast3 parser
 val kleenestar :
   'ast2 parser -> 'ast1 -> ('ast1 -> 'ast2 -> 'ast1) -> 'ast1 parser
+val kleenestar_eof :
+  'ast2 parser -> 'ast1 -> ('ast1 -> 'ast2 -> 'ast1) -> 'ast1 parser
 val option : 'ast parser -> 'ast option parser
 val choice_list : 'ast parser list -> 'ast parser
 val kwd : string -> unit parser

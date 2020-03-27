@@ -487,11 +487,11 @@ let actor_pars : a_contract parser =
  (fun (((name,fields),methods),fallback) -> AContract(name,methods,fallback,fields))
 
 let configuration_pars : configuration parser =
- concat (kleenestar actor_pars [] addel) eof fst
+ kleenestar_eof actor_pars [] addel
 
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
-"="; ","; "fail"; "if"; "then"; "else"; "{"; "function";
+"="; ","; ";"; "fail"; "if"; "then"; "else"; "{"; "function";
 "}"; "return"; ":"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ]
 
 let get_tokens file = remove_minspace (of_token(lexer file));;
@@ -501,8 +501,11 @@ let test filename =
   let in_channel = open_in filename in
   let file = Stream.of_channel(in_channel) in
   let (s, conf, tbl) = configuration_pars (get_tokens file) [] in
+  prerr_endline "######## TOKENS #######" ;
   print_token_list s;
+  prerr_endline "######## TABLE #######" ;
   print_table tbl;
+  prerr_endline "######## PROGRAM #######" ;
   pp_configuration conf
  with
   | Fail (`Syntax l) ->

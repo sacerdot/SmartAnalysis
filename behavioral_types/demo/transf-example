@@ -1,48 +1,28 @@
-contract a {
+contract Bank {
+
+   int x
+   int y
+   bool z
+
 (*
+   function pay(int n) : int payable {
+      if (msg.value >= 1 && this.balance > n) {
+         msg.sender.transfer(n) ;
+         msg.sender.ack() ;
+      }
+   }
 
-    int x = 0
-
-    function addbalance () : int {
-        return value
-    }
-
-    function getbalance () : int {
-        return balance
-    }
-
-    function transf_tob (int v) : int {
-        
-        if (v <= balance) then 
-            x = b.addbalance.value(v)()
-        else 
-            x = 0
-        return x
-    }
+   function() payable { }
 *)
 }
 
-contract b {
-
+contract Thief {
 
 (*
-    int x = 0
-    function addbalance () : int {
-        return value
-    }
+   function ack() {
+      msg.sender.pay.value(1)(2) ;
+   }
 
-    function getbalance () : int {
-        return balance
-    }
-
-    function transf_toa (int v) : int {
-        int x = 0
-        if (v <= balance) then 
-               x = a.addbalance.value(v)()
-        else 
-            x = 0
-        return x
-    }
+   function() payable { }
 *)
-
 }
