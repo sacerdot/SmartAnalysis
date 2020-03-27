@@ -1,12 +1,28 @@
-compiler.cmo : smartCalculus.cmo parserCombinator.cmo grammar.cmo
-compiler.cmx : smartCalculus.cmx parserCombinator.cmx grammar.cmx
-grammar.cmo : smartCalculus.cmo parserCombinator.cmo
-grammar.cmx : smartCalculus.cmx parserCombinator.cmx
+compiler.cmo : \
+    smartCalculus.cmo \
+    parserCombinator.cmo \
+    grammar.cmo
+compiler.cmx : \
+    smartCalculus.cmx \
+    parserCombinator.cmx \
+    grammar.cmx
+grammar.cmo : \
+    smartCalculus.cmo \
+    parserCombinator.cmo
+grammar.cmx : \
+    smartCalculus.cmx \
+    parserCombinator.cmx
 lib.cmo :
 lib.cmx :
-parserCombinator.cmo : smartCalculus.cmo
-parserCombinator.cmx : smartCalculus.cmx
-pythonDeploy.cmo : compiler.cmo
-pythonDeploy.cmx : compiler.cmx
-smartCalculus.cmo : lib.cmo
-smartCalculus.cmx : lib.cmx
+parserCombinator.cmo : \
+    smartCalculus.cmo
+parserCombinator.cmx : \
+    smartCalculus.cmx
+pythonDeploy.cmo : \
+    compiler.cmo
+pythonDeploy.cmx : \
+    compiler.cmx
+smartCalculus.cmo : \
+    lib.cmo
+smartCalculus.cmx : \
+    lib.cmx

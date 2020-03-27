@@ -22,7 +22,7 @@ $(EXEC): $(OBJS)
 	$(CAMLC) -c $<
 
 clean:
-	rm -f *.cmo *.cmi *.json
+	rm -f *.cmo *.cmi *.json $(EXEC)
 
 depend: $(SOURCES)
 	$(CAMLDEP) *.mli *.ml > .depend
