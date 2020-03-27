@@ -51,7 +51,7 @@ type (_,_) stm =
  | Epsilon : (_,[`Epsilon]) stm
  | Return : 'a expr -> ('a,[`Return]) stm
  | Assign : 'a lhs * 'a rhs * ('b,'c) stm -> ('b,'c) stm
- | IfThenElse : bool expr * ('b,_) stm * ('b,_) stm * ('b,'c) stm -> ('b,'c) stm
+ | IfThenElse : bool expr * ('b,[`Epsilon]) stm * ('b,[`Epsilon]) stm * ('b,'c) stm -> ('b,'c) stm
  | Revert : _ stm
 type ('a,'b) block =
  Block : 'b var_list * _ var_list * ('a,[`Return]) stm -> ('a,'b) block
