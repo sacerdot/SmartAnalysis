@@ -1,14 +1,16 @@
 type 'a t = 'a list
 type any_expr =
     AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
+type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a, 'b) MicroSolidity.meth -> any_meth
 type any_field_or_fun =
     Field : 'a MicroSolidity.field * bool -> any_field_or_fun
   | Fun : ('b, 'c) MicroSolidity.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
+type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
 type 'ast parser =
     Genlex.token t ->
-    vartable * bool -> Genlex.token t * 'ast * (vartable * bool)
+    vartable -> Genlex.token t * 'ast * vartable
 exception Fail
 val fst : 'a -> 'b -> 'a
 val scd : 'a -> 'b -> 'b

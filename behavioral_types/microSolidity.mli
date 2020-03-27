@@ -1,4 +1,4 @@
-type address = int
+type address = string
 type 'a tag = Int : int tag | Bool : bool tag | Address : address tag
 type _ tag_list =
     TNil : unit tag_list
@@ -44,7 +44,7 @@ type _ rhs =
       'b expr_list -> 'a rhs
 type (_, _) stm =
     Epsilon : ('d, [ `Epsilon ]) stm
-  | Return : 'a expr -> ('a, [ `Return ]) stm
+  | Return : 'a expr -> ('a, 'b) stm
   | Assign : 'a lhs * 'a rhs * ('b, 'c) stm -> ('b, 'c) stm
   | IfThenElse : bool expr * ('b, [ `Epsilon ]) stm *
       ('b, [ `Epsilon ]) stm * ('b, 'c) stm -> ('b, 'c) stm
@@ -79,4 +79,6 @@ val pp_meth : 'a tag * 'b tag_list * string -> string
 val pp_lhs : 'a lhs -> string
 val pp_rhs : 'a tag -> 'a rhs -> string
 val pp_stm : 'a tag -> ('a, 'b) stm -> string
+val pp_configuration : configuration -> string
+
 val lookup_method : ('a, 'b) meth -> methods -> ('a, 'b) block

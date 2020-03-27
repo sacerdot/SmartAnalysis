@@ -1,6 +1,6 @@
 open Lib
 
-type address = int
+type address = string
 type 'a tag =
  | Int : int tag
  | Bool : bool tag
@@ -49,7 +49,7 @@ type _ rhs =
  | Call : address expr * ('a,'b) meth * int expr option * 'b expr_list -> 'a rhs
 type (_,_) stm =
  | Epsilon : (_,[`Epsilon]) stm
- | Return : 'a expr -> ('a,[`Return]) stm
+ | Return : 'a expr -> ('a,_) stm
  | Assign : 'a lhs * 'a rhs * ('b,'c) stm -> ('b,'c) stm
  | IfThenElse : bool expr * ('b,[`Epsilon]) stm * ('b,[`Epsilon]) stm * ('b,'c) stm -> ('b,'c) stm
  | Revert : _ stm
@@ -120,7 +120,7 @@ let rec pp_var_list : type a. a var_list -> string list =
  function
     VNil -> []
   | VCons(v,tl) -> pp_var v :: pp_var_list tl
-let pp_address : address -> string = string_of_int
+let pp_address : address -> string = fun s -> s
 let pp_value (type a) (tag : a tag) (v : a) =
  match tag with
     Int -> string_of_int v
@@ -194,6 +194,9 @@ let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
      pp_stm tag stm2 ^ " }; " ^
      pp_stm tag stm3
   | Revert -> "revert"
+
+let pp_configuration _ =
+ assert false
 
 (*
 type ('a,'b,'c) block = 'b var_list * 'c var_list * ('a,[`Return]) stm

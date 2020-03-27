@@ -1,9 +1,7 @@
 (*Types*)
 type 'a t = 'a list
 type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
-(*
-type any_tag = AnyTag : 'a tag -> any_tag
-*)
+type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
 (*
 type any_tag_list = AnyTagList : 'a SmartCalculus.tag_list -> any_tag_list
@@ -13,13 +11,8 @@ type any_field_or_fun =
     | Field: _ MicroSolidity.field * bool -> any_field_or_fun
     | Fun:  _ MicroSolidity.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
-(*
-type any_rhs = AnyRhs: 'a tag * 'a rhs -> any_rhs
-type any_actor = 
-    | ActHum: a_human -> any_actor
-    | ActCon: a_contract -> any_actor
-*)
-type 'ast parser = Genlex.token t -> vartable * bool -> Genlex.token t * 'ast * (vartable * bool)
+type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
+type 'ast parser = Genlex.token t -> vartable -> Genlex.token t * 'ast * (vartable)
 exception Fail
 
 (*Utils*)
@@ -59,7 +52,6 @@ let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr
 
 let value : type a. a MicroSolidity.tag -> Genlex.token -> a MicroSolidity.expr = fun tag tok ->
  match tag,tok with
- | Address,Kwd "this" -> This
  | Int,Int x -> Value x
  | Bool,Kwd "true" -> Value true
  | Bool,Kwd "false" -> Value false

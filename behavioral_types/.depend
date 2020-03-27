@@ -3,9 +3,11 @@ compiler.cmo : \
 compiler.cmx : \
     grammar.cmx
 grammar.cmo : \
-    parserCombinator.cmi
+    parserCombinator.cmi \
+    microSolidity.cmi
 grammar.cmx : \
-    parserCombinator.cmx
+    parserCombinator.cmx \
+    microSolidity.cmx
 lib.cmo : \
     lib.cmi
 lib.cmx : \
