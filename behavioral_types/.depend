@@ -1,6 +1,6 @@
-compiler.cmo : \
+analyzer.cmo : \
     grammar.cmo
-compiler.cmx : \
+analyzer.cmx : \
     grammar.cmx
 grammar.cmo : \
     parserCombinator.cmi \
@@ -28,7 +28,3 @@ parserCombinator.cmx : \
     parserCombinator.cmi
 parserCombinator.cmi : \
     microSolidity.cmi
-pythonDeploy.cmo : \
-    compiler.cmo
-pythonDeploy.cmx : \
-    compiler.cmx

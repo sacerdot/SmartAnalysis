@@ -3,10 +3,7 @@ type 'a t = 'a list
 type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
-(*
-type any_tag_list = AnyTagList : 'a SmartCalculus.tag_list -> any_tag_list
-type any_var_list = AnyVarList : 'a SmartCalculus.var_list -> any_var_list
-*)
+type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
 type any_field_or_fun = 
     | Field: _ MicroSolidity.field * bool -> any_field_or_fun
     | Fun:  _ MicroSolidity.meth -> any_field_or_fun
@@ -41,7 +38,6 @@ let print_table =
   (function
     | Field (f,_) -> print_endline (MicroSolidity.pp_field f)
     | Fun (meth) -> print_endline(MicroSolidity.pp_meth meth))
-
 
 (*Cast*)
 let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr =

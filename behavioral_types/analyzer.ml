@@ -1,1 +1,1 @@
-Grammar.test "demo/transf-example"
+print_endline (Grammar.test "demo/transf-example")

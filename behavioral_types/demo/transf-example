@@ -1,4 +1,4 @@
-Contract a (100) {
+contract a {
 
     int x = 0
 
@@ -19,7 +19,8 @@ Contract a (100) {
         return x
     }
 }
-Contract b (100) {
+
+contract b {
 
 
     int x = 0

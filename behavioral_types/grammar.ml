@@ -116,9 +116,7 @@ let rec atomic_int_expr s =
  choice_list [
    comb_parser (base Int) (fun expr -> AnyExpr(Int,expr));
    concat (kwd "-") atomic_int_expr (fun _ -> uminus) ;
-   brackets_pars int_expr;
-   comb_parser (concat (kwd "max") (brackets_pars (concat (concat int_expr (kwd ",") fst)
-   int_expr couple)) scd) (fun (e1,e2) -> max e1 e2)
+   brackets_pars int_expr
  ] s
 and int_expr s =
  concat atomic_int_expr (option cont_int_expr) (fun x f -> match f with Some funct
@@ -236,7 +234,7 @@ let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list
  match tl,el with
   | TNil,[] -> ENil
   | TCons(t,ttail),(h::etail) -> 
-    ECons((check_type t h),(check_expr_list_type ttail etail))
+    ECons(check_type t h,check_expr_list_type ttail etail)
   | _,_ -> raise Fail
 
 let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser =
@@ -354,17 +352,25 @@ let assign_pars s tbl =
  rhs_toassign_pars this_opt varname ns1 ntbl1
 *)
 
-let revert_pars = const (Kwd "revert") (fun _ -> MicroSolidity.Revert)
+type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 
-let epsilon_pars : _ MicroSolidity.stm parser = fun s t -> s,MicroSolidity.Epsilon,t 
+let revert_pars : 'b rettag -> ('a,'b) stm parser = fun tag -> const (Kwd "revert") (fun _ -> MicroSolidity.Revert)
+
+let epsilon_pars : type b. b rettag -> ('a,b) stm parser =
+ function
+    RTEpsilon -> fun s t -> s,MicroSolidity.Epsilon,t 
+  | RTReturn -> raise Fail
+
+let if_then_else bexpr stm1 stm2 stm3 =
+ IfThenElse(check_type Bool bexpr,stm1,stm2,stm3)
     
 (*
  * stm ::= revert | return expr | assign | if bool_expr then stm else stm ; stm | { stm } | epsilon
  *)
-let rec stm_pars : _ MicroSolidity.stm parser = fun s ->
+let rec stm_pars : type b. b rettag -> ('a,b) stm parser = fun tag s ->
  choice_list[
   (* revert *)
-  revert_pars ;
+  revert_pars tag ;
 
 (*XXX
   (* return *)
@@ -380,19 +386,19 @@ let rec stm_pars : _ MicroSolidity.stm parser = fun s ->
    (kwd "if")
    bool_expr scd)
    (kwd "then") fst)
-   stm_pars couple)
+   (stm_pars RTEpsilon) couple)
    (kwd "else") fst)
-   stm_pars couple)
+   (stm_pars RTEpsilon) couple)
    (kwd ";") fst)
-   stm_pars couple)
+   (stm_pars tag) couple)
    (fun (((bexpr,stm1),stm2),stm3) ->
-     IfThenElse(check_type Bool bexpr,stm1,stm2,stm3));
+     if_then_else bexpr stm1 stm2 stm3);
 
   (* {stm} *)
-  concat (kwd "{") (concat stm_pars (kwd "}") fst) scd;
+  concat (kwd "{") (concat (stm_pars tag) (kwd "}") fst) scd;
 
   (* epsilon *)
-  epsilon_pars
+  epsilon_pars tag
  ] s
 
 let rec add_local_var tbl =
@@ -417,30 +423,36 @@ let rec varlist_append l1 l2 =
 * parameters ::= t Var (, t Var)* ?
 *)
 let rec parameter_pars s t = 
- let pars_varlist_singleton = concat type_pars varname 
- (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil)))) in
+ let pars_varlist_singleton =
+  concat type_pars varname 
+   (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil)))) in
  let (ns,vl,nt) = 
-  comb_parser (brackets_pars (option (concat pars_varlist_singleton
+  comb_parser (option (concat pars_varlist_singleton
   (kleenestar (concat (kwd ",") pars_varlist_singleton scd) 
-  (AnyVarList(VNil)) varlist_append) varlist_append))) 
-  (function | Some s -> s | None -> AnyVarList(VNil)) s t in
+  (AnyVarList(VNil)) varlist_append) varlist_append))
+  (function Some s -> s | None -> AnyVarList(VNil)) s t in
  ns,vl,add_local_var nt vl
 
 (*
- * meth ::= function Var parameters:t { stm return e }
+ * meth ::= function Var parameters : t { paramters stm }
  *)
 let any_meth_pars s t =
  let (ns1,(name,((AnyVarList vl),(AnyTag t1))),nt1) =
-  concat (concat (kwd "function") varname scd) 
-  (concat parameter_pars (concat (kwd ":") type_pars scd) couple) couple s t in
- let (ns2,(stml,e),nt2) = 
-  concat (concat (kwd "{")
-  (concat (concat (kleenestar (comb_parser (decl_pars true)
-  (fun (Let (f,v)) -> Assign(f,Expr(Value v)))) [] addel)
-  stm_list_pars List.append) (concat (kwd "return") expr_pars scd) 
-  couple) scd) (kwd "}") fst ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
-  ns2,
-  AnyMethodDecl((t1,(get_taglist vl),name),(vl,stml,(check_type t1 e))),
+  concat (concat
+   (kwd "function")
+   varname scd)
+   (concat parameter_pars (concat (kwd ":") type_pars scd) couple) couple
+   s t in
+ let (ns2,((payable,AnyVarList lvl),stm),nt2) = 
+  concat (concat (concat (concat
+   (comb_parser (option (kwd "payable")) (function None -> false | Some () -> true))
+   (kwd "{") fst)
+   parameter_pars couple)
+   (stm_pars RTReturn) couple)
+   (kwd "}") fst
+   ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
+ ns2,
+  AnyMethodDecl((t1,get_taglist vl,name),Block(vl,lvl,stm),payable),
   remove_local_vars nt2
 
 let methods_pars s = kleenestar any_meth_pars [] addel s

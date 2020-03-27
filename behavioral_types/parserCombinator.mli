@@ -3,6 +3,7 @@ type any_expr =
     AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a, 'b) MicroSolidity.meth -> any_meth
+type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
 type any_field_or_fun =
     Field : 'a MicroSolidity.field * bool -> any_field_or_fun
   | Fun : ('b, 'c) MicroSolidity.meth -> any_field_or_fun
@@ -29,6 +30,7 @@ val add_field_to_table :
   vartable -> MicroSolidity.any_field -> bool -> vartable
 val get_fun : vartable -> string -> any_meth option
 val add_fun_to_table : vartable -> any_meth -> vartable
+val remove_local_vars : vartable -> vartable
 val remove_local_vars : vartable -> vartable
 val const : Genlex.token -> (Genlex.token -> 'ast) -> 'ast parser
 val choice : 'ast parser -> 'ast parser -> 'ast parser

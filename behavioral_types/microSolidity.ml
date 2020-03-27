@@ -196,7 +196,7 @@ let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
   | Revert -> "revert"
 
 let pp_configuration _ =
- assert false
+ "XXX TODO"
 
 (*
 type ('a,'b,'c) block = 'b var_list * 'c var_list * ('a,[`Return]) stm
