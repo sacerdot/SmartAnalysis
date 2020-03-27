@@ -461,7 +461,7 @@ let any_meth_pars s t =
   stm_list_pars List.append) (concat (kwd "return") expr_pars scd) 
   couple) scd) (kwd "}") fst ns1 ((add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))),act) in
   ns2,(AnyMethodDecl((t1,(get_taglist vl),name),(vl,stml,(check_type t1
-  e)))),((remove_local_var nt2),act)
+  e)))),((remove_local_vars nt2),act)
 
 let methods_pars s = kleenestar any_meth_pars [] addel s
 

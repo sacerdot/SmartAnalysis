@@ -1,25 +1,25 @@
-open String
-open Char
-open Genlex
-open SmartCalculus
-
 (*Types*)
 type 'a t = 'a list
-type any_expr = AnyExpr : 'a tag * 'a expr -> any_expr
+type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
+(*
 type any_tag = AnyTag : 'a tag -> any_tag
-type any_field = AnyField: 'a SmartCalculus.field -> any_field
-type any_meth = AnyMeth : ('a,'b) SmartCalculus.meth -> any_meth
+*)
+type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
+(*
 type any_tag_list = AnyTagList : 'a SmartCalculus.tag_list -> any_tag_list
 type any_var_list = AnyVarList : 'a SmartCalculus.var_list -> any_var_list
+*)
 type any_field_or_fun = 
-    | Field: 'a tag * string * bool -> any_field_or_fun
-    | Fun:  ('a, 'b) SmartCalculus.meth -> any_field_or_fun
+    | Field: _ MicroSolidity.field * bool -> any_field_or_fun
+    | Fun:  _ MicroSolidity.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
+(*
 type any_rhs = AnyRhs: 'a tag * 'a rhs -> any_rhs
 type any_actor = 
     | ActHum: a_human -> any_actor
     | ActCon: a_contract -> any_actor
-type 'ast parser = token t -> (vartable * bool) -> token t * 'ast * (vartable * bool)
+*)
+type 'ast parser = Genlex.token t -> vartable * bool -> Genlex.token t * 'ast * (vartable * bool)
 exception Fail
 
 (*Utils*)
@@ -31,38 +31,35 @@ let addel = (fun l el -> l@[el])
 let identity = (fun x -> x)
 
 (*print*)
-let rec print_token_list l =
- match l with
- | (Kwd x)::l -> print_string "Kwd "; print_string x; print_endline ""; print_token_list l
- | (Ident x)::l -> print_string "Ident "; print_string x; print_endline ""; print_token_list l
- | (Int n)::l -> print_string "int "; print_int n; print_endline ""; print_token_list l
- | (Char c)::l -> print_string "char "; print_char c; print_endline ""; print_token_list l
- | (String s)::l -> print_string "string "; print_string s; print_endline ""; print_token_list l
- | _ -> ()
+let print_token_list =
+ List.iter
+  (fun t ->
+    (match t with
+      | (Genlex.Kwd x) -> print_string "Kwd "; print_string x
+      | (Ident x) -> print_string "Ident "; print_string x
+      | (Int n) -> print_string "int "; print_int n
+      | (Char c) -> print_string "char "; print_char c
+      | (String s) -> print_string "string "; print_string s
+      | (Float f) -> print_string "float "; print_float f
+    ); print_endline "")
 
-let rec print_table=
- function
- | [] -> print_endline "";
- | Field (t,f,_)::tl -> print_endline (pp_field (t,f)); print_table tl
- | Fun (meth)::tl -> print_endline(pp_meth meth); print_table tl
+let print_table =
+ List.iter
+  (function
+    | Field (f,_) -> print_endline (MicroSolidity.pp_field f)
+    | Fun (meth) -> print_endline(MicroSolidity.pp_meth meth))
 
 
 (*Cast*)
-let check_type : type a. a tag -> any_expr -> a expr =
- fun tag expr ->
-  match expr,tag with
-  | AnyExpr(_,Fail),_ -> Fail
-  | AnyExpr(_,Var(ContractAddress,var)),HumanAddress -> Var(HumanAddress,var)
-  | AnyExpr(_,Var(HumanAddress,var)),ContractAddress -> Var(ContractAddress,var)
-  | AnyExpr(t, e),_ -> 
-   match eq_tag tag t with 
+let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr =
+ fun tag (AnyExpr(t, e)) ->
+   match MicroSolidity.eq_tag tag t with 
    | Some Refl -> e
    | _ -> raise Fail 
 
-let value : type a. a tag -> token -> a expr = fun tag tok ->
+let value : type a. a MicroSolidity.tag -> Genlex.token -> a MicroSolidity.expr = fun tag tok ->
  match tag,tok with
- | String,Genlex.String x -> Value x
- | ContractAddress,Kwd "this" -> This
+ | Address,Kwd "this" -> This
  | Int,Int x -> Value x
  | Bool,Kwd "true" -> Value true
  | Bool,Kwd "false" -> Value false
@@ -71,13 +68,12 @@ let value : type a. a tag -> token -> a expr = fun tag tok ->
 let rec remove_minspace =
  function
  | [] -> []
- | (Genlex.Int x)::tl -> 
-  if (x < 0) then [(Kwd "-")]@[(Genlex.Int (-x))]@(remove_minspace tl) else
-   [(Genlex.Int x)]@(remove_minspace tl)
+ | (Genlex.Int x)::tl when x < 0 -> 
+     [(Genlex.Kwd "-")]@[(Genlex.Int (-x))]@(remove_minspace tl)
  | hd::tl -> [hd]@(remove_minspace tl)
 
 let comb_parser: 'a parser -> ('a -> 'b) -> 'b parser =
- fun pars f s tbl -> let (ns,nast,nt) = pars s tbl in ns,(f nast),nt
+ fun pars f s tbl -> let ns,nast,nt = pars s tbl in ns,(f nast),nt
 
 let junk =
  function
@@ -91,20 +87,20 @@ let of_token streamt =
  in List.rev (aux [] streamt)
 
 (*table*)
-let rec get_field : vartable -> string -> (any_field  * bool) option =
+let rec get_field : vartable -> string -> (MicroSolidity.any_field  * bool) option =
  fun tbl varname -> 
   match tbl with
   | [] -> None
-  | Field (tag, name, islocal )::_ when varname=name ->  Some (AnyField(tag,
+  | Field ((tag, name), islocal )::_ when varname=name ->  Some (AnyField(tag,
   name),islocal)
   | _::tl -> get_field tl varname
 
-let add_field_to_table : vartable -> any_field -> bool -> vartable =
+let add_field_to_table : vartable -> MicroSolidity.any_field -> bool -> vartable =
  fun tbl (AnyField(t,fieldname)) is_local -> 
   match get_field tbl fieldname with
-  | None -> List.append ([Field(t,fieldname,is_local)]) tbl 
+  | None -> List.append ([Field((t,fieldname),is_local)]) tbl 
   | Some(AnyField(tag,name),_) -> 
-   (match eq_tag tag t with
+   (match MicroSolidity.eq_tag tag t with
    | Some Refl -> tbl
    | None -> raise Fail)
 
@@ -122,14 +118,13 @@ let add_fun_to_table : vartable -> any_meth -> vartable =
   | None -> List.append ([Fun(t,l,funname)]) tbl
   | _ -> raise Fail
 
-let remove_local_var: vartable -> vartable =
- fun tbl  -> List.filter (fun x -> 
-  match x with
-  | Field(_, _ , true) -> false
+let remove_local_vars: vartable -> vartable =
+ fun tbl  -> List.filter (function
+  | Field(_, true) -> false
   | _ -> true) tbl
    
 (*parser*)
-let const : token -> (token -> 'ast) -> 'ast parser =
+let const : Genlex.token -> (Genlex.token -> 'ast) -> 'ast parser =
  fun t1 f t2 tbl ->
   if (List.length t2 > 0) && (t1 = (List.hd t2)) then
    (junk t2), f t1, tbl

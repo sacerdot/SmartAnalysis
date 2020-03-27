@@ -1,28 +1,32 @@
 compiler.cmo : \
-    smartCalculus.cmo \
-    parserCombinator.cmo \
     grammar.cmo
 compiler.cmx : \
-    smartCalculus.cmx \
-    parserCombinator.cmx \
     grammar.cmx
 grammar.cmo : \
-    smartCalculus.cmo \
-    parserCombinator.cmo
+    parserCombinator.cmi
 grammar.cmx : \
-    smartCalculus.cmx \
     parserCombinator.cmx
-lib.cmo :
-lib.cmx :
+lib.cmo : \
+    lib.cmi
+lib.cmx : \
+    lib.cmi
+lib.cmi :
+microSolidity.cmo : \
+    lib.cmi \
+    microSolidity.cmi
+microSolidity.cmx : \
+    lib.cmx \
+    microSolidity.cmi
+microSolidity.cmi :
 parserCombinator.cmo : \
-    smartCalculus.cmo
+    microSolidity.cmi \
+    parserCombinator.cmi
 parserCombinator.cmx : \
-    smartCalculus.cmx
+    microSolidity.cmx \
+    parserCombinator.cmi
+parserCombinator.cmi : \
+    microSolidity.cmi
 pythonDeploy.cmo : \
     compiler.cmo
 pythonDeploy.cmx : \
     compiler.cmx
-smartCalculus.cmo : \
-    lib.cmo
-smartCalculus.cmx : \
-    lib.cmx

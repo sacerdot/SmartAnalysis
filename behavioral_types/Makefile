@@ -1,4 +1,4 @@
-SOURCES = lib.ml smartCalculus.ml parserCombinator.ml grammar.ml compiler.ml pythonDeploy.ml
+SOURCES = lib.ml microSolidity.ml parserCombinator.ml grammar.ml compiler.ml pythonDeploy.ml
 EXEC = compiler
 CAMLC = ocamlc
 CAMLDEP = ocamldep

@@ -1,6 +1,5 @@
 open Grammar
 open SmartCalculus
-open ParserCombinator
 
 let nl = "\n"
 let symb_array = "symbol"
