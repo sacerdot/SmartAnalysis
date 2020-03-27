@@ -1,5 +1,5 @@
-SOURCES = lib.ml microSolidity.ml parserCombinator.ml grammar.ml compiler.ml pythonDeploy.ml
-EXEC = compiler
+SOURCES = lib.ml microSolidity.ml parserCombinator.ml grammar.ml analyzer.ml
+EXEC = analyzer
 CAMLC = ocamlc
 CAMLDEP = ocamldep
 LIBS=$(WITHUNIX)
