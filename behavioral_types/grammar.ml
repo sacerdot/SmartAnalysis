@@ -216,7 +216,10 @@ let type_pars =
 
 let field_pars islocal s t = 
  let (ns,field,tbl) =
-  concat type_pars varname (fun (AnyTag t) v -> AnyField (t,v)) s t in 
+  concat (concat
+   type_pars
+   varname (fun (AnyTag t) v -> AnyField (t,v)))
+   (kwd ";") fst s t in 
  ns,field,add_field_to_table tbl field islocal
 
  (*

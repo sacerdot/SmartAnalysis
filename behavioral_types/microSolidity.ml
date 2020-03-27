@@ -114,7 +114,7 @@ let rec pp_tag_list : type a. a tag_list -> string list =
  function
     TNil -> []
   | TCons(x,tl) -> pp_tag x :: pp_tag_list tl
-let pp_ident (t,s) = s ^ ":" ^ pp_tag t
+let pp_ident (t,s) = pp_tag t ^ " " ^ s
 let pp_var = pp_ident
 let rec pp_var_list : type a. a var_list -> string list =
  function
@@ -128,7 +128,7 @@ let pp_value (type a) (tag : a tag) (v : a) =
   | Address -> pp_address v
 let pp_field = pp_ident
 let pp_any_field (AnyField f) = pp_field f
-let pp_fields l = String.concat "" (List.map (fun f -> pp_any_field f ^ "\n") l)
+let pp_fields l = String.concat "" (List.map (fun f -> pp_any_field f ^ ";\n") l)
 
 let rec pp_expr : type a. a tag -> a expr -> string =
  fun tag ->
