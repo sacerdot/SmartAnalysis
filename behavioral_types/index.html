@@ -4,7 +4,37 @@
  </head>
  <body>
   <button onclick="eval()">Eval</button>
-  <textarea rows="2" cols="50" id="in">x (y. (z.z) (z.z))</textarea>
+  <textarea rows="2" cols="50" id="in">
+contract Bank {
+
+   int x;
+   int y;
+   bool z;
+
+(*
+   function pay(int n) : int payable {
+      return n
+      if (msg.value &gt;= 1 &amp;&amp; this.balance &gt; n) {
+         msg.sender.transfer(n) ;
+         msg.sender.ack() ;
+      }
+*)
+   }
+
+   function() payable { return 0 }
+}
+
+contract Thief {
+
+(*
+   function ack() {
+      msg.sender.pay.value(1)(2) ;
+   }
+*)
+
+   function() payable { return 0 }
+}
+  </textarea>
   <div id="main">
   </div>
  </body>
