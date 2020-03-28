@@ -1,10 +1,13 @@
 <html>
  <head>
-  <script type="text/javascript" src="main.js"></script>
+  <script type="text/javascript" src="_build/default/analyzer.js"></script>
  </head>
  <body>
   <button onclick="eval()">Eval</button>
   <hr>
+  <table>
+  <tr>
+  <td>
   <textarea rows="30" cols="70" id="in">
 contract Bank {
 
@@ -36,7 +39,12 @@ contract Thief {
    function() payable { return 0 }
 }
   </textarea>
-  <div id="main">
-  </div>
+  </td>
+  <td>
+  <textarea rows="30" cols="70" id="out">
+  </textarea>
+  </td>
+  </tr>
+  </table>
  </body>
 </html>

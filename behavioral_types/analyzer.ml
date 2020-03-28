@@ -6,7 +6,7 @@ let eval () =
  let x = (Js.coerce_opt (document##getElementById (Js.string "in")) Dom_html.CoerceTo.textarea (fun _ -> assert false))##.value in
  let input = Js.to_string x in
  let o = Grammar.test_string input in
- let main = Js.Opt.get (document##getElementById (Js.string "main")) (fun () -> assert false) in
+ let main = Js.Opt.get (document##getElementById (Js.string "out")) (fun () -> assert false) in
  main##.innerHTML := Js.string o
 
 let _ = Js.export "eval" (Js.wrap_callback eval)
