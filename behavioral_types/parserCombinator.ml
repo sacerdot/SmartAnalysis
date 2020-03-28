@@ -87,7 +87,7 @@ let add_field_to_table : vartable -> MicroSolidity.any_field -> bool -> vartable
  fun tbl (AnyField(t,fieldname)) is_local -> 
   match get_field tbl fieldname with
   | None -> List.append ([Field((t,fieldname),is_local)]) tbl 
-  | Some(AnyField(tag,name),_) -> 
+  | Some(AnyField(tag,_),_) -> 
    (match MicroSolidity.eq_tag tag t with
    | Some Refl -> tbl
    | None -> raise (Fail (`Typing (MicroSolidity.pp_tag tag ^ " vs " ^ MicroSolidity.pp_tag t))))

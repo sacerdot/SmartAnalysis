@@ -83,9 +83,7 @@ let var_pars: type a. a tag -> (a expr) parser = fun tag s t ->
 const (List.hd s) (fun _ -> 
  let aux : a expr =
  (match tag,s,t with
- | Int,(Kwd "msg")::(Kwd ".")::(Kwd "value")::tl,_ -> MsgValue
- (*| Int,(Kwd "balance")::tl,_ -> Var(Int,"balance")*)
- | _,(Ident var)::tl,tbl -> 
+ | _,(Ident var)::_,tbl -> 
   (match get_field tbl var with
     | Some (AnyField(tagfield,name),islocal) ->
        (match eq_tag tagfield tag,islocal with
@@ -369,11 +367,11 @@ let assign_pars s tbl =
 
 type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 
-let revert_pars : 'a tag -> 'b rettag -> ('a,'b) stm parser = fun tag _ s t ->
+let revert_pars : 'a tag -> 'b rettag -> ('a,'b) stm parser = fun _ _ s t ->
  const (Kwd "revert") (fun _ -> MicroSolidity.Revert) s t
 
 let epsilon_pars : type b. 'a tag -> b rettag -> ('a,b) stm parser =
- fun tag rettag s t ->
+ fun _ rettag s t ->
   match rettag with
     RTEpsilon -> s,MicroSolidity.Epsilon,t 
   | RTReturn -> raise (Fail (`Typing "epsilon not allowed here"))
@@ -440,7 +438,7 @@ let rec varlist_append l1 l2 =
 (*
 * parameters ::= t Var (, t Var)* ?
 *)
-let rec parameter_pars s t = 
+let parameter_pars s t = 
  let pars_varlist_singleton =
   concat type_pars varname 
    (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil)))) in
@@ -489,7 +487,7 @@ let fallback_pars =
   (block_pars Int VNil) scd)
   (function
       block,true -> block
-    | block,false -> raise (Fail (`Typing "the fallback method must be payable")))
+    | _,false -> raise (Fail (`Typing "the fallback method must be payable")))
 
 (*
  * act ::= contract varname { field* meth* }
@@ -515,11 +513,9 @@ let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 
 let get_tokens file = remove_minspace (of_token(lexer file));;
 
-let test filename =
+let test_stream stream =
  try
-  let in_channel = open_in filename in
-  let file = Stream.of_channel(in_channel) in
-  let (s, conf, tbl) = configuration_pars (get_tokens file) [] in
+  let (s, conf, tbl) = configuration_pars (get_tokens stream) [] in
   prerr_endline "######## TOKENS #######" ;
   print_token_list s;
   prerr_endline "######## TABLE #######" ;
@@ -535,3 +531,12 @@ let test filename =
      prerr_endline "######## TYPING ERROR #######" ;
      prerr_endline msg ;
      "error"
+
+let test_file filename =
+ let in_channel = open_in filename in
+ let stream = Stream.of_channel in_channel in
+ test_stream stream
+
+let test_string s =
+ let stream = Stream.of_string s in
+ test_stream stream

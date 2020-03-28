@@ -31,7 +31,6 @@ val add_field_to_table :
 val get_fun : vartable -> string -> any_meth option
 val add_fun_to_table : vartable -> any_meth -> vartable
 val remove_local_vars : vartable -> vartable
-val remove_local_vars : vartable -> vartable
 val const : Genlex.token -> (Genlex.token -> 'ast) -> 'ast parser
 val choice : 'ast parser -> 'ast parser -> 'ast parser
 val concat :

@@ -4,14 +4,15 @@ contract Bank {
    int y;
    bool z;
 
-(*
    function pay(int n) : int payable {
+      return n
+(*
       if (msg.value >= 1 && this.balance > n) {
          msg.sender.transfer(n) ;
          msg.sender.ack() ;
       }
-   }
 *)
+   }
 
    function() payable { return 0 }
 }

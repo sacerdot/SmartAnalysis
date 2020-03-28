@@ -152,17 +152,12 @@ let rec pp_expr : type a. a tag -> a expr -> string =
   | MsgValue -> "msg.value"
   | Balance e -> pp_expr Address e ^ ".balance"
 
-let rec  pp_tagged_expr e = pp_expr (fst e) (snd e)
+let pp_tagged_expr e = pp_expr (fst e) (snd e)
 
 let rec pp_expr_list : type a. a tag_list -> a expr_list -> string list = fun tg el ->
  match tg,el with
     TNil,ENil -> []
    | TCons(tag,tagl),ECons(v,tl) -> pp_expr tag v :: pp_expr_list tagl tl
-
-let rec pp_tag_list : type a. a tag_list -> string list =
- function
-    TNil -> []
-  | TCons(tag,tagl) -> pp_tag tag :: pp_tag_list tagl
 
 let pp_meth (rtag,tags,id) =
  id ^ ":(" ^ String.concat "*" (pp_tag_list tags) ^ " -> " ^ pp_tag rtag ^ ")"
@@ -171,9 +166,9 @@ let pp_lhs =
  function
   | LField f -> pp_field f ^ " := "
   | LVar v -> pp_var v ^ " := "
-  | LDiscard t -> ""
+  | LDiscard _ -> ""
 
-let rec pp_rhs tag =
+let pp_rhs tag =
  function
   | Expr e -> pp_expr tag e
   | Call(addr,meth,value,exprl) ->
