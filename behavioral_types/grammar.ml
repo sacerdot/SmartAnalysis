@@ -515,12 +515,14 @@ let get_tokens file = remove_minspace (of_token(lexer file));;
 
 let test_stream stream =
  try
-  let (s, conf, tbl) = configuration_pars (get_tokens stream) [] in
+  let (_s, conf,_tbl) = configuration_pars (get_tokens stream) [] in
+(*
   "######## TOKENS #######\n" ^
   print_token_list s ^
   "######## TABLE #######\n" ^
   print_table tbl ^
   "######## PROGRAM #######" ^
+*)
   pp_configuration conf
  with
   | Fail (`Syntax l) ->
