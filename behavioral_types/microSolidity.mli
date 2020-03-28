@@ -57,7 +57,7 @@ type any_method_decl =
 type methods = any_method_decl list
 type fields = any_field list
 type a_contract =
-    AContract : address * methods * (int, unit tag_list) block option *
+    AContract : address * methods * (int, unit) block option *
       fields -> a_contract
 type configuration = a_contract list
 type (_, _) eq = Refl : ('a, 'a) eq

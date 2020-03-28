@@ -369,28 +369,31 @@ let assign_pars s tbl =
 
 type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 
-let revert_pars : 'b rettag -> ('a,'b) stm parser = fun tag -> const (Kwd "revert") (fun _ -> MicroSolidity.Revert)
+let revert_pars : 'a tag -> 'b rettag -> ('a,'b) stm parser = fun tag _ s t ->
+ const (Kwd "revert") (fun _ -> MicroSolidity.Revert) s t
 
-let epsilon_pars : type b. b rettag -> ('a,b) stm parser =
- function
-    RTEpsilon -> fun s t -> s,MicroSolidity.Epsilon,t 
+let epsilon_pars : type b. 'a tag -> b rettag -> ('a,b) stm parser =
+ fun tag rettag s t ->
+  match rettag with
+    RTEpsilon -> s,MicroSolidity.Epsilon,t 
   | RTReturn -> raise (Fail (`Typing "epsilon not allowed here"))
 
-let if_then_else bexpr stm1 stm2 stm3 =
- IfThenElse(check_type Bool bexpr,stm1,stm2,stm3)
+let return_pars : 'a tag -> 'b rettag -> ('a,'b) stm parser = fun tag _ ->
+ concat
+  (kwd "return")
+  expr_pars
+  (fun () expr -> MicroSolidity.Return (check_type tag expr))
     
 (*
  * stm ::= revert | return expr | assign | if bool_expr then stm else stm ; stm | { stm } | epsilon
  *)
-let rec stm_pars : type b. b rettag -> ('a,b) stm parser = fun tag s ->
+let rec stm_pars : type b. 'a tag -> b rettag -> ('a,b) stm parser = fun tag rettag s t ->
  choice_list[
   (* revert *)
-  revert_pars tag ;
+  revert_pars tag rettag ;
 
-(*XXX
   (* return *)
-  return_pars ;
-*)
+  return_pars tag rettag ;
 
 (*XXX
   (*assign*)
@@ -401,20 +404,20 @@ let rec stm_pars : type b. b rettag -> ('a,b) stm parser = fun tag s ->
    (kwd "if")
    bool_expr scd)
    (kwd "then") fst)
-   (stm_pars RTEpsilon) couple)
+   (stm_pars tag RTEpsilon) couple)
    (kwd "else") fst)
-   (stm_pars RTEpsilon) couple)
+   (stm_pars tag RTEpsilon) couple)
    (kwd ";") fst)
-   (stm_pars tag) couple)
+   (stm_pars tag rettag) couple)
    (fun (((bexpr,stm1),stm2),stm3) ->
-     if_then_else bexpr stm1 stm2 stm3);
+     IfThenElse(check_type Bool bexpr,stm1,stm2,stm3));
 
   (* {stm} *)
-  concat (kwd "{") (concat (stm_pars tag) (kwd "}") fst) scd;
+  concat (kwd "{") (concat (stm_pars tag rettag) (kwd "}") fst) scd;
 
   (* epsilon *)
-  epsilon_pars tag
- ] s
+  epsilon_pars tag rettag
+ ] s t
 
 let rec add_local_var tbl =
   function 
@@ -448,6 +451,18 @@ let rec parameter_pars s t =
   (function Some s -> s | None -> AnyVarList(VNil)) s t in
  ns,vl,add_local_var nt vl
 
+(* [payable] { paramterms stm } *)
+let block_pars tag vl s t =
+ let (ns2,((payable,AnyVarList lvl),stm),nt2) = 
+  concat (concat (concat (concat
+   (comb_parser (option (kwd "payable")) (function None -> false | Some () -> true))
+   (kwd "{") fst)
+   parameter_pars couple)
+   (stm_pars tag RTReturn) couple)
+   (kwd "}") fst
+   s t in
+ ns2, (Block(vl,lvl,stm),payable), remove_local_vars nt2
+
 (*
  * meth ::= function Var parameters : t { paramters stm }
  *)
@@ -458,22 +473,23 @@ let any_meth_pars s t =
    varname scd)
    (concat parameter_pars (concat (kwd ":") type_pars scd) couple) couple
    s t in
- let (ns2,((payable,AnyVarList lvl),stm),nt2) = 
-  concat (concat (concat (concat
-   (comb_parser (option (kwd "payable")) (function None -> false | Some () -> true))
-   (kwd "{") fst)
-   parameter_pars couple)
-   (stm_pars RTReturn) couple)
-   (kwd "}") fst
-   ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
+ let (ns2,(block,payable),nt2) = 
+  block_pars t1 vl ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
  ns2,
-  AnyMethodDecl((t1,get_taglist vl,name),Block(vl,lvl,stm),payable),
+  AnyMethodDecl((t1,get_taglist vl,name),block,payable),
   remove_local_vars nt2
 
 let methods_pars s = kleenestar any_meth_pars [] addel s
 
-let fallback_pars s t =
- raise (Fail (`Typing "XXX TODO"))
+let fallback_pars =
+ comb_parser (concat (concat (concat
+  (kwd "function")
+  (kwd "(") fst)
+  (kwd ")") fst)
+  (block_pars Int VNil) scd)
+  (function
+      block,true -> block
+    | block,false -> raise (Fail (`Typing "the fallback method must be payable")))
 
 (*
  * act ::= contract varname { field* meth* }
@@ -495,7 +511,7 @@ let configuration_pars : configuration parser =
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
 "="; ","; ";"; "fail"; "if"; "then"; "else"; "{"; "function";
-"}"; "return"; ":"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ]
+"}"; "return"; ":"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
 
 let get_tokens file = remove_minspace (of_token(lexer file));;
 

@@ -11,9 +11,9 @@ contract Bank {
          msg.sender.ack() ;
       }
    }
-
-   function() payable { }
 *)
+
+   function() payable { return 0 }
 }
 
 contract Thief {
@@ -22,7 +22,7 @@ contract Thief {
    function ack() {
       msg.sender.pay.value(1)(2) ;
    }
-
-   function() payable { }
 *)
+
+   function() payable { return 0 }
 }
