@@ -17,8 +17,8 @@ val fst : 'a -> 'b -> 'a
 val scd : 'a -> 'b -> 'b
 val addel : 'a list -> 'a -> 'a list
 val identity : 'a -> 'a
-val print_token_list : Genlex.token list -> unit
-val print_table : any_field_or_fun list -> unit
+val print_token_list : Genlex.token list -> string
+val print_table : any_field_or_fun list -> string
 val check_type : 'a MicroSolidity.tag -> any_expr -> 'a MicroSolidity.expr
 val value : 'a MicroSolidity.tag -> Genlex.token -> 'a MicroSolidity.expr
 val remove_minspace : Genlex.token list -> Genlex.token list

@@ -21,23 +21,25 @@ let addel = (fun l el -> l@[el])
 let identity = (fun x -> x)
 
 (*print*)
-let print_token_list =
- List.iter
-  (fun t ->
-    (match t with
-      | (Genlex.Kwd x) -> print_string "Kwd "; print_string x
-      | (Ident x) -> print_string "Ident "; print_string x
-      | (Int n) -> print_string "int "; print_int n
-      | (Char c) -> print_string "char "; print_char c
-      | (String s) -> print_string "string "; print_string s
-      | (Float f) -> print_string "float "; print_float f
-    ); print_endline "")
+let print_token_list l =
+ String.concat ""
+  (List.map
+   (fun t ->
+     (match t with
+       | (Genlex.Kwd x) -> "Kwd " ^ x
+       | (Ident x) -> "Ident " ^ x
+       | (Int n) -> "int " ^ string_of_int n
+       | (Char c) -> "char " ^ String.make 1 c
+       | (String s) -> "string " ^ s
+       | (Float f) -> "float " ^ string_of_float f
+     ) ^ "\n") l)
 
-let print_table =
- List.iter
-  (function
-    | Field (f,_) -> print_endline (MicroSolidity.pp_field f)
-    | Fun (meth) -> print_endline(MicroSolidity.pp_meth meth))
+let print_table l =
+ String.concat ""
+  (List.map
+    (function
+      | Field (f,_) -> MicroSolidity.pp_field f
+      | Fun (meth) -> MicroSolidity.pp_meth meth) l)
 
 (*Cast*)
 let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr =
