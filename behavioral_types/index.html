@@ -1,4 +1,4 @@
-<html>
+<html> 
  <head>
   <script type="text/javascript" src="analyzerlib.js"></script>
 <style type="text/css" media="screen">
@@ -20,7 +20,7 @@ contract Bank {
    int y;
    bool z;
 
-(*
+(* comment *)
    function pay(int n) : int payable {
       return n
       if (msg.value &gt;= 1 &amp;&amp; this.balance &gt; n) {
@@ -28,7 +28,6 @@ contract Bank {
          msg.sender.ack() ;
       }
    }
-*)
 
    function() payable { return 0 }
 }
@@ -60,9 +59,11 @@ contract Thief {
 <script>
     var editor_in = ace.edit("in");
     var editor_out = ace.edit("out");
-    //editor.setTheme("ace/theme/monokai");
+    //editor_in.setTheme("ace/theme/tomorrow");
+    editor_in.setTheme("ace/theme/tomorrow_night_blue");
+    editor_out.setTheme("ace/theme/tomorrow_night_blue");
     editor_in.session.setMode("ace/mode/microsolidity");
-    editor_out.session.setMode("ace/mode/javascript");
+    editor_out.session.setMode("ace/mode/microsolidity");
     doc_in = editor_in.getSession().getDocument();
     doc_out = editor_out.getSession().getDocument();
 </script>
