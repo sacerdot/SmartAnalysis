@@ -1,14 +1,19 @@
 <html>
  <head>
   <script type="text/javascript" src="analyzerlib.js"></script>
+<style type="text/css" media="screen">
+    .editor { 
+        height: 400px;
+    }
+</style>
  </head>
  <body>
   <button onclick="eval()">Eval</button>
   <hr>
-  <table>
+  <table width="100%">
   <tr>
   <td>
-  <textarea rows="30" cols="70" id="in">
+<div id="in" class="editor">
 contract Bank {
 
    int x;
@@ -38,13 +43,31 @@ contract Thief {
 
    function() payable { return 0 }
 }
-  </textarea>
+</div>
   </td>
+  <td width="50%">
+  <div id="out" class="editor">
+foo afadslfdsf lsajfldjfldfjlasjlfsa
+  </div>
+  </td>
+  </tr>
+  <tr>
   <td>
-  <textarea rows="30" cols="70" readonly id="out">
-  </textarea>
   </td>
   </tr>
   </table>
+    
+<script src="https://pagecdn.io/lib/ace/1.4.8/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor_in = ace.edit("in");
+    var editor_out = ace.edit("out");
+    //editor.setTheme("ace/theme/monokai");
+    ace.config.setModuleUrl("ace/mode/MicroSolidity", "https://sacerdot.github.io/SmartAnalysis/behavioral_types/ace_microsolidity.js")
+    editor_in.setOption("mode", "ace/mode/MicroSolidity")
+    //editor_in.session.setMode("ace/mode/javascript");
+    //editor_out.session.setMode("ace/mode/javascript");
+    doc_in = editor_in.getSession().getDocument();
+    doc_out = editor_out.getSession().getDocument();
+</script>
  </body>
 </html>
