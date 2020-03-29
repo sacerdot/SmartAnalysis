@@ -27,11 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * ***** END LICENSE BLOCK ***** */
-
+ 
 define(function(require, exports, module) {
 "use strict";
 
-var lang = require("../lib/lang");
+var lang = require("https://sacerdot.github.io/SmartAnalysis/behavioral_types/ace/lang");
 
 var TextHighlightRules = function() {
 
