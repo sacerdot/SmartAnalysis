@@ -47,7 +47,6 @@ contract Thief {
   </td>
   <td width="50%">
   <div id="out" class="editor">
-foo afadslfdsf lsajfldjfldfjlasjlfsa
   </div>
   </td>
   </tr>
@@ -57,16 +56,13 @@ foo afadslfdsf lsajfldjfldfjlasjlfsa
   </tr>
   </table>
     
-<script src="https://pagecdn.io/lib/ace/1.4.8/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="ace/require.js" type="text/javascript" charset="utf-8"></script>
+<script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor_in = ace.edit("in");
     var editor_out = ace.edit("out");
     //editor.setTheme("ace/theme/monokai");
-    ace.config.setModuleUrl("ace/mode/MicroSolidity", "https://sacerdot.github.io/SmartAnalysis/behavioral_types/ace/MicroSolidity.js")
-    editor_in.setOption("mode", "ace/mode/MicroSolidity")
-    //editor_in.session.setMode("ace/mode/javascript");
-    //editor_out.session.setMode("ace/mode/javascript");
+    editor_in.session.setMode("ace/mode/microsolidity");
+    editor_out.session.setMode("ace/mode/javascript");
     doc_in = editor_in.getSession().getDocument();
     doc_out = editor_out.getSession().getDocument();
 </script>
