@@ -28,7 +28,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-define(function(require, exports, module) {
+ace.define(function(require, exports, module) {
 "use strict";
 
 var oop = require("https://sacerdot.github.io/SmartAnalysis/behavioral_types/ace/oop"); 
