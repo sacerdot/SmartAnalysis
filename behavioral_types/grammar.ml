@@ -4,6 +4,7 @@ open Genlex
 
 (** weakly typed expressions **)
 
+type any_ident = AnyIdent : 'a MicroSolidity.ident -> any_ident
 type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
@@ -21,7 +22,7 @@ let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr
 (** symbol table **)
 
 type any_field_or_fun = 
-    | Field: _ MicroSolidity.field * bool -> any_field_or_fun
+    | VarOrField: _ MicroSolidity.ident * bool -> any_field_or_fun
     | Fun:  _ MicroSolidity.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
 
@@ -29,22 +30,21 @@ let print_table l =
  String.concat ""
   (List.map
     (function
-      | Field (f,_) -> MicroSolidity.pp_field f
+      | VarOrField (f,_) -> MicroSolidity.pp_field f
       | Fun (meth) -> MicroSolidity.pp_meth meth) l)
 
-let rec get_field : vartable -> string -> (MicroSolidity.any_field  * bool) option =
+let rec get_field : vartable -> string -> (any_ident  * bool) option =
  fun tbl varname -> 
   match tbl with
   | [] -> None
-  | Field ((tag, name), islocal )::_ when varname=name ->  Some (AnyField(tag,
-  name),islocal)
+  | VarOrField ((tag, name), islocal )::_ when varname=name ->  Some (AnyIdent(tag,name),islocal)
   | _::tl -> get_field tl varname
 
-let add_field_to_table : vartable -> MicroSolidity.any_field -> bool -> vartable =
- fun tbl (AnyField(t,fieldname)) is_local -> 
+let add_field_to_table : vartable -> any_ident -> bool -> vartable =
+ fun tbl (AnyIdent(t,fieldname)) is_local -> 
   match get_field tbl fieldname with
-  | None -> List.append ([Field((t,fieldname),is_local)]) tbl 
-  | Some(AnyField(tag,_),_) -> 
+  | None -> List.append ([VarOrField((t,fieldname),is_local)]) tbl 
+  | Some(AnyIdent(tag,_),_) -> 
    (match MicroSolidity.eq_tag tag t with
    | Some Refl -> tbl
    | None -> raise (Reject (MicroSolidity.pp_tag tag ^ " vs " ^ MicroSolidity.pp_tag t)))
@@ -65,7 +65,7 @@ let add_fun_to_table : vartable -> any_meth -> vartable =
 
 let remove_local_vars: vartable -> vartable =
  fun tbl  -> List.filter (function
-  | Field(_, true) -> false
+  | VarOrField(_, true) -> false
   | _ -> true) tbl
 
 (*Expression *)
@@ -154,7 +154,7 @@ const x (fun _ ->
  match tag,s,t with
  | _,(Ident var)::_,tbl -> 
   (match get_field tbl var with
-    | Some (AnyField(tagfield,name),islocal) ->
+    | Some (AnyIdent(tagfield,name),islocal) ->
        (match eq_tag tagfield tag,islocal with
          | Some Refl,false -> MicroSolidity.Field(tagfield,name)
          | Some Refl,true -> Var(tagfield,name)
@@ -295,7 +295,7 @@ let field_pars islocal s t =
  let ns,field,error,tbl =
   concat (concat
    type_pars
-   varname (fun (AnyTag t) v -> AnyField (t,v)))
+   varname (fun (AnyTag t) v -> AnyIdent (t,v)))
    (kwd ";") cfst s t in 
  let x =
   try
@@ -305,15 +305,12 @@ let field_pars islocal s t =
  in
   ns,field,error,x
 
- (*
-  * decl ::= t
-  *)
-let decl_pars islocal s t = field_pars islocal s t
-
 (*
- * store ::= decl*
+ * fields ::= decl*
  *)
-let store_pars = kleenestar (decl_pars false) [] addel
+let fields_pars =
+ comb_parser (kleenestar (field_pars false) [] addel)
+  (List.map (fun (AnyIdent (tag,id)) -> AnyField (tag,id)))
 
 let parse_any_expr_list = 
  comb_parser 
@@ -510,7 +507,7 @@ let rec add_local_var tbl =
   function 
    | AnyVarList VNil -> tbl
    | AnyVarList (VCons(h,tl)) -> 
-    add_local_var (add_field_to_table tbl (AnyField h) true) (AnyVarList tl)
+    add_local_var (add_field_to_table tbl (AnyIdent h) true) (AnyVarList tl)
   
 let rec get_taglist : type a. a var_list -> a tag_list =
  function
@@ -524,18 +521,32 @@ let rec varlist_append l1 l2 =
    let AnyVarList l = varlist_append (AnyVarList tl) l2 in
    AnyVarList(VCons(hd,l))
 
+let pars_varlist_singleton =
+ concat type_pars varname 
+  (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil))))
+
 (*
 * parameters ::= t Var (, t Var)* ?
 *)
 let parameter_pars s t = 
- let pars_varlist_singleton =
-  concat type_pars varname 
-   (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil)))) in
  let ns,vl,error,nt = 
   brackets_pars (comb_parser (option (concat pars_varlist_singleton
   (kleenestar (concat (kwd ",") pars_varlist_singleton csnd) 
   (AnyVarList(VNil)) varlist_append) varlist_append))
   (function Some s -> s | None -> AnyVarList(VNil))) s t in
+ let x =
+  try
+   add_local_var nt vl
+  with Reject msg -> raise (Fail (best error (msg,ns))) in
+ ns,vl,error,x
+
+(*
+* vars ::= t Var; (t Var;)* ?
+*)
+let vars_pars s t = 
+ let ns,vl,error,nt = 
+  kleenestar (concat (kwd ",") pars_varlist_singleton csnd) 
+  (AnyVarList(VNil)) varlist_append s t in
  let x =
   try
    add_local_var nt vl
@@ -548,7 +559,7 @@ let block_pars ?(check_payable=false) tag vl s t =
   concat (concat (concat (concat
    (comb_parser (option (kwd "payable")) (function None -> if check_payable then raise (Reject "must be payable") ; false | Some () -> true))
    (kwd "{") cfst)
-   parameter_pars couple)
+   vars_pars couple)
    (stm_pars tag RTReturn) couple)
    (kwd "}") cfst
    s t in
@@ -591,7 +602,7 @@ let actor_pars : (a_contract,'t) parser =
   (kwd "contract")
   varname csnd)
   (kwd "{") cfst)
-  store_pars couple)
+  fields_pars couple)
   methods_pars couple)
   (option fallback_pars) couple)
   (kwd "}") cfst)
@@ -607,7 +618,7 @@ let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 
 let test_stream stream =
  try
-  let _s, conf, _error, _tbl = actor_pars (*configuration_pars*) (get_tokens lexer stream) [] in
+  let _s, conf, _error, _tbl = configuration_pars (get_tokens lexer stream) [] in
 (*
   "######## TOKENS #######\n" ^
   print_token_list s ^
@@ -615,7 +626,7 @@ let test_stream stream =
   print_table tbl ^
   "######## PROGRAM #######" ^
 *)
-  pp_a_contract (*pp_configuration*) conf
+  pp_configuration conf
  with
   | Fail (msg,l) ->
      "######## SYNTAX ERROR #######\n" ^
