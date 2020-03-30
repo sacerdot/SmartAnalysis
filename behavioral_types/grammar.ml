@@ -532,10 +532,10 @@ let parameter_pars s t =
   concat type_pars varname 
    (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil)))) in
  let ns,vl,error,nt = 
-  comb_parser (option (concat pars_varlist_singleton
+  brackets_pars (comb_parser (option (concat pars_varlist_singleton
   (kleenestar (concat (kwd ",") pars_varlist_singleton csnd) 
   (AnyVarList(VNil)) varlist_append) varlist_append))
-  (function Some s -> s | None -> AnyVarList(VNil)) s t in
+  (function Some s -> s | None -> AnyVarList(VNil))) s t in
  let x =
   try
    add_local_var nt vl
@@ -620,8 +620,7 @@ let test_stream stream =
   | Fail (msg,l) ->
      "######## SYNTAX ERROR #######\n" ^
      "<< " ^ msg ^ " >>\n" ^
-     print_token_list l ^
-     "error"
+     print_token_list l
 
 let test_file filename =
  let in_channel = open_in filename in
