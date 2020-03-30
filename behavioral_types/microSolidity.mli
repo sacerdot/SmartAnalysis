@@ -79,6 +79,7 @@ val pp_meth : 'a tag * 'b tag_list * string -> string
 val pp_lhs : 'a lhs -> string
 val pp_rhs : 'a tag -> 'a rhs -> string
 val pp_stm : 'a tag -> ('a, 'b) stm -> string
+val pp_a_contract : a_contract -> string
 val pp_configuration : configuration -> string
 
 val lookup_method : ('a, 'b) meth -> methods -> ('a, 'b) block

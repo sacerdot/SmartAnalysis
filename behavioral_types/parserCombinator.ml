@@ -1,39 +1,24 @@
-(*Types*)
+(** Types **)
 type 'a t = 'a list
-type ('ast,'a) parser = Genlex.token t -> 'a -> Genlex.token t * 'ast * 'a
-exception Fail of [`Syntax of Genlex.token t | `Typing of string ]
+type error = string * Genlex.token t
+type ('ast,'a) parser =
+  Genlex.token t -> 'a -> Genlex.token t * 'ast * error * 'a
+exception Fail of error
+exception Reject of string
 
-(*Utils*)
+(** Utils **)
 
-let fst = (fun x _ -> x)
-let scd = (fun _ x -> x)
+let best err1 err2 =
+ if List.length (snd err1) < List.length (snd err2) then err1 else err2
+  
+let cfst = (fun x _ -> x)
+let csnd = (fun _ x -> x)
 
 let addel = (fun l el -> l@[el]) 
 let identity = (fun x -> x)
 
-(*print*)
-let print_token_list l =
- String.concat ""
-  (List.map
-   (fun t ->
-     (match t with
-       | (Genlex.Kwd x) -> "Kwd " ^ x
-       | (Ident x) -> "Ident " ^ x
-       | (Int n) -> "int " ^ string_of_int n
-       | (Char c) -> "char " ^ String.make 1 c
-       | (String s) -> "string " ^ s
-       | (Float f) -> "float " ^ string_of_float f
-     ) ^ "\n") l)
+(** Streams **)
 
-(*Cast*)
-
-let value : type a. a MicroSolidity.tag -> Genlex.token -> a MicroSolidity.expr = fun tag tok ->
- match tag,tok with
- | Int,Int x -> Value x
- | Bool,Kwd "true" -> Value true
- | Bool,Kwd "false" -> Value false
- | _ -> raise (Fail (`Syntax [tok]))
-   
 let rec remove_minspace =
  function
  | [] -> []
@@ -41,56 +26,64 @@ let rec remove_minspace =
      [(Genlex.Kwd "-")]@[(Genlex.Int (-x))]@(remove_minspace tl)
  | hd::tl -> [hd]@(remove_minspace tl)
 
-let comb_parser pars f s tbl =
- let ns,nast,nt = pars s tbl in ns,(f nast),nt
-
-let junk =
- function
-  [] -> []
- | _::tl -> tl
-
 let of_token streamt =
  let rec aux acc s = 
   try aux ((Stream.next s) :: acc) s
   with Stream.Failure -> acc
  in List.rev (aux [] streamt)
 
-(*parser*)
-let const =
- fun t1 f t2 tbl ->
-  if (List.length t2 > 0) && (t1 = (List.hd t2)) then
-   (junk t2), f t1, tbl
-  else
-   raise (Fail (`Syntax t2))
+let get_tokens lexer file = remove_minspace (of_token(lexer file));;
 
-let choice p1 p2 s tbl =
- try p1 s tbl with Fail _ -> p2 s tbl
+let string_of_token =
+ function
+  | (Genlex.Kwd x) -> "Kwd " ^ x
+  | (Ident x) -> "Ident " ^ x
+  | (Int n) -> "int " ^ string_of_int n
+  | (Char c) -> "char " ^ String.make 1 c
+  | (String s) -> "string " ^ s
+  | (Float f) -> "float " ^ string_of_float f
 
-let concat p1 p2 f s tbl =
- let rest1,ast1,tbl1 = p1 s tbl in
- let rest2,ast2,tbl2 = p2 rest1 tbl1 in
- rest2,f ast1 ast2,tbl2
+let print_token_list l =
+ String.concat "" (List.map (fun t -> string_of_token t ^ "\n") l)
 
-let kleenestar p empty_ast f s t =
- let rec aux p1 s1 acc tbl=
+(** Parser combinators **)
+
+let comb_parser pars f s tbl =
+ let ns,nast,error,nt = pars s tbl in
+ let x =
   try
-   let (rest1, ast1, ntbl) = p1 s1 tbl in
-   aux p1 rest1 (f acc ast1) ntbl
-  with Fail _ -> (s1, acc, tbl) in
- aux p s empty_ast t
+   f nast
+  with Reject msg -> raise (Fail (best error (msg, s)))
+ in
+  ns,x,error,nt
 
-let kleenestar_eof p empty_ast f s t =
- let rec aux p1 s1 acc tbl=
-  if s1 = [] then s1,acc,tbl
-  else
-   let (rest1, ast1, ntbl) = p1 s1 tbl in
-   aux p1 rest1 (f acc ast1) ntbl
- in aux p s empty_ast t
+let eof s t =
+  match s with
+   | [] -> s,(),("ok",s),t
+   | _ -> raise (Fail ("eof expected", s))
+
+let const kwd f s tbl =
+ match s with
+  | t::tl when kwd = t ->
+     let x =
+      try
+        f t
+      with Reject msg -> raise (Fail (msg, s))
+     in
+      tl, x, ("ok",tl), tbl
+  | _ -> raise (Fail (string_of_token kwd ^ " expected", s))
+
+let kwd str = const (Kwd str) ignore
 
 let option p s tbl =
  try 
-  let next,res,ntbl = p s tbl in next,Some res,ntbl
- with Fail _ -> s,None,tbl
+  let next,res,error,ntbl = p s tbl in next,Some res,error,ntbl
+ with Fail error -> s,None,error,tbl
+
+let choice p1 p2 s tbl =
+ try p1 s tbl with Fail error1 ->
+ try p2 s tbl with Fail error2 ->
+  raise (Fail (best error1 error2))
 
 let rec choice_list =
  function
@@ -98,9 +91,26 @@ let rec choice_list =
   | hd :: [] -> hd
   | hd :: tl -> choice hd (choice_list tl)
 
-let kwd str = const (Kwd str) ignore
+let concat p1 p2 f s tbl =
+ let rest1,ast1,error1,tbl1 = p1 s tbl in
+ try
+  let rest2,ast2,error2,tbl2 = p2 rest1 tbl1 in
+  let x =
+   try
+    f ast1 ast2
+   with Reject msg -> raise (Fail (best (best error1 error2) (msg,s)))
+  in
+   rest2,x,best error1 error2,tbl2
+ with Fail error2 -> raise (Fail (best error1 error2))
 
-let eof l t =
-  match l with
-   | [] -> l,(),t
-   | _ -> raise (Fail (`Syntax l))
+let kleenestar p empty_ast f s t =
+ let rec aux s1 acc error tbl=
+  try
+   let rest1, ast1, error1, ntbl = p s1 tbl in
+   let x =
+    try
+     f acc ast1
+    with Reject msg -> raise (Fail (best error1 (msg,s1))) in
+   aux rest1 x (best error1 error) ntbl
+  with Fail error1 -> s1, acc, best error1 error, tbl in
+ aux s empty_ast ("kleenestar",s) t

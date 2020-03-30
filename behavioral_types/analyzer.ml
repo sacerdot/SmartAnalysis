@@ -2,6 +2,13 @@ open Js_of_ocaml
 
 let document = Dom_html.window##.document
 
+let _ =
+ Utils.set_error (fun msg ->
+  let errors = Js.Opt.get (document##getElementById (Js.string "errors")) (fun () -> assert false) in
+  Dom.appendChild errors (document##createTextNode (Js.string msg));
+  Dom.appendChild errors (document##createElement (Js.string "br"));
+ )
+
 let eval () =
  (*let _ = Js.Unsafe.fun_call (Js.Unsafe.variable "alert") [|s|] in*)
  let doc_in = Js.Unsafe.variable "window.doc_in" in

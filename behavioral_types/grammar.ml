@@ -2,7 +2,7 @@ open MicroSolidity
 open ParserCombinator
 open Genlex
 
-(* weakly typed expressions *)
+(** weakly typed expressions **)
 
 type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
@@ -10,16 +10,15 @@ type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
 type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
 type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
 
+let pp_any_expr (AnyExpr (t,e)) = pp_expr t e
+
 let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr =
  fun tag (AnyExpr(t, e)) ->
    match MicroSolidity.eq_tag tag t with 
    | Some Refl -> e
-   | _ -> raise (Fail (`Typing (MicroSolidity.pp_expr t e ^ " should have type " ^ MicroSolidity.pp_tag tag)))
+   | _ -> raise (Reject (MicroSolidity.pp_expr t e ^ " should have type " ^ MicroSolidity.pp_tag tag))
 
-
-let pp_any_expr (AnyExpr (t,e)) = pp_expr t e
-
-(* symbol table *)
+(** symbol table **)
 
 type any_field_or_fun = 
     | Field: _ MicroSolidity.field * bool -> any_field_or_fun
@@ -48,7 +47,7 @@ let add_field_to_table : vartable -> MicroSolidity.any_field -> bool -> vartable
   | Some(AnyField(tag,_),_) -> 
    (match MicroSolidity.eq_tag tag t with
    | Some Refl -> tbl
-   | None -> raise (Fail (`Typing (MicroSolidity.pp_tag tag ^ " vs " ^ MicroSolidity.pp_tag t))))
+   | None -> raise (Reject (MicroSolidity.pp_tag tag ^ " vs " ^ MicroSolidity.pp_tag t)))
 
 let rec get_fun : vartable -> string -> any_meth option =
  fun tbl funname -> 
@@ -62,7 +61,7 @@ let add_fun_to_table : vartable -> any_meth -> vartable =
  fun tbl (AnyMeth(t,l,funname)) -> 
   match get_fun tbl funname with
   | None -> List.append ([Fun(t,l,funname)]) tbl
-  | _ -> raise (Fail (`Typing (funname ^ "(..) not found")))
+  | _ -> raise (Reject (funname ^ "(..) not found"))
 
 let remove_local_vars: vartable -> vartable =
  fun tbl  -> List.filter (function
@@ -74,44 +73,44 @@ let remove_local_vars: vartable -> vartable =
 let plus e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Plus(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " + " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " + " ^ pp_any_expr e2))
   
 let uminus e =
  match e with
   | AnyExpr(Int,e) -> AnyExpr(Int,UMinus(e))
-  | _ -> raise (Fail (`Typing ("-" ^ pp_any_expr e)))
+  | _ -> raise (Reject ("-" ^ pp_any_expr e))
 
 let minus e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Minus(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " - " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " - " ^ pp_any_expr e2))
 
 let mult e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Mult(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " * " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " * " ^ pp_any_expr e2))
 
 let div e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Div(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " / " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " / " ^ pp_any_expr e2))
 
 let gt e2 e1 =
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Gt(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " > " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " > " ^ pp_any_expr e2))
 
 let ge e2 e1 =
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Geq(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " >= " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " >= " ^ pp_any_expr e2))
 
 let eq e2 e1 = 
  match e1,e2 with
  | AnyExpr(t1,v1),AnyExpr(t2,v2) ->
   (match eq_tag t1 t2 with
   | Some Refl -> AnyExpr(Bool,Eq(t1,v1,v2))
-  | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " == " ^ pp_any_expr e2))))
+  | _ -> raise (Reject (pp_any_expr e1 ^ " == " ^ pp_any_expr e2)))
 
 let lt e1 e2 = gt e2 e1
 
@@ -120,19 +119,19 @@ let le e1 e2 = ge e2 e1
 let andb e2 e1 =
  match e1,e2 with
  | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,And(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " && " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " && " ^ pp_any_expr e2))
 
 
 let orb e2 e1 =
  match e1,e2 with
  | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,Or(v1,v2))
- | _ -> raise (Fail (`Typing (pp_any_expr e1 ^ " || " ^ pp_any_expr e2)))
+ | _ -> raise (Reject (pp_any_expr e1 ^ " || " ^ pp_any_expr e2))
 
 
 let notb e = 
  match e with
  | AnyExpr(Bool, v) -> AnyExpr(Bool, Not(v))
- | _ -> raise (Fail (`Typing ("!" ^ pp_any_expr e)))
+ | _ -> raise (Reject ("!" ^ pp_any_expr e))
 
 let scd_notb _ e = notb e
 
@@ -140,34 +139,50 @@ let neq e1 e2 = notb (eq e1 e2)
 
 let varname s t =
  match s with
-  | (Ident x) :: tl -> tl,x,t
-  | _ -> raise (Fail (`Syntax s))
+  | (Ident x) :: tl -> tl,x,("ok",tl),t
+  | _ -> raise (Fail ("expected ident",s))
 
 let couple el1 el2 = el1,el2
 
 let var_pars: type a. a tag -> (a expr,'t) parser = fun tag s t ->
-const (List.hd s) (fun _ -> 
+ let x =
+  try
+   List.hd s
+  with Failure _ -> raise (Fail ("var expected, eof found",s)) in
+const x (fun _ -> 
  let aux : a expr =
- (match tag,s,t with
+ match tag,s,t with
  | _,(Ident var)::_,tbl -> 
   (match get_field tbl var with
     | Some (AnyField(tagfield,name),islocal) ->
        (match eq_tag tagfield tag,islocal with
          | Some Refl,false -> MicroSolidity.Field(tagfield,name)
          | Some Refl,true -> Var(tagfield,name)
-         | None,_ -> raise (Fail (`Typing (pp_tag tagfield ^ " vs " ^ pp_tag tag))))
+         | None,_ -> raise (Reject (pp_tag tagfield ^ " vs " ^ pp_tag tag)))
     | None -> 
 (*XXX qua dovrei parsare i nomi dei contratti in indirizzi!
     (match tag with 
     | Address -> Value var
-    | _ -> raise Fail)) *) raise (Fail (`Typing (var ^ " not found"))))
- | _ -> raise (Fail (`Syntax s))) in aux) s t
+    | _ -> raise Fail)) *) raise (Reject (var ^ " not found")))
+ | _ -> raise (Reject ("ident expected")) in aux) s t
 
-let value_pars tag s = const (List.hd s) (value tag) s
+let value : type a. a MicroSolidity.tag -> Genlex.token -> a MicroSolidity.expr = fun tag tok ->
+ match tag,tok with
+ | Int,Int x -> Value x
+ | Bool,Kwd "true" -> Value true
+ | Bool,Kwd "false" -> Value false
+ | _ -> raise (Reject ("value expected"))
+
+let value_pars tag s =
+ let t =
+  try
+   List.hd s
+  with Failure _ -> raise (Fail ("value expected, eof found",s)) in
+ const t (value tag) s
 
 let this_pars = const (Kwd "this") (fun _ -> MicroSolidity.This)
 
-let brackets_pars pars = concat (concat (kwd "(") pars scd) (kwd ")") fst
+let brackets_pars pars = concat (concat (kwd "(") pars csnd) (kwd ")") cfst
 
 (*Variable | value *)
 let base tag s tbl =
@@ -189,8 +204,7 @@ let rec atomic_int_expr s =
    brackets_pars int_expr
  ] s
 and int_expr s =
- concat atomic_int_expr (option cont_int_expr) (fun x f -> match f with Some funct
- -> funct x | _ -> x) s
+ concat atomic_int_expr (option cont_int_expr) (fun x f -> match f with Some funct -> funct x | _ -> x) s
 and binop s =
  choice_list [
   const (Kwd "+") (fun _ -> plus) ;
@@ -211,7 +225,7 @@ and cont_int_expr s = concat binop int_expr (fun f x -> f x) s
 let rec atomic_bool_expr s =
  choice_list[
   comb_parser (base Bool) (fun expr -> AnyExpr(Bool,expr));
-  concat (concat (kwd "(") bool_expr scd) (kwd ")") fst ;
+  concat (concat (kwd "(") bool_expr csnd) (kwd ")") cfst ;
   concat (kwd "!") atomic_bool_expr (fun _ -> notb) ;
   concat int_expr (concat cmpop int_expr (fun f x -> f x)) (fun x f -> f x);
   concat (choice_list[int_expr; contract_expr]) (concat eqop expr_pars (fun f x -> f x)) (fun x f -> f x);
@@ -229,8 +243,7 @@ and eqop s =
   const (Kwd "!=") (fun _ -> neq);
  ] s
 and bool_expr s =
- concat atomic_bool_expr (option cont_bool_expr) (fun x f -> match f with Some y ->
-  y x | _ -> x) s
+ concat atomic_bool_expr (option cont_bool_expr) (fun x f -> match f with Some y -> y x | _ -> x) s
 and bin_bool_op s =
  choice_list [
   const (Kwd "&&") (fun _ -> andb) ;
@@ -254,7 +267,7 @@ and contract_expr s =
 
 and expr_pars s =
  choice_list [
-  concat (concat (kwd "(") expr_pars scd) (kwd ")") fst;
+  concat (concat (kwd "(") expr_pars csnd) (kwd ")") cfst;
   int_expr;
   bool_expr;
   contract_expr
@@ -279,12 +292,18 @@ let type_pars =
 ]
 
 let field_pars islocal s t = 
- let (ns,field,tbl) =
+ let ns,field,error,tbl =
   concat (concat
    type_pars
    varname (fun (AnyTag t) v -> AnyField (t,v)))
-   (kwd ";") fst s t in 
- ns,field,add_field_to_table tbl field islocal
+   (kwd ";") cfst s t in 
+ let x =
+  try
+   add_field_to_table tbl field islocal
+  with
+   Reject msg -> raise (Fail (best error (msg,s)))
+ in
+  ns,field,error,x
 
  (*
   * decl ::= t
@@ -299,7 +318,7 @@ let store_pars = kleenestar (decl_pars false) [] addel
 let parse_any_expr_list = 
  comb_parser 
  (brackets_pars (option (concat expr_pars 
- (kleenestar (concat (kwd ",") expr_pars scd) [] addel) 
+ (kleenestar (concat (kwd ",") expr_pars csnd) [] addel) 
  (fun expr el -> [expr]@el))))(function Some s -> s | None -> [])
 
 let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list 
@@ -308,8 +327,8 @@ let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list
   | TNil,[] -> ENil
   | TCons(t,ttail),(h::etail) -> 
     ECons(check_type t h,check_expr_list_type ttail etail)
-  | TNil,_ -> raise (Fail (`Typing "too many args"))
-  | _,[] -> raise (Fail (`Typing "not enough args"))
+  | TNil,_ -> raise (Reject "too many args")
+  | _,[] -> raise (Reject "not enough args")
 
 let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> ('c,'t) parser =
  fun tl f ->
@@ -325,7 +344,7 @@ let get_rhs_from_expr_list =
     | Call(c,(tag,tags,name),value,elist) -> 
         aux tl
         (Call(c,(tag,TCons(t,tags),name),value,ECons(expr,elist)))
-    | _ -> raise (Fail (`Typing "not a function call")))
+    | _ -> raise (Reject ("not a function call")))
   in aux (List.rev el) (Call(c,(typ,TNil,m),value,ENil))
 
 (*
@@ -353,18 +372,22 @@ let check_rhs_type: type a. a tag -> any_rhs -> a rhs =
   | AnyRhs(t,r) -> 
     (match eq_tag t tag with
         Some Refl -> r
-      | None -> raise (Fail (`Typing (pp_tag t ^ " vs " ^ pp_tag tag))))
+      | None -> raise (Reject (pp_tag t ^ " vs " ^ pp_tag tag)))
 
-let pars_mesg_value s t= try comb_parser (concat (kwd ".") 
-    (concat (kwd "value") (brackets_pars int_expr) scd) scd) (opt_expr Int) s t
-    with Fail _ -> (s,None,t)
+let pars_mesg_value s t=
+  comb_parser (
+   option (concat (concat
+    (kwd ".") 
+    (kwd "value") csnd)
+    (brackets_pars int_expr) csnd))
+   (fun x -> Option.bind x (opt_expr Int)) s t
 
 let funname s tbl = 
  comb_parser varname
   (fun var ->
     match get_fun tbl var with
        Some _ -> var
-     | None -> raise (Fail (`Typing (var ^ "(..) not found ")))) s tbl
+     | None -> raise (Reject (var ^ "(..) not found "))) s tbl
 
 (*
 (*
@@ -387,7 +410,7 @@ let call_pars s t =
  * call_contr ::= contr_expr.varname (.value)? (( (e (, e)* ? )
  *)
 let call_with_contr tag s t =
- let (ns0, contr, nt0) = comb_parser (concat contract_expr (kwd ".") fst)
+ let (ns0, contr, nt0) = comb_parser (concat contract_expr (kwd ".") cfst)
   (opt_expr ContractAddress) s t in
  match contr with
  | Some This -> comb_parser call_pars (check_rhs_type tag) ns0 nt0 
@@ -420,14 +443,14 @@ let rec rhs_toassign_pars this_opt varname s =
    ns1,(Assign((et,varname),(check_rhs_type et any_rhs))),
    add_field_to_table ntbl1 (AnyField(et,varname)) islocal) in
  choice (concat (concat (kwd "(")
-(rhs_toassign_pars this_opt varname) scd) (kwd ")") fst) (aux this_opt varname) s
+(rhs_toassign_pars this_opt varname) csnd) (kwd ")") cfst) (aux this_opt varname) s
 *)
 
 (*
 (*assign ::= Var = rhs*)
 let assign_pars s tbl =
- let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") fst) s tbl in
- let (ns1,varname, ntbl1) = concat varname (kwd "=") fst ns0 ntbl0 in
+ let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") cfst) s tbl in
+ let (ns1,varname, ntbl1) = concat varname (kwd "=") cfst ns0 ntbl0 in
  rhs_toassign_pars this_opt varname ns1 ntbl1
 *)
 
@@ -439,8 +462,8 @@ let revert_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun _ _ s t -
 let epsilon_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser =
  fun _ rettag s t ->
   match rettag with
-    RTEpsilon -> s,MicroSolidity.Epsilon,t 
-  | RTReturn -> raise (Fail (`Typing "epsilon not allowed here"))
+    RTEpsilon -> s,MicroSolidity.Epsilon,("ok",s),t 
+  | RTReturn -> raise (Fail ("epsilon not allowed here",s))
 
 let return_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun tag _ ->
  concat
@@ -466,18 +489,18 @@ let rec stm_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser = fun ta
   (*if then else*)
   comb_parser (concat (concat (concat (concat (concat (concat (concat
    (kwd "if")
-   bool_expr scd)
-   (kwd "then") fst)
+   bool_expr csnd)
+   (kwd "then") cfst)
    (stm_pars tag RTEpsilon) couple)
-   (kwd "else") fst)
+   (kwd "else") cfst)
    (stm_pars tag RTEpsilon) couple)
-   (kwd ";") fst)
+   (kwd ";") cfst)
    (stm_pars tag rettag) couple)
    (fun (((bexpr,stm1),stm2),stm3) ->
      IfThenElse(check_type Bool bexpr,stm1,stm2,stm3));
 
   (* {stm} *)
-  concat (kwd "{") (concat (stm_pars tag rettag) (kwd "}") fst) scd;
+  concat (kwd "{") (concat (stm_pars tag rettag) (kwd "}") cfst) csnd;
 
   (* epsilon *)
   epsilon_pars tag rettag
@@ -508,39 +531,44 @@ let parameter_pars s t =
  let pars_varlist_singleton =
   concat type_pars varname 
    (fun (AnyTag t) s -> (AnyVarList(VCons((t,s),VNil)))) in
- let (ns,vl,nt) = 
+ let ns,vl,error,nt = 
   comb_parser (option (concat pars_varlist_singleton
-  (kleenestar (concat (kwd ",") pars_varlist_singleton scd) 
+  (kleenestar (concat (kwd ",") pars_varlist_singleton csnd) 
   (AnyVarList(VNil)) varlist_append) varlist_append))
   (function Some s -> s | None -> AnyVarList(VNil)) s t in
- ns,vl,add_local_var nt vl
+ let x =
+  try
+   add_local_var nt vl
+  with Reject msg -> raise (Fail (best error (msg,ns))) in
+ ns,vl,error,x
 
 (* [payable] { paramterms stm } *)
-let block_pars tag vl s t =
- let (ns2,((payable,AnyVarList lvl),stm),nt2) = 
+let block_pars ?(check_payable=false) tag vl s t =
+ let ns2,((payable,AnyVarList lvl),stm),error2,nt2 = 
   concat (concat (concat (concat
-   (comb_parser (option (kwd "payable")) (function None -> false | Some () -> true))
-   (kwd "{") fst)
+   (comb_parser (option (kwd "payable")) (function None -> if check_payable then raise (Reject "must be payable") ; false | Some () -> true))
+   (kwd "{") cfst)
    parameter_pars couple)
    (stm_pars tag RTReturn) couple)
-   (kwd "}") fst
+   (kwd "}") cfst
    s t in
- ns2, (Block(vl,lvl,stm),payable), remove_local_vars nt2
+ ns2, (Block(vl,lvl,stm),payable), error2, remove_local_vars nt2
 
 (*
  * meth ::= function Var parameters : t { paramters stm }
  *)
 let any_meth_pars s t =
- let (ns1,(name,((AnyVarList vl),(AnyTag t1))),nt1) =
+ let ns1,(name,((AnyVarList vl),(AnyTag t1))),error1,nt1 =
   concat (concat
    (kwd "function")
-   varname scd)
-   (concat parameter_pars (concat (kwd ":") type_pars scd) couple) couple
+   varname csnd)
+   (concat parameter_pars (concat (kwd ":") type_pars csnd) couple) couple
    s t in
- let (ns2,(block,payable),nt2) = 
+ let ns2,(block,payable),error2,nt2 = 
   block_pars t1 vl ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
  ns2,
   AnyMethodDecl((t1,get_taglist vl,name),block,payable),
+  best error1 error2,
   remove_local_vars nt2
 
 let methods_pars s = kleenestar any_meth_pars [] addel s
@@ -548,12 +576,12 @@ let methods_pars s = kleenestar any_meth_pars [] addel s
 let fallback_pars =
  comb_parser (concat (concat (concat
   (kwd "function")
-  (kwd "(") fst)
-  (kwd ")") fst)
-  (block_pars Int VNil) scd)
+  (kwd "(") cfst)
+  (kwd ")") cfst)
+  (block_pars ~check_payable:true Int VNil) csnd)
   (function
       block,true -> block
-    | _,false -> raise (Fail (`Typing "the fallback method must be payable")))
+    | _,false -> assert false)
 
 (*
  * act ::= contract varname { field* meth* }
@@ -561,27 +589,25 @@ let fallback_pars =
 let actor_pars : (a_contract,'t) parser =
  comb_parser (concat (concat (concat (concat (concat (concat
   (kwd "contract")
-  varname scd)
-  (kwd "{") fst)
+  varname csnd)
+  (kwd "{") cfst)
   store_pars couple)
   methods_pars couple)
   (option fallback_pars) couple)
-  (kwd "}") fst)
+  (kwd "}") cfst)
  (fun (((name,fields),methods),fallback) -> AContract(name,methods,fallback,fields))
 
 let configuration_pars : (configuration,'t) parser =
- kleenestar_eof actor_pars [] addel
+ concat (kleenestar actor_pars [] addel) eof cfst
 
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
 "="; ","; ";"; "fail"; "if"; "then"; "else"; "{"; "function";
 "}"; "return"; ":"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
 
-let get_tokens file = remove_minspace (of_token(lexer file));;
-
 let test_stream stream =
  try
-  let (_s, conf,_tbl) = configuration_pars (get_tokens stream) [] in
+  let _s, conf, _error, _tbl = actor_pars (*configuration_pars*) (get_tokens lexer stream) [] in
 (*
   "######## TOKENS #######\n" ^
   print_token_list s ^
@@ -589,15 +615,12 @@ let test_stream stream =
   print_table tbl ^
   "######## PROGRAM #######" ^
 *)
-  pp_configuration conf
+  pp_a_contract (*pp_configuration*) conf
  with
-  | Fail (`Syntax l) ->
+  | Fail (msg,l) ->
      "######## SYNTAX ERROR #######\n" ^
+     "<< " ^ msg ^ " >>\n" ^
      print_token_list l ^
-     "error"
-  | Fail (`Typing msg) ->
-     "######## TYPING ERROR #######\n" ^
-     msg ^
      "error"
 
 let test_file filename =
