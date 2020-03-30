@@ -2077,15 +2077,12 @@
      _D_=[0,0],
      _E_=[0,0],
      _F_=[0,0],
-     _bj_=[0,[0,caml_new_string("-")],0],
-     _bm_=[0,caml_new_string("parserCombinator.ml"),160,10],
-     _bl_=caml_new_string("(..) not found"),
-     _bk_=caml_new_string(" vs "),
-     _bf_=caml_new_string("false"),
-     _bg_=caml_new_string("true"),
-     _bh_=[13,1],
-     _bi_=[13,0],
-     _be_=caml_new_string(" should have type "),
+     _bi_=[0,[0,caml_new_string("-")],0],
+     _bj_=[0,caml_new_string("parserCombinator.ml"),97,10],
+     _be_=caml_new_string("false"),
+     _bf_=caml_new_string("true"),
+     _bg_=[13,1],
+     _bh_=[13,0],
      _a8_=caml_new_string("\n"),
      _a9_=caml_new_string("Kwd "),
      _a__=caml_new_string("Ident "),
@@ -2151,6 +2148,9 @@
      _bp_=caml_new_string(" - "),
      _bo_=caml_new_string("-"),
      _bn_=caml_new_string(" + "),
+     _bm_=caml_new_string("(..) not found"),
+     _bl_=caml_new_string(" vs "),
+     _bk_=caml_new_string(" should have type "),
      _bB_=[0,caml_new_string("this")],
      _bW_=caml_new_string("bool"),
      _bY_=caml_new_string("int"),
@@ -3269,62 +3269,19 @@
                      default:var c=t[1],_iu_=symbol(_bc_,make(1,c))}
                    return symbol(_iu_,_a8_)},
                  l))}
-    function check_type(tag,param)
-     {var e=param[2],t=param[1],match=eq_tag(tag,t);
-      if(match)return e;
-      var _it_=symbol(_be_,pp_tag(tag));
-      throw [0,Fail,[0,198079127,symbol(pp_expr(t,e),_it_)]]}
     function remove_minspace(param)
      {if(param)
-       {var _is_=param[1];
-        if(2 === _is_[0])
-         {var tl$0=param[2],x=_is_[1];
+       {var _it_=param[1];
+        if(2 === _it_[0])
+         {var tl$0=param[2],x=_it_[1];
           if(! (0 <= x))
-           return append(_bj_,append([0,[2,- x | 0],0],remove_minspace(tl$0)))}
+           return append(_bi_,append([0,[2,- x | 0],0],remove_minspace(tl$0)))}
         var tl=param[2];
-        return append([0,_is_,0],remove_minspace(tl))}
+        return append([0,_it_,0],remove_minspace(tl))}
       return 0}
     function comb_parser(pars,f,s,tbl)
      {var match=caml_call2(pars,s,tbl),nt=match[3],nast=match[2],ns=match[1];
       return [0,ns,caml_call1(f,nast),nt]}
-    function get_field(tbl,varname)
-     {var tbl$0=tbl;
-      for(;;)
-       {if(tbl$0)
-         {var _ir_=tbl$0[1];
-          if(0 === _ir_[0])
-           {var islocal=_ir_[2],match=_ir_[1],name=match[2],tag=match[1];
-            if(caml_string_equal(varname,name))
-             return [0,[0,[0,[0,tag,name]],islocal]]}
-          var tbl$1=tbl$0[2],tbl$0=tbl$1;
-          continue}
-        return 0}}
-    function add_field_to_table(tbl,param,is_local)
-     {var
-       match=param[1],
-       fieldname=match[2],
-       t=match[1],
-       match$0=get_field(tbl,fieldname);
-      if(match$0)
-       {var match$1=match$0[1][1][1],tag=match$1[1],match$2=eq_tag(tag,t);
-        if(match$2)return tbl;
-        var _iq_=symbol(_bk_,pp_tag(t));
-        throw [0,Fail,[0,198079127,symbol(pp_tag(tag),_iq_)]]}
-      return append([0,[0,[0,t,fieldname],is_local],0],tbl)}
-    function remove_local_vars(param$0)
-     {var accu=0,param=param$0;
-      for(;;)
-       {if(param)
-         {var l=param[2],x=param[1];
-          if(0 === x[0])
-           if(0 === x[2])var switch$0=0;else var _ip_=0,switch$0=1;
-          else
-           var switch$0=0;
-          if(! switch$0)var _ip_=1;
-          if(_ip_){var accu$0=[0,x,accu],accu=accu$0,param=l;continue}
-          var param=l;
-          continue}
-        return rev(accu)}}
     function const$0(t1,f,t2,tbl)
      {var len=0,param=t2;
       for(;;)
@@ -3333,17 +3290,17 @@
           continue}
         if(0 < len)
          if(caml_equal(t1,hd(t2)))
-          {var _in_=caml_call1(f,t1);
-           if(t2)var tl=t2[2],_io_=tl;else var _io_=0;
-           return [0,_io_,_in_,tbl]}
+          {var _ir_=caml_call1(f,t1);
+           if(t2)var tl=t2[2],_is_=tl;else var _is_=0;
+           return [0,_is_,_ir_,tbl]}
         throw [0,Fail,[0,606664323,t2]]}}
     function choice(p1,p2,s,tbl)
      {try
-       {var _il_=caml_call2(p1,s,tbl);return _il_}
-      catch(_im_)
-       {_im_ = caml_wrap_exception(_im_);
-        if(_im_[1] === Fail)return caml_call2(p2,s,tbl);
-        throw _im_}}
+       {var _ip_=caml_call2(p1,s,tbl);return _ip_}
+      catch(_iq_)
+       {_iq_ = caml_wrap_exception(_iq_);
+        if(_iq_[1] === Fail)return caml_call2(p2,s,tbl);
+        throw _iq_}}
     function concat$0(p1,p2,f,s,tbl)
      {var
        match=caml_call2(p1,s,tbl),
@@ -3363,12 +3320,12 @@
            ntbl=match[3],
            ast1=match[2],
            rest1=match[1],
-           _ij_=aux(p1,rest1,caml_call2(f,acc,ast1),ntbl);
-          return _ij_}
-        catch(_ik_)
-         {_ik_ = caml_wrap_exception(_ik_);
-          if(_ik_[1] === Fail)return [0,s1,acc,tbl];
-          throw _ik_}}
+           _in_=aux(p1,rest1,caml_call2(f,acc,ast1),ntbl);
+          return _in_}
+        catch(_io_)
+         {_io_ = caml_wrap_exception(_io_);
+          if(_io_[1] === Fail)return [0,s1,acc,tbl];
+          throw _io_}}
       return aux(p,s,empty_ast,t)}
     function option(p,s,tbl)
      {try
@@ -3377,25 +3334,68 @@
          ntbl=match[3],
          res=match[2],
          next=match[1],
-         _ih_=[0,next,[0,res],ntbl];
+         _il_=[0,next,[0,res],ntbl];
+        return _il_}
+      catch(_im_)
+       {_im_ = caml_wrap_exception(_im_);
+        if(_im_[1] === Fail)return [0,s,0,tbl];
+        throw _im_}}
+    function choice_list(param)
+     {if(param)
+       {var _ig_=param[2],_ih_=param[1];
+        if(_ig_)
+         {var _ii_=choice_list(_ig_);
+          return function(_ij_,_ik_){return choice(_ih_,_ii_,_ij_,_ik_)}}
         return _ih_}
-      catch(_ii_)
-       {_ii_ = caml_wrap_exception(_ii_);
-        if(_ii_[1] === Fail)return [0,s,0,tbl];
-        throw _ii_}}
-    function choice_list(l)
-     {if(l)
-       {var _ic_=l[2],_id_=l[1];
-        if(_ic_)
-         {var _ie_=choice_list(_ic_);
-          return function(_if_,_ig_){return choice(_id_,_ie_,_if_,_ig_)}}
-        return _id_}
-      throw [0,Assert_failure,_bm_]}
+      throw [0,Assert_failure,_bj_]}
     function kwd(str)
-     {function _h9_(_ib_){return 0}
-      var _h__=[0,str];
-      return function(_h$_,_ia_){return const$0(_h__,_h9_,_h$_,_ia_)}}
+     {function _ib_(_if_){return 0}
+      var _ic_=[0,str];
+      return function(_id_,_ie_){return const$0(_ic_,_ib_,_id_,_ie_)}}
+    function check_type(tag,param)
+     {var e=param[2],t=param[1],match=eq_tag(tag,t);
+      if(match)return e;
+      var _ia_=symbol(_bk_,pp_tag(tag));
+      throw [0,Fail,[0,198079127,symbol(pp_expr(t,e),_ia_)]]}
     function pp_any_expr(param){var e=param[2],t=param[1];return pp_expr(t,e)}
+    function get_field(tbl,varname)
+     {var tbl$0=tbl;
+      for(;;)
+       {if(tbl$0)
+         {var _h$_=tbl$0[1];
+          if(0 === _h$_[0])
+           {var islocal=_h$_[2],match=_h$_[1],name=match[2],tag=match[1];
+            if(caml_string_equal(varname,name))
+             return [0,[0,[0,[0,tag,name]],islocal]]}
+          var tbl$1=tbl$0[2],tbl$0=tbl$1;
+          continue}
+        return 0}}
+    function add_field_to_table(tbl,param,is_local)
+     {var
+       match=param[1],
+       fieldname=match[2],
+       t=match[1],
+       match$0=get_field(tbl,fieldname);
+      if(match$0)
+       {var match$1=match$0[1][1][1],tag=match$1[1],match$2=eq_tag(tag,t);
+        if(match$2)return tbl;
+        var _h__=symbol(_bl_,pp_tag(t));
+        throw [0,Fail,[0,198079127,symbol(pp_tag(tag),_h__)]]}
+      return append([0,[0,[0,t,fieldname],is_local],0],tbl)}
+    function remove_local_vars(param$0)
+     {var accu=0,param=param$0;
+      for(;;)
+       {if(param)
+         {var l=param[2],x=param[1];
+          if(0 === x[0])
+           if(0 === x[2])var switch$0=0;else var _h9_=0,switch$0=1;
+          else
+           var switch$0=0;
+          if(! switch$0)var _h9_=1;
+          if(_h9_){var accu$0=[0,x,accu],accu=accu$0,param=l;continue}
+          var param=l;
+          continue}
+        return rev(accu)}}
     function plus(e1,e2)
      {if(0 === e1[1])
        if(0 === e2[1]){var v2=e2[2],v1=e1[2];return [0,0,[2,v1,v2]]}
@@ -3474,8 +3474,8 @@
                case 1:
                 if(0 === tok[0])
                  {var _hP_=tok[1];
-                  if(! caml_string_notequal(_hP_,_bf_))return _bi_;
-                  if(! caml_string_notequal(_hP_,_bg_))return _bh_}
+                  if(! caml_string_notequal(_hP_,_be_))return _bh_;
+                  if(! caml_string_notequal(_hP_,_bf_))return _bg_}
                 break
                }
              throw [0,Fail,[0,606664323,[0,tok,0]]]}
@@ -3875,7 +3875,7 @@
           if(! switch$0){var tbl$0=tbl[2],tbl=tbl$0;continue}}
         else
          var match$0=0;
-        if(match$0)throw [0,Fail,[0,198079127,symbol(funname,_bl_)]];
+        if(match$0)throw [0,Fail,[0,198079127,symbol(funname,_bm_)]];
         var
          _dD_=block_pars(t$0,vl,ns1,append([0,[1,[0,t$0,l,funname]],0],nt1)),
          nt2=_dD_[3],

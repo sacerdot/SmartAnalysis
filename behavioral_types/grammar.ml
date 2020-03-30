@@ -2,9 +2,75 @@ open MicroSolidity
 open ParserCombinator
 open Genlex
 
+(* weakly typed expressions *)
+
+type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
+type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
+type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
+type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
+type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
+
+let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr =
+ fun tag (AnyExpr(t, e)) ->
+   match MicroSolidity.eq_tag tag t with 
+   | Some Refl -> e
+   | _ -> raise (Fail (`Typing (MicroSolidity.pp_expr t e ^ " should have type " ^ MicroSolidity.pp_tag tag)))
+
+
 let pp_any_expr (AnyExpr (t,e)) = pp_expr t e
 
+(* symbol table *)
+
+type any_field_or_fun = 
+    | Field: _ MicroSolidity.field * bool -> any_field_or_fun
+    | Fun:  _ MicroSolidity.meth -> any_field_or_fun
+type vartable = any_field_or_fun list
+
+let print_table l =
+ String.concat ""
+  (List.map
+    (function
+      | Field (f,_) -> MicroSolidity.pp_field f
+      | Fun (meth) -> MicroSolidity.pp_meth meth) l)
+
+let rec get_field : vartable -> string -> (MicroSolidity.any_field  * bool) option =
+ fun tbl varname -> 
+  match tbl with
+  | [] -> None
+  | Field ((tag, name), islocal )::_ when varname=name ->  Some (AnyField(tag,
+  name),islocal)
+  | _::tl -> get_field tl varname
+
+let add_field_to_table : vartable -> MicroSolidity.any_field -> bool -> vartable =
+ fun tbl (AnyField(t,fieldname)) is_local -> 
+  match get_field tbl fieldname with
+  | None -> List.append ([Field((t,fieldname),is_local)]) tbl 
+  | Some(AnyField(tag,_),_) -> 
+   (match MicroSolidity.eq_tag tag t with
+   | Some Refl -> tbl
+   | None -> raise (Fail (`Typing (MicroSolidity.pp_tag tag ^ " vs " ^ MicroSolidity.pp_tag t))))
+
+let rec get_fun : vartable -> string -> any_meth option =
+ fun tbl funname -> 
+  match tbl with
+  | [] -> None
+  | Fun (rettag, tagl, name)::_ when funname=name -> Some (AnyMeth(rettag, tagl,
+  name))
+  | _::tl -> get_fun tl funname
+
+let add_fun_to_table : vartable -> any_meth -> vartable =
+ fun tbl (AnyMeth(t,l,funname)) -> 
+  match get_fun tbl funname with
+  | None -> List.append ([Fun(t,l,funname)]) tbl
+  | _ -> raise (Fail (`Typing (funname ^ "(..) not found")))
+
+let remove_local_vars: vartable -> vartable =
+ fun tbl  -> List.filter (function
+  | Field(_, true) -> false
+  | _ -> true) tbl
+
 (*Expression *)
+
 let plus e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Plus(v1,v2))
@@ -79,7 +145,7 @@ let varname s t =
 
 let couple el1 el2 = el1,el2
 
-let var_pars: type a. a tag -> (a expr) parser = fun tag s t ->
+let var_pars: type a. a tag -> (a expr,'t) parser = fun tag s t ->
 const (List.hd s) (fun _ -> 
  let aux : a expr =
  (match tag,s,t with
@@ -245,7 +311,7 @@ let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list
   | TNil,_ -> raise (Fail (`Typing "too many args"))
   | _,[] -> raise (Fail (`Typing "not enough args"))
 
-let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> 'c parser =
+let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> ('c,'t) parser =
  fun tl f ->
    comb_parser (comb_parser parse_any_expr_list (check_expr_list_type tl)) f
 
@@ -367,16 +433,16 @@ let assign_pars s tbl =
 
 type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 
-let revert_pars : 'a tag -> 'b rettag -> ('a,'b) stm parser = fun _ _ s t ->
+let revert_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun _ _ s t ->
  const (Kwd "revert") (fun _ -> MicroSolidity.Revert) s t
 
-let epsilon_pars : type b. 'a tag -> b rettag -> ('a,b) stm parser =
+let epsilon_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser =
  fun _ rettag s t ->
   match rettag with
     RTEpsilon -> s,MicroSolidity.Epsilon,t 
   | RTReturn -> raise (Fail (`Typing "epsilon not allowed here"))
 
-let return_pars : 'a tag -> 'b rettag -> ('a,'b) stm parser = fun tag _ ->
+let return_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun tag _ ->
  concat
   (kwd "return")
   expr_pars
@@ -385,7 +451,7 @@ let return_pars : 'a tag -> 'b rettag -> ('a,'b) stm parser = fun tag _ ->
 (*
  * stm ::= revert | return expr | assign | if bool_expr then stm else stm ; stm | { stm } | epsilon
  *)
-let rec stm_pars : type b. 'a tag -> b rettag -> ('a,b) stm parser = fun tag rettag s t ->
+let rec stm_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser = fun tag rettag s t ->
  choice_list[
   (* revert *)
   revert_pars tag rettag ;
@@ -492,7 +558,7 @@ let fallback_pars =
 (*
  * act ::= contract varname { field* meth* }
  *)
-let actor_pars : a_contract parser =
+let actor_pars : (a_contract,'t) parser =
  comb_parser (concat (concat (concat (concat (concat (concat
   (kwd "contract")
   varname scd)
@@ -503,7 +569,7 @@ let actor_pars : a_contract parser =
   (kwd "}") fst)
  (fun (((name,fields),methods),fallback) -> AContract(name,methods,fallback,fields))
 
-let configuration_pars : configuration parser =
+let configuration_pars : (configuration,'t) parser =
  kleenestar_eof actor_pars [] addel
 
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
