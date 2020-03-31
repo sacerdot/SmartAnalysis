@@ -476,21 +476,27 @@ type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 let revert_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun _ _ s t ->
  const (Kwd "revert") (fun _ -> MicroSolidity.Revert) s t
 
-let epsilon_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser =
- fun _ rettag s t ->
-  match rettag with
-    RTEpsilon -> s,MicroSolidity.Epsilon,("ok",s),t 
-  | RTReturn -> raise (Fail ("epsilon not allowed here",s))
+let epsilon_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
+ fun tag rettag s t ->
+  match rettag,tag with
+    RTEpsilon,_ -> s,MicroSolidity.Epsilon,("ok",s),t 
+  | RTReturn,Unit -> s,MicroSolidity.Return,("ok",s),t
+  | RTReturn,_ -> raise (Fail ("implicit return not allowed here",s))
 
 let rhs_pars : 'a tag -> ('a rhs,'t) parser = fun tag ->
  comb_parser expr_pars
   (fun expr -> MicroSolidity.Expr (check_type tag expr))
 
-let return_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun tag _ ->
+let return_pars : type a. a tag -> 'b rettag -> ((a,'b) stm,'t) parser = fun tag _ ->
  concat (concat
   (kwd "return")
-  (rhs_pars tag) csnd)
-  (kwd ";") (fun rhs () -> MicroSolidity.Return rhs)
+  (option (rhs_pars tag)) csnd)
+  (kwd ";")
+    (fun rhs () ->
+      match rhs,tag with
+       | Some rhs,_ -> MicroSolidity.ReturnRhs rhs
+       | None,Unit -> MicroSolidity.Return
+       | None,_ -> raise (Reject ("return without value of type " ^ pp_tag tag)))
     
 (*
  * stm ::= revert | return expr | assign | if bool_expr then stm else stm ; stm | { stm } | epsilon
@@ -613,7 +619,7 @@ let fallback_pars =
   (kwd "function")
   (kwd "(") cfst)
   (kwd ")") cfst)
-  (block_pars ~check_payable:true Int VNil) csnd)
+  (block_pars ~check_payable:true Unit VNil) csnd)
   (function
       block,true -> block
     | _,false -> assert false)
@@ -656,6 +662,9 @@ let test_stream stream =
      "######## SYNTAX ERROR #######\n" ^
      "<< " ^ msg ^ " >>\n" ^
      print_token_list l
+  | exn ->
+     "######## UNHANLDED EXCEPTION #######\n" ^
+     Printexc.to_string exn
 
 let test_file filename =
  let in_channel = open_in filename in

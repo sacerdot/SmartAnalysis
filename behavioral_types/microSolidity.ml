@@ -2,6 +2,7 @@ open Lib
 
 type address = string
 type 'a tag =
+ | Unit : unit tag
  | Int : int tag
  | Bool : bool tag
  | Address : address tag
@@ -49,7 +50,8 @@ type _ rhs =
  | Call : address expr * ('a,'b) meth * int expr option * 'b expr_list -> 'a rhs
 type (_,_) stm =
  | Epsilon : (_,[`Epsilon]) stm
- | Return : 'a rhs -> ('a,_) stm
+ | ReturnRhs : 'a rhs -> ('a,_) stm
+ | Return : (unit,_) stm
  | Assign : 'a lhs * 'a rhs * ('b,'c) stm -> ('b,'c) stm
  | IfThenElse : bool expr * ('b,[`Epsilon]) stm * ('b,[`Epsilon]) stm * ('b,'c) stm -> ('b,'c) stm
  | Revert : _ stm
@@ -60,7 +62,7 @@ type any_method_decl =
 type methods = any_method_decl list
 type fields = any_field list
 type a_contract =
- AContract : address * methods * (int,unit) block option * fields -> a_contract
+ AContract : address * methods * (unit,unit) block option * fields -> a_contract
 type configuration = a_contract list
 
 (*
@@ -107,6 +109,7 @@ let tag_of_lhs =
 (*** Serialization ***)
 let pp_tag : type a. a tag -> string =
  function
+  | Unit -> "?VOID?"
   | Int -> "int"
   | Bool -> "bool"
   | Address -> "address"
@@ -124,7 +127,8 @@ let rec pp_var_list : type a. a var_list -> string list =
 let pp_address : address -> string = fun s -> s
 let pp_value (type a) (tag : a tag) (v : a) =
  match tag with
-    Int -> string_of_int v
+  | Unit -> assert false (* it should not happen *)
+  | Int -> string_of_int v
   | Bool -> string_of_bool v
   | Address -> pp_address v
 let pp_field = pp_ident
@@ -178,10 +182,11 @@ let pp_rhs tag =
      (match value with None -> "" | Some v -> pp_expr Int v ^ ".") ^
      "(" ^ String.concat "," (pp_expr_list (snd3 meth) exprl) ^ ")"
 
-let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
+let rec pp_stm : type a b. a tag -> (a,b) stm -> string = fun tag ->
  function
   | Epsilon -> ""
-  | Return e -> "return " ^ pp_rhs tag e ^ ";"
+  | ReturnRhs e -> "return " ^ pp_rhs tag e ^ ";"
+  | Return -> "return;"
   | Assign(lhs,rhs,stm) ->
      pp_lhs lhs ^
      pp_rhs (tag_of_lhs lhs) rhs ^
@@ -193,17 +198,17 @@ let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
      pp_stm tag stm3
   | Revert -> "revert"
 
-let pp_block payable ?out tag (Block (vl,lvl,stm)) =
+let pp_block : type a. bool -> a tag -> (a, 'b) block -> address =
+fun payable tag (Block (vl,lvl,stm)) ->
  "(" ^ String.concat "," (pp_var_list vl) ^ ") " ^
- (match out with None -> "" | Some t -> "returns (" ^ pp_tag t ^ ") ") ^
+ (match tag with Unit -> "" | _ -> "returns (" ^ pp_tag tag ^ ") ") ^
  (if payable then "payable " else " ") ^ "{\n" ^
  String.concat "" (List.map (fun s -> "     " ^ s ^ ";\n") (pp_var_list lvl)) ^
  "      " ^ pp_stm tag stm ^
  "\n   }\n\n"
 
 let pp_any_method_decl (AnyMethodDecl(m,b,payable)) =
- "   function " ^ pp_meth m ^ " " ^
-  pp_block ~out:(fst3 m) payable (fst3 m) b
+ "   function " ^ pp_meth m ^ " " ^ pp_block payable (fst3 m) b
 
 let pp_methods l =
  String.concat "\n" (List.map pp_any_method_decl l)
@@ -211,7 +216,7 @@ let pp_methods l =
 let pp_fallback =
  function
     None -> ""
-  | Some b -> "   function " ^ pp_block true Int b
+  | Some b -> "   function " ^ pp_block true Unit b
 
 let pp_a_contract (AContract (addr,methods,fallback,fields)) =
  "contract " ^ addr ^ " {\n" ^

@@ -9,7 +9,12 @@ exception Reject of string
 (** Utils **)
 
 let best err1 err2 =
- if List.length (snd err1) < List.length (snd err2) then err1 else err2
+ if fst err1 = "ok" then err2
+ else if fst err2 = "ok" then err1
+ else if List.length (snd err1) < List.length (snd err2) then err1
+ else if List.length (snd err1) = List.length (snd err2) then
+  (fst err1 ^ "\n| " ^ fst err2, snd err1)
+ else err2
   
 let cfst = (fun x _ -> x)
 let csnd = (fun _ x -> x)

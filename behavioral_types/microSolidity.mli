@@ -1,5 +1,6 @@
 type address = string
-type 'a tag = Int : int tag | Bool : bool tag | Address : address tag
+type 'a tag =
+ Unit : unit tag | Int : int tag | Bool : bool tag | Address : address tag
 type _ tag_list =
     TNil : unit tag_list
   | TCons : 'a tag * 'b tag_list -> ('a * 'b) tag_list
@@ -44,7 +45,8 @@ type _ rhs =
       'b expr_list -> 'a rhs
 type (_, _) stm =
     Epsilon : ('d, [ `Epsilon ]) stm
-  | Return : 'a rhs -> ('a, 'b) stm
+  | ReturnRhs : 'a rhs -> ('a, 'b) stm
+  | Return : (unit, 'b) stm
   | Assign : 'a lhs * 'a rhs * ('b, 'c) stm -> ('b, 'c) stm
   | IfThenElse : bool expr * ('b, [ `Epsilon ]) stm *
       ('b, [ `Epsilon ]) stm * ('b, 'c) stm -> ('b, 'c) stm
@@ -57,7 +59,7 @@ type any_method_decl =
 type methods = any_method_decl list
 type fields = any_field list
 type a_contract =
-    AContract : address * methods * (int, unit) block option *
+    AContract : address * methods * (unit, unit) block option *
       fields -> a_contract
 type configuration = a_contract list
 type (_, _) eq = Refl : ('a, 'a) eq
