@@ -44,7 +44,7 @@ type _ rhs =
       'b expr_list -> 'a rhs
 type (_, _) stm =
     Epsilon : ('d, [ `Epsilon ]) stm
-  | Return : 'a expr -> ('a, 'b) stm
+  | Return : 'a rhs -> ('a, 'b) stm
   | Assign : 'a lhs * 'a rhs * ('b, 'c) stm -> ('b, 'c) stm
   | IfThenElse : bool expr * ('b, [ `Epsilon ]) stm *
       ('b, [ `Epsilon ]) stm * ('b, 'c) stm -> ('b, 'c) stm

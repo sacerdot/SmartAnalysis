@@ -7,7 +7,7 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var MicrosolidityHighlightRules = function() {
 
     var keywords = (
-        "contract|function|payable|return|if|else"
+        "contract|function|payable|return|if|else|returns"
     );
 
     var builtinConstants = ("true|false");

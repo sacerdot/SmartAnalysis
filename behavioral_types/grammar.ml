@@ -482,12 +482,15 @@ let epsilon_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser =
     RTEpsilon -> s,MicroSolidity.Epsilon,("ok",s),t 
   | RTReturn -> raise (Fail ("epsilon not allowed here",s))
 
+let rhs_pars : 'a tag -> ('a rhs,'t) parser = fun tag ->
+ comb_parser expr_pars
+  (fun expr -> MicroSolidity.Expr (check_type tag expr))
+
 let return_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun tag _ ->
  concat (concat
   (kwd "return")
-  expr_pars csnd)
-  (kwd ";")
-  (fun expr () -> MicroSolidity.Return (check_type tag expr))
+  (rhs_pars tag) csnd)
+  (kwd ";") (fun rhs () -> MicroSolidity.Return rhs)
     
 (*
  * stm ::= revert | return expr | assign | if bool_expr then stm else stm ; stm | { stm } | epsilon
@@ -589,11 +592,12 @@ let block_pars ?(check_payable=false) tag vl s t =
  * meth ::= function Var parameters : t { paramters stm }
  *)
 let any_meth_pars s t =
- let ns1,(name,((AnyVarList vl),(AnyTag t1))),error1,nt1 =
-  concat (concat
+ let ns1,((name,AnyVarList vl),(AnyTag t1)),error1,nt1 =
+  concat (concat (concat
    (kwd "function")
    varname csnd)
-   (concat parameter_pars (concat (kwd ":") type_pars csnd) couple) couple
+   parameter_pars couple)
+   (concat (kwd "returns") (brackets_pars type_pars) csnd) couple
    s t in
  let ns2,(block,payable),error2,nt2 = 
   block_pars t1 vl ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
@@ -634,7 +638,7 @@ let configuration_pars : (configuration,'t) parser =
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
 "="; ","; ";"; "fail"; "if"; "then"; "else"; "{"; "function";
-"}"; "return"; ":"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
+"}"; "return"; "returns"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
 
 let test_stream stream =
  try

@@ -49,7 +49,7 @@ type _ rhs =
  | Call : address expr * ('a,'b) meth * int expr option * 'b expr_list -> 'a rhs
 type (_,_) stm =
  | Epsilon : (_,[`Epsilon]) stm
- | Return : 'a expr -> ('a,_) stm
+ | Return : 'a rhs -> ('a,_) stm
  | Assign : 'a lhs * 'a rhs * ('b,'c) stm -> ('b,'c) stm
  | IfThenElse : bool expr * ('b,[`Epsilon]) stm * ('b,[`Epsilon]) stm * ('b,'c) stm -> ('b,'c) stm
  | Revert : _ stm
@@ -181,7 +181,7 @@ let pp_rhs tag =
 let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
  function
   | Epsilon -> ""
-  | Return e -> "return " ^ pp_expr tag e ^ ";"
+  | Return e -> "return " ^ pp_rhs tag e ^ ";"
   | Assign(lhs,rhs,stm) ->
      pp_lhs lhs ^
      pp_rhs (tag_of_lhs lhs) rhs ^
@@ -195,7 +195,7 @@ let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
 
 let pp_block payable ?out tag (Block (vl,lvl,stm)) =
  "(" ^ String.concat "," (pp_var_list vl) ^ ") " ^
- (match out with None -> "" | Some t -> ": " ^ pp_tag t ^ " ") ^
+ (match out with None -> "" | Some t -> "returns (" ^ pp_tag t ^ ") ") ^
  (if payable then "payable " else " ") ^ "{\n" ^
  String.concat "" (List.map (fun s -> "     " ^ s ^ ";\n") (pp_var_list lvl)) ^
  "      " ^ pp_stm tag stm ^
