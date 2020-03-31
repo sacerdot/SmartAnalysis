@@ -178,6 +178,7 @@ let pp_rhs tag =
   | Expr e -> pp_expr tag e
   | Call(addr,meth,value,exprl) ->
      pp_expr Address addr ^
+     "." ^
      pp_meth meth ^
      (match value with None -> "" | Some v -> pp_expr Int v ^ ".") ^
      "(" ^ String.concat "," (pp_expr_list (snd3 meth) exprl) ^ ")"

@@ -85,6 +85,11 @@ let option p s tbl =
   let next,res,error,ntbl = p s tbl in next,Some res,error,ntbl
  with Fail error -> s,None,error,tbl
 
+let option2 d p s tbl =
+ try 
+  let next,res,error,ntbl = p s tbl in next,res,error,ntbl
+ with Fail error -> s,d,best error ("ok",s),tbl
+
 let choice p1 p2 s tbl =
  try p1 s tbl with Fail error1 ->
  try p2 s tbl with Fail error2 ->

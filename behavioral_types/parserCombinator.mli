@@ -28,6 +28,7 @@ val const : Genlex.token -> (Genlex.token -> 'ast) -> ('ast,'t) parser
 val kwd : string -> (unit,'t) parser
 
 val option : ('ast,'t) parser -> ('ast option, 't) parser
+val option2 : 'ast -> ('ast,'t) parser -> ('ast, 't) parser
 val choice : ('ast,'t) parser -> ('ast,'t) parser -> ('ast,'t) parser
 val choice_list : ('ast,'t) parser list -> ('ast,'t) parser
 val concat :

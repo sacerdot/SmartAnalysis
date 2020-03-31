@@ -6,6 +6,7 @@ open Genlex
 
 type any_ident = AnyIdent : 'a MicroSolidity.ident -> any_ident
 type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_expr
+type any_expr_list = AnyExprList : 'a MicroSolidity.tag_list * 'a MicroSolidity.expr_list -> any_expr_list
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
 type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
@@ -294,14 +295,6 @@ and expr_pars s =
  ] s
 
 (*
-let get_null_value : type a. a tag -> a =
-function
- | Int ->  0
- | Bool ->  false
- | ContractAddress -> Contract ""
- | HumanAddress -> Human ""
-*)
-(*
 * t ::= int | bool
 *)
 let type_pars =
@@ -332,13 +325,20 @@ let fields_pars =
  comb_parser (kleenestar (field_pars false) [] addel)
   (List.map (fun (AnyIdent (tag,id)) -> AnyField (tag,id)))
 
-(*
+let rec expr_list_of_any_expr_list : any_expr list -> any_expr_list =
+ function
+    [] -> AnyExprList(TNil,ENil)
+  | AnyExpr(t,e)::tl ->
+     let AnyExprList(ts,es) = expr_list_of_any_expr_list tl in
+      AnyExprList(TCons(t,ts),ECons(e,es))
+
 let parse_any_expr_list = 
  comb_parser 
- (brackets_pars (option (concat expr_pars 
- (kleenestar (concat (kwd ",") expr_pars csnd) [] addel) 
- (fun expr el -> [expr]@el))))(function Some s -> s | None -> [])
-*)
+ (brackets_pars
+   (option2 [] (concat
+     expr_pars 
+     (kleenestar (concat (kwd ",") expr_pars csnd) [] addel) List.cons)))
+  expr_list_of_any_expr_list
 
 (*
 let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list 
@@ -382,14 +382,12 @@ let parse_method_call : string -> any_rhs parser =
   in aux tbl s tbl
 *)
 
-(*
 let opt_expr : type a. a tag -> any_expr -> a expr option = fun t -> 
  function
   | AnyExpr(texp,e) -> 
     match eq_tag texp t with 
      | Some Refl -> Some e
      | None -> None 
-*)
 
 (*
 let check_rhs_type: type a. a tag -> any_rhs -> a rhs =
@@ -477,6 +475,34 @@ let rec rhs_toassign_pars this_opt varname s =
 (rhs_toassign_pars this_opt varname) csnd) (kwd ")") cfst) (aux this_opt varname) s
 *)
 
+let ident_pars s t =
+ match s with
+    Ident i::tl -> tl,i,("ok",tl),t
+  | _ -> raise (Fail ("ident expected",s))
+
+let dot_value_pars s t=
+  comb_parser (
+   option (concat (concat
+    (kwd ".") 
+    (kwd "value") csnd)
+    (brackets_pars int_expr) csnd))
+   (fun x -> Option.bind x (opt_expr Int)) s t
+
+(*
+ * call_contr ::= contr_expr.varname (.value)? (( (e (, e)* ? )
+ *)
+let call_pars tag =
+ comb_parser (concat (concat (concat
+  (option2 (AnyExpr(Address,This)) (concat contract_expr (kwd ".") cfst))
+  ident_pars couple)
+  dot_value_pars couple)
+  parse_any_expr_list couple)
+ (fun (((addr,name),value),params) ->
+   let addr = check_type Address addr in
+   let AnyExprList(tags,exprs) = params in
+   let name = tag,tags,name in
+   Call(addr,name,value,exprs))
+
 (*
 (*assign ::= Var = rhs*)
 let assign_pars s tbl =
@@ -502,8 +528,11 @@ let epsilon_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
   | RTReturn,_ -> raise (Fail ("implicit return not allowed here",s))
 
 let rhs_pars : 'a tag -> ('a rhs,'t) parser = fun tag ->
- comb_parser expr_pars
-  (fun expr -> MicroSolidity.Expr (check_type tag expr))
+ choice_list [
+  comb_parser expr_pars
+   (fun expr -> MicroSolidity.Expr (check_type tag expr)) ;
+  call_pars tag
+ ]
 
 let return_pars : type a. a tag -> 'b rettag -> ((a,'b) stm,'t) parser = fun tag _ ->
  concat (concat
@@ -576,10 +605,10 @@ let pars_varlist_singleton =
 *)
 let parameter_pars s t = 
  let ns,vl,error,nt = 
-  brackets_pars (comb_parser (option (concat pars_varlist_singleton
+  brackets_pars (option2 (AnyVarList VNil) (concat pars_varlist_singleton
   (kleenestar (concat (kwd ",") pars_varlist_singleton csnd) 
   (AnyVarList(VNil)) varlist_append) varlist_append))
-  (function Some s -> s | None -> AnyVarList(VNil))) s t in
+  s t in
  let x =
   try
    add_local_var nt vl
@@ -620,7 +649,7 @@ let any_meth_pars s t =
    (kwd "function")
    varname csnd)
    parameter_pars couple)
-   (comb_parser (option ((concat (kwd "returns") (brackets_pars type_pars)) csnd)) (Option.value ~default:(AnyTag Unit))) couple
+   (option2 (AnyTag Unit) ((concat (kwd "returns") (brackets_pars type_pars)) csnd)) couple
    s t in
  let ns2,(block,payable),error2,nt2 = 
   block_pars t1 vl ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
