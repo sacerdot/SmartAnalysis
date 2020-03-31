@@ -22,11 +22,15 @@ contract Bank {
    bool z;
 
    (* this is a comment; comments can be nested *)
-   function pay(int n) returns (int) payable {
+   function identity(int x) returns (int) {
+        return x;
+   }
+
+   function pay(int n) payable {
       if (msg.value &gt;= 1 &amp;&amp; this.balance &gt; n) {
          (*msg.sender.transfer(n) ;
          msg.sender.ack() ;*)
-      } else {} ; return 0;
+      }
    }
 
    function() payable { return; }

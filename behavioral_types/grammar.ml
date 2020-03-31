@@ -488,7 +488,10 @@ let assign_pars s tbl =
 type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 
 let revert_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun _ _ s t ->
- const (Kwd "revert") (fun _ -> MicroSolidity.Revert) s t
+ concat (concat
+  (kwd "revert")
+  (kwd "(") csnd)
+  (kwd ")") (fun _ _ -> MicroSolidity.Revert) s t
 
 let epsilon_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
  fun tag rettag s t ->
@@ -528,12 +531,11 @@ let rec stm_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser = fun ta
   assign_pars;
 *)
   (*if then else*)
-  comb_parser (concat (concat (concat (concat (concat
+  comb_parser (concat (concat (concat (concat
    (kwd "if")
    bool_expr csnd)
    (stm_pars tag RTEpsilon) couple)
    (option (concat (kwd "else") (stm_pars tag RTEpsilon) csnd)) couple)
-   (kwd ";") cfst)
    (stm_pars tag rettag) couple)
    (fun (((bexpr,stm1),stm2),stm3) ->
      let stm2 = Option.value stm2 ~default:Epsilon in 
@@ -617,7 +619,7 @@ let any_meth_pars s t =
    (kwd "function")
    varname csnd)
    parameter_pars couple)
-   (concat (kwd "returns") (brackets_pars type_pars) csnd) couple
+   (comb_parser (option ((concat (kwd "returns") (brackets_pars type_pars)) csnd)) (Option.value ~default:(AnyTag Unit))) couple
    s t in
  let ns2,(block,payable),error2,nt2 = 
   block_pars t1 vl ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in

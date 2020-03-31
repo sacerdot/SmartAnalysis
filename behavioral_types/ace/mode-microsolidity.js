@@ -17,7 +17,7 @@ var MicrosolidityHighlightRules = function() {
     );
 
     var keywordMapper = this.createKeywordMapper({
-        "variable.language": "this|msg|value|sender|balance",
+        "variable.language": "this|msg|value|sender|balance|revert",
         "keyword": keywords,
         "constant.language": builtinConstants,
         "support.function": builtinFunctions
