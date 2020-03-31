@@ -196,7 +196,7 @@ let rec pp_stm : type a b. a tag -> (a,b) stm -> string = fun tag ->
      "   " ^ pp_stm tag stm1 ^ "\n      } else {\n       " ^
      pp_stm tag stm2 ^ "\n      }\n      " ^
      pp_stm tag stm3
-  | Revert -> "revert()"
+  | Revert -> "revert();"
 
 let pp_block : type a. bool -> a tag -> (a, 'b) block -> address =
 fun payable tag (Block (vl,lvl,stm)) ->

@@ -229,7 +229,7 @@ and binop s =
   const (Kwd "/") (fun _ -> div) ;
   const (Kwd "-") (fun _ -> minus)
  ] s
-and cont_int_expr s = concat binop int_expr (fun f x -> f x) s
+and cont_int_expr s = concat binop int_expr (fun f x y -> f y x) s
 
  (* Bool Expression
  * atomic_bool_expr :=
@@ -488,10 +488,11 @@ let assign_pars s tbl =
 type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 
 let revert_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun _ _ s t ->
- concat (concat
+ concat (concat (concat
   (kwd "revert")
   (kwd "(") csnd)
-  (kwd ")") (fun _ _ -> MicroSolidity.Revert) s t
+  (kwd ")") csnd)
+  (kwd ";") (fun _ _ -> MicroSolidity.Revert) s t
 
 let epsilon_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
  fun tag rettag s t ->
@@ -659,7 +660,7 @@ let configuration_pars : (configuration,'t) parser =
 
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
-"="; ","; ";"; "fail"; "if"; "then"; "else"; "{"; "function";
+"="; ","; ";"; "fail"; "if"; "else"; "revert"; "{"; "function";
 "}"; "return"; "returns"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
 
 let test_stream stream =

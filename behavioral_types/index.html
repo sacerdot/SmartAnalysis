@@ -23,7 +23,10 @@ contract Bank {
 
    (* this is a comment; comments can be nested *)
    function identity(int x) returns (int) {
-        return x;
+      if (x &lt; 0)
+        revert();
+      else { return x; }
+      return -1 * x;
    }
 
    function pay(int n) payable {
