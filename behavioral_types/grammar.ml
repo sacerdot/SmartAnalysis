@@ -9,7 +9,9 @@ type any_expr = AnyExpr : 'a MicroSolidity.tag * 'a MicroSolidity.expr -> any_ex
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
 type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
+(*
 type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
+*)
 
 let pp_any_expr (AnyExpr (t,e)) = pp_expr t e
 
@@ -137,8 +139,6 @@ let notb e =
  match e with
  | AnyExpr(Bool, v) -> AnyExpr(Bool, Not(v))
  | _ -> raise (Reject ("!" ^ pp_any_expr e))
-
-let scd_notb _ e = notb e
 
 let neq e1 e2 = notb (eq e1 e2)
 
@@ -332,12 +332,15 @@ let fields_pars =
  comb_parser (kleenestar (field_pars false) [] addel)
   (List.map (fun (AnyIdent (tag,id)) -> AnyField (tag,id)))
 
+(*
 let parse_any_expr_list = 
  comb_parser 
  (brackets_pars (option (concat expr_pars 
  (kleenestar (concat (kwd ",") expr_pars csnd) [] addel) 
  (fun expr el -> [expr]@el))))(function Some s -> s | None -> [])
+*)
 
+(*
 let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list 
 = fun tl el ->
  match tl,el with
@@ -346,7 +349,9 @@ let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list
     ECons(check_type t h,check_expr_list_type ttail etail)
   | TNil,_ -> raise (Reject "too many args")
   | _,[] -> raise (Reject "not enough args")
+*)
 
+(*
 let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> ('c,'t) parser =
  fun tl f ->
    comb_parser (comb_parser parse_any_expr_list (check_expr_list_type tl)) f
@@ -363,6 +368,7 @@ let get_rhs_from_expr_list =
         (Call(c,(tag,TCons(t,tags),name),value,ECons(expr,elist)))
     | _ -> raise (Reject ("not a function call")))
   in aux (List.rev el) (Call(c,(typ,TNil,m),value,ENil))
+*)
 
 (*
 let parse_method_call : string -> any_rhs parser =
@@ -376,13 +382,16 @@ let parse_method_call : string -> any_rhs parser =
   in aux tbl s tbl
 *)
 
+(*
 let opt_expr : type a. a tag -> any_expr -> a expr option = fun t -> 
  function
   | AnyExpr(texp,e) -> 
     match eq_tag texp t with 
      | Some Refl -> Some e
      | None -> None 
+*)
 
+(*
 let check_rhs_type: type a. a tag -> any_rhs -> a rhs =
  fun tag rhs ->
   match rhs with
@@ -390,7 +399,9 @@ let check_rhs_type: type a. a tag -> any_rhs -> a rhs =
     (match eq_tag t tag with
         Some Refl -> r
       | None -> raise (Reject (pp_tag t ^ " vs " ^ pp_tag tag)))
+*)
 
+(*
 let pars_mesg_value s t=
   comb_parser (
    option (concat (concat
@@ -398,13 +409,16 @@ let pars_mesg_value s t=
     (kwd "value") csnd)
     (brackets_pars int_expr) csnd))
    (fun x -> Option.bind x (opt_expr Int)) s t
+*)
 
+(*
 let funname s tbl = 
  comb_parser varname
   (fun var ->
     match get_fun tbl var with
        Some _ -> var
      | None -> raise (Reject (var ^ "(..) not found "))) s tbl
+*)
 
 (*
 (*
@@ -674,3 +688,6 @@ let test_file filename =
 let test_string s =
  let stream = Stream.of_string s in
  test_stream stream
+
+(* to avoid warnings for unused functions *)
+let _ = print_table
