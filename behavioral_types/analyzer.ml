@@ -9,7 +9,7 @@ let _ =
   Dom.appendChild errors (document##createElement (Js.string "br"));
  )
 
-let eval () =
+let parse () =
  (*let _ = Js.Unsafe.fun_call (Js.Unsafe.variable "alert") [|s|] in*)
  let doc_in = Js.Unsafe.variable "window.doc_in" in
  let x = Js.Unsafe.meth_call doc_in "getValue" [| |] in
@@ -23,7 +23,15 @@ let eval () =
  let _ = Js.Unsafe.meth_call doc_out "setValue" [| Js.Unsafe.inject y |] in
  ()
 
-let _ = Js.export "eval" (Js.wrap_callback eval)
+let copy_output_to_input () =
+ let doc_in = Js.Unsafe.variable "window.doc_out" in
+ let x = Js.Unsafe.meth_call doc_in "getValue" [| |] in
+ let doc_out = Js.Unsafe.variable "window.doc_in" in
+ let _ = Js.Unsafe.meth_call doc_out "setValue" [| Js.Unsafe.inject x |] in
+ ()
+
+let _ = Js.export "parse" (Js.wrap_callback parse)
+let _ = Js.export "copy_output_to_input" (Js.wrap_callback copy_output_to_input)
 
 (*
 let onload _ =
