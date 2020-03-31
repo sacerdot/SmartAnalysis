@@ -511,6 +511,13 @@ let assign_pars s tbl =
  rhs_toassign_pars this_opt varname ns1 ntbl1
 *)
 
+let rhs_pars : 'a tag -> ('a rhs,'t) parser = fun tag ->
+ choice_list [
+  comb_parser expr_pars
+   (fun expr -> MicroSolidity.Expr (check_type tag expr)) ;
+  call_pars tag
+ ]
+
 type 'a rettag = RTEpsilon : [`Epsilon] rettag | RTReturn : [`Return] rettag
 
 let revert_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun _ _ s t ->
@@ -527,13 +534,6 @@ let epsilon_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
   | RTReturn,Unit -> s,MicroSolidity.Return,("ok",s),t
   | RTReturn,_ -> raise (Fail ("implicit return not allowed here",s))
 
-let rhs_pars : 'a tag -> ('a rhs,'t) parser = fun tag ->
- choice_list [
-  comb_parser expr_pars
-   (fun expr -> MicroSolidity.Expr (check_type tag expr)) ;
-  call_pars tag
- ]
-
 let return_pars : type a. a tag -> 'b rettag -> ((a,'b) stm,'t) parser = fun tag _ ->
  concat (concat
   (kwd "return")
@@ -548,7 +548,7 @@ let return_pars : type a. a tag -> 'b rettag -> ((a,'b) stm,'t) parser = fun tag
 (*
  * stm ::= revert | return expr | assign | if bool_expr then stm else stm ; stm | { stm } | epsilon
  *)
-let rec stm_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser = fun tag rettag s t ->
+let rec stm_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser = fun tag rettag s t ->
  choice_list[
   (* revert *)
   revert_pars tag rettag ;
@@ -556,10 +556,9 @@ let rec stm_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser = fun ta
   (* return *)
   return_pars tag rettag ;
 
-(*XXX
   (*assign*)
-  assign_pars;
-*)
+  assign_pars tag rettag;
+
   (*if then else*)
   comb_parser (concat (concat (concat (concat
    (kwd "if")
@@ -577,6 +576,19 @@ let rec stm_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser = fun ta
   (* epsilon *)
   epsilon_pars tag rettag
  ] s t
+
+(*assign ::= [var|field =] rhs*)
+and assign_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
+ fun tag rettag s t ->
+  let s1,var,error1,t1 = option (concat varname (kwd "=") cfst) s t in
+  let aux : type c. c tag -> c lhs -> ((a,b) stm,'t) parser = fun lhstag lhs s1 t1 ->
+   let s2,(rhs,cont),error2,t2 =
+    concat (concat (rhs_pars lhstag) (kwd ";") cfst) (stm_pars tag rettag) couple s1 t1 in
+   s2,Assign(lhs,rhs,cont),best (best error1 error2) ("ok",s2),t2 in
+  match Option.bind var (get_field t1) with
+     None -> aux Unit (LDiscard Unit) s1 t1
+   | Some (AnyIdent(lhstag,id),true) -> aux lhstag (LVar(lhstag,id)) s1 t1
+   | Some (AnyIdent(lhstag,id),false) -> aux lhstag (LField(lhstag,id)) s1 t1
 
 let rec add_local_var tbl =
   function 

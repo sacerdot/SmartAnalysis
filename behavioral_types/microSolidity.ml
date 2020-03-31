@@ -180,7 +180,7 @@ let pp_rhs tag =
      pp_expr Address addr ^
      "." ^
      pp_meth meth ^
-     (match value with None -> "" | Some v -> pp_expr Int v ^ ".") ^
+     (match value with None -> "" | Some v -> ".value(" ^ pp_expr Int v ^ ")") ^
      "(" ^ String.concat "," (pp_expr_list (snd3 meth) exprl) ^ ")"
 
 let rec pp_stm : type a b. a tag -> (a,b) stm -> string = fun tag ->
@@ -191,7 +191,7 @@ let rec pp_stm : type a b. a tag -> (a,b) stm -> string = fun tag ->
   | Assign(lhs,rhs,stm) ->
      pp_lhs lhs ^
      pp_rhs (tag_of_lhs lhs) rhs ^
-     "; " ^ pp_stm tag stm
+     ";\n      " ^ pp_stm tag stm
   | IfThenElse(c,stm1,stm2,stm3) ->
      "if " ^ pp_expr Bool c ^ " {\n      " ^
      "   " ^ pp_stm tag stm1 ^ "\n      } else {\n       " ^
