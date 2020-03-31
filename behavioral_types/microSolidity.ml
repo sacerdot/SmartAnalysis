@@ -67,8 +67,8 @@ type configuration = a_contract list
 
 (*
 ## Syntactic differences w.r.t. the paper ##
-1. no void returning functions and epsilon used as void:
-   we always return 0 instead
+1. we differentiate Epsilon (used only in if-then-else branches) from
+   Return
 2. no transfer function:
    we just call fallback instead
 
