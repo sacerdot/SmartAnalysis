@@ -8,7 +8,7 @@
 </style>
  </head>
  <body>
-  <button onclick="eval()">Eval</button>
+  <button onclick="eval()">Parse</button>
   <hr>
   <table width="100%">
   <tr>
@@ -20,16 +20,15 @@ contract Bank {
    int y;
    bool z;
 
-(* comment *)
+   (* this is a comment; comments can be nested *)
    function pay(int n) : int payable {
-      return n
       if (msg.value &gt;= 1 &amp;&amp; this.balance &gt; n) {
-         msg.sender.transfer(n) ;
-         msg.sender.ack() ;
-      }
+         (*msg.sender.transfer(n) ;
+         msg.sender.ack() ;*)
+      } else {} ; return 0;
    }
 
-   function() payable { return 0 }
+   function() payable { return 0; }
 }
 
 contract Thief {
@@ -40,13 +39,12 @@ contract Thief {
    }
 *)
 
-   function() payable { return 0 }
+   function() payable { return 0; }
 }
 </div>
   </td>
   <td width="50%">
-  <div id="out" class="editor">
-  </div>
+  <div id="out" class="editor"></div>
   </td>
   </tr>
   <tr>

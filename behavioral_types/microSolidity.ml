@@ -114,12 +114,13 @@ let rec pp_tag_list : type a. a tag_list -> string list =
  function
     TNil -> []
   | TCons(x,tl) -> pp_tag x :: pp_tag_list tl
-let pp_ident (t,s) = pp_tag t ^ " " ^ s
+let pp_decl (t,s) = pp_tag t ^ " " ^ s
+let pp_ident (_t,s) = (*pp_tag t ^ " " ^*) s
 let pp_var = pp_ident
 let rec pp_var_list : type a. a var_list -> string list =
  function
     VNil -> []
-  | VCons(v,tl) -> pp_var v :: pp_var_list tl
+  | VCons(v,tl) -> pp_decl v :: pp_var_list tl
 let pp_address : address -> string = fun s -> s
 let pp_value (type a) (tag : a tag) (v : a) =
  match tag with
@@ -127,7 +128,7 @@ let pp_value (type a) (tag : a tag) (v : a) =
   | Bool -> string_of_bool v
   | Address -> pp_address v
 let pp_field = pp_ident
-let pp_any_field (AnyField f) = pp_field f
+let pp_any_field (AnyField f) = pp_decl f
 let pp_fields l = String.concat "" (List.map (fun f -> "   " ^ pp_any_field f ^ ";\n") l)
 
 let rec pp_expr : type a. a tag -> a expr -> string =
@@ -143,10 +144,10 @@ let rec pp_expr : type a. a tag -> a expr -> string =
   | UMinus e -> "-" ^ pp_expr tag e
   | Geq (e1,e2) -> "(" ^ pp_expr Int e1 ^ " >= " ^ pp_expr Int e2 ^ ")"
   | Gt (e1,e2) -> "(" ^ pp_expr Int e1 ^ " > " ^ pp_expr Int e2 ^ ")"
-  | Eq (tag,e1,e2) -> "(" ^ pp_expr tag e1 ^ " = " ^ pp_expr tag e2 ^ ")"
-  | And (g1,g2) -> "(" ^ pp_expr tag g1 ^ " /\\\\ " ^ pp_expr tag g2 ^ ")"
-  | Or (g1,g2) -> "(" ^ pp_expr tag g1 ^ " \\\\/ " ^ pp_expr tag g2 ^ ")"
-  | Not g -> "~" ^ pp_expr tag g
+  | Eq (tag,e1,e2) -> "(" ^ pp_expr tag e1 ^ " == " ^ pp_expr tag e2 ^ ")"
+  | And (g1,g2) -> "(" ^ pp_expr tag g1 ^ " && " ^ pp_expr tag g2 ^ ")"
+  | Or (g1,g2) -> "(" ^ pp_expr tag g1 ^ " || " ^ pp_expr tag g2 ^ ")"
+  | Not g -> "!" ^ pp_expr tag g
   | Value v -> pp_value tag v
   | MsgSender -> "msg.sender"
   | MsgValue -> "msg.value"
@@ -159,8 +160,8 @@ let rec pp_expr_list : type a. a tag_list -> a expr_list -> string list = fun tg
     TNil,ENil -> []
    | TCons(tag,tagl),ECons(v,tl) -> pp_expr tag v :: pp_expr_list tagl tl
 
-let pp_meth (rtag,tags,id) =
- id ^ ":(" ^ String.concat "*" (pp_tag_list tags) ^ " -> " ^ pp_tag rtag ^ ")"
+let pp_meth (_rtag,_tags,id) =
+ id(* ^ ":(" ^ String.concat "*" (pp_tag_list tags) ^ " -> " ^ pp_tag rtag ^ ")"*)
 
 let pp_lhs =
  function
@@ -180,28 +181,29 @@ let pp_rhs tag =
 let rec pp_stm : type b. 'a tag -> ('a,b) stm -> string = fun tag ->
  function
   | Epsilon -> ""
-  | Return e -> "return " ^ pp_expr tag e
+  | Return e -> "return " ^ pp_expr tag e ^ ";"
   | Assign(lhs,rhs,stm) ->
      pp_lhs lhs ^
      pp_rhs (tag_of_lhs lhs) rhs ^
      "; " ^ pp_stm tag stm
   | IfThenElse(c,stm1,stm2,stm3) ->
-     "if " ^ pp_expr Bool c ^
-     " { " ^ pp_stm tag stm1 ^ " } else { " ^
-     pp_stm tag stm2 ^ " }; " ^
+     "if " ^ pp_expr Bool c ^ " {\n      " ^
+     "   " ^ pp_stm tag stm1 ^ "\n      } else {\n       " ^
+     pp_stm tag stm2 ^ "\n      };\n      " ^
      pp_stm tag stm3
   | Revert -> "revert"
 
-let pp_block payable tag (Block (vl,lvl,stm)) =
+let pp_block payable ?out tag (Block (vl,lvl,stm)) =
  "(" ^ String.concat "," (pp_var_list vl) ^ ") " ^
- (if payable then "payable " else "") ^
- "   {\n" ^
+ (match out with None -> "" | Some t -> ": " ^ pp_tag t ^ " ") ^
+ (if payable then "payable " else " ") ^ "{\n" ^
  String.concat "" (List.map (fun s -> "     " ^ s ^ ";\n") (pp_var_list lvl)) ^
  "      " ^ pp_stm tag stm ^
  "\n   }\n\n"
 
 let pp_any_method_decl (AnyMethodDecl(m,b,payable)) =
- "   " ^ pp_meth m ^ " " ^ pp_block payable (fst3 m) b
+ "   function " ^ pp_meth m ^ " " ^
+  pp_block ~out:(fst3 m) payable (fst3 m) b
 
 let pp_methods l =
  String.concat "\n" (List.map pp_any_method_decl l)

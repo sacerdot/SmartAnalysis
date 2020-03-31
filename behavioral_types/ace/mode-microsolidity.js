@@ -7,7 +7,7 @@ var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 var MicrosolidityHighlightRules = function() {
 
     var keywords = (
-        "contract|function|payable|msg|sender|balance|return|"
+        "contract|function|payable|return|if|else"
     );
 
     var builtinConstants = ("true|false");
@@ -17,7 +17,7 @@ var MicrosolidityHighlightRules = function() {
     );
 
     var keywordMapper = this.createKeywordMapper({
-        "variable.language": "this",
+        "variable.language": "this|msg|value|sender|balance",
         "keyword": keywords,
         "constant.language": builtinConstants,
         "support.function": builtinFunctions

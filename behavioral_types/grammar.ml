@@ -70,6 +70,11 @@ let remove_local_vars: vartable -> vartable =
 
 (*Expression *)
 
+let balance e =
+ match e with
+  | AnyExpr(Address,a) -> AnyExpr(Int,Balance a)
+  | _ -> raise (Reject (pp_any_expr e ^ ".balance"))
+
 let plus e1 e2 = 
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Plus(v1,v2))
@@ -184,21 +189,33 @@ let this_pars = const (Kwd "this") (fun _ -> MicroSolidity.This)
 
 let brackets_pars pars = concat (concat (kwd "(") pars csnd) (kwd ")") cfst
 
+let msg_sender_pars =
+ comb_parser
+  (concat (concat (kwd "msg") (kwd ".") csnd) (kwd "sender") csnd)
+  (fun () -> MsgSender)
+
+let msg_value_pars =
+ comb_parser
+  (concat (concat (kwd "msg") (kwd ".") csnd) (kwd "value") csnd)
+  (fun () -> AnyExpr(Int,MsgValue))
+
 (*Variable | value *)
 let base tag s tbl =
     choice_list[
         var_pars tag;
-        value_pars tag ;
+        value_pars tag;
     ] s tbl
 
 (* Int Expression
  * atomic_int_expr :=
-    base Int | - atomic_int_expr | varname | ( int_expr ) | string
+    base Int | msg.value | address.balance | - atomic_int_expr | varname | ( int_expr ) | string
  * int_expr := atomic_int_expr ?cont_int_expr
  * cont_int_expr ::=  + int_expr | * int_expr | / int_expr | - int_expr 
  *)
 let rec atomic_int_expr s = 
  choice_list [
+   msg_value_pars;
+   balance_pars;
    comb_parser (base Int) (fun expr -> AnyExpr(Int,expr));
    concat (kwd "-") atomic_int_expr (fun _ -> uminus) ;
    brackets_pars int_expr
@@ -222,7 +239,7 @@ and cont_int_expr s = concat binop int_expr (fun f x -> f x) s
  * bool_expr := atomic_int_expr ?cont_int_expr
  * cont_bool_expr ::=  && bool_expr | || bool_expr 
  *)
-let rec atomic_bool_expr s =
+and atomic_bool_expr s =
  choice_list[
   comb_parser (base Bool) (fun expr -> AnyExpr(Bool,expr));
   concat (concat (kwd "(") bool_expr csnd) (kwd ")") cfst ;
@@ -251,13 +268,16 @@ and bin_bool_op s =
   eqop;
  ] s
 and cont_bool_expr s = concat (choice bin_bool_op eqop) bool_expr (fun f x -> f x) s
-
+and balance_pars s =
+ concat (concat contract_expr (kwd ".") cfst) (kwd "balance")
+  (fun a _ -> balance a) s
 (*
  * contr_expr ::= this | Var
  *)
 and contract_expr s = 
  let rec aux s =
   choice_list [
+   msg_sender_pars;
    base Address; 
    this_pars;
    brackets_pars aux;
@@ -463,10 +483,11 @@ let epsilon_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser =
   | RTReturn -> raise (Fail ("epsilon not allowed here",s))
 
 let return_pars : 'a tag -> 'b rettag -> (('a,'b) stm,'t) parser = fun tag _ ->
- concat
+ concat (concat
   (kwd "return")
-  expr_pars
-  (fun () expr -> MicroSolidity.Return (check_type tag expr))
+  expr_pars csnd)
+  (kwd ";")
+  (fun expr () -> MicroSolidity.Return (check_type tag expr))
     
 (*
  * stm ::= revert | return expr | assign | if bool_expr then stm else stm ; stm | { stm } | epsilon
@@ -484,16 +505,15 @@ let rec stm_pars : type b. 'a tag -> b rettag -> (('a,b) stm,'t) parser = fun ta
   assign_pars;
 *)
   (*if then else*)
-  comb_parser (concat (concat (concat (concat (concat (concat (concat
+  comb_parser (concat (concat (concat (concat (concat
    (kwd "if")
    bool_expr csnd)
-   (kwd "then") cfst)
    (stm_pars tag RTEpsilon) couple)
-   (kwd "else") cfst)
-   (stm_pars tag RTEpsilon) couple)
+   (option (concat (kwd "else") (stm_pars tag RTEpsilon) csnd)) couple)
    (kwd ";") cfst)
    (stm_pars tag rettag) couple)
    (fun (((bexpr,stm1),stm2),stm3) ->
+     let stm2 = Option.value stm2 ~default:Epsilon in 
      IfThenElse(check_type Bool bexpr,stm1,stm2,stm3));
 
   (* {stm} *)
