@@ -16,6 +16,7 @@ val identity : 'a -> 'a
 
 (** Streams **)
 
+val string_of_token : Genlex.token -> string
 val print_token_list : Genlex.token list -> string
 val get_tokens : ('a -> Genlex.token Stream.t) -> 'a -> Genlex.token t
 
@@ -32,6 +33,10 @@ val option2 : 'ast -> ('ast,'t) parser -> ('ast, 't) parser
 val choice : ('ast,'t) parser -> ('ast,'t) parser -> ('ast,'t) parser
 val choice_list : ('ast,'t) parser list -> ('ast,'t) parser
 val concat :
-  ('ast1,'t) parser -> ('ast2,'t) parser -> ('ast1 -> 'ast2 -> 'ast3) -> ('ast3,'t) parser
+  ('ast1,'t) parser -> ('ast2,'t) parser -> ('ast1 -> 'ast2 -> 'ast3) ->
+   ('ast3,'t) parser
 val kleenestar :
   ('ast2,'t) parser -> 'ast1 -> ('ast1 -> 'ast2 -> 'ast1) -> ('ast1,'t) parser
+(* (nelist p sep) parses p (sep p)* (left-associative) *)
+val nelist :
+  ('a,'t) parser -> ('a -> 'a -> 'a,'t) parser -> ('a,'t) parser

@@ -124,3 +124,14 @@ let kleenestar p empty_ast f s t =
    aux rest1 x (best error1 error) ntbl
   with Fail error1 -> s1, acc, best error1 error, tbl in
  aux s empty_ast ("kleenestar",s) t
+
+(* (x_binop x_expr)* *)
+let rec x_cont x_expr x_binop s =
+ option2 (fun x -> x) (concat (concat
+  x_binop
+  x_expr (fun f x y -> f y x))
+  (x_cont x_expr x_binop) (fun f1 f2 x -> f2 (f1 x))) s
+
+(* x_expr (x_binop x_expr)* *)
+let nelist x_expr x_binop =
+ concat x_expr (x_cont x_expr x_binop) (fun x f -> f x)

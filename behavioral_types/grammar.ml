@@ -103,17 +103,17 @@ let div e1 e2 =
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Int,Div(v1,v2))
  | _ -> raise (Reject (pp_any_expr e1 ^ " / " ^ pp_any_expr e2))
 
-let gt e2 e1 =
+let gt e1 e2 =
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Gt(v1,v2))
  | _ -> raise (Reject (pp_any_expr e1 ^ " > " ^ pp_any_expr e2))
 
-let ge e2 e1 =
+let ge e1 e2 =
  match e1,e2 with
  | AnyExpr(Int,v1),AnyExpr(Int,v2) -> AnyExpr(Bool,Geq(v1,v2))
  | _ -> raise (Reject (pp_any_expr e1 ^ " >= " ^ pp_any_expr e2))
 
-let eq e2 e1 = 
+let eq e1 e2 = 
  match e1,e2 with
  | AnyExpr(t1,v1),AnyExpr(t2,v2) ->
   (match eq_tag t1 t2 with
@@ -124,13 +124,13 @@ let lt e1 e2 = gt e2 e1
 
 let le e1 e2 = ge e2 e1
 
-let andb e2 e1 =
+let andb e1 e2 =
  match e1,e2 with
  | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,And(v1,v2))
  | _ -> raise (Reject (pp_any_expr e1 ^ " && " ^ pp_any_expr e2))
 
 
-let orb e2 e1 =
+let orb e1 e2 =
  match e1,e2 with
  | AnyExpr(Bool,v1),AnyExpr(Bool,v2) -> AnyExpr(Bool,Or(v1,v2))
  | _ -> raise (Reject (pp_any_expr e1 ^ " || " ^ pp_any_expr e2))
@@ -210,8 +210,8 @@ let base tag s tbl =
 (* Int Expression
  * atomic_int_expr :=
     base Int | msg.value | address.balance | - atomic_int_expr | varname | ( int_expr ) | string
- * int_expr := atomic_int_expr ?cont_int_expr
- * cont_int_expr ::=  + int_expr | * int_expr | / int_expr | - int_expr 
+ * mul_int_expr := atomic_int_expr  (( * | / ) atomic_int_expr)*
+ * int_expr := mul_int_expr  (( + | - ) mul_int_expr)*
  *)
 let rec atomic_int_expr s = 
  choice_list [
@@ -221,16 +221,18 @@ let rec atomic_int_expr s =
    concat (kwd "-") atomic_int_expr (fun _ -> uminus) ;
    brackets_pars int_expr
  ] s
-and int_expr s =
- concat atomic_int_expr (option cont_int_expr) (fun x f -> match f with Some funct -> funct x | _ -> x) s
-and binop s =
+and mul_int_expr s = nelist atomic_int_expr mul_binop s
+and int_expr s = nelist mul_int_expr add_binop s
+and add_binop s =
  choice_list [
   const (Kwd "+") (fun _ -> plus) ;
-  const (Kwd "*") (fun _ -> mult) ;
-  const (Kwd "/") (fun _ -> div) ;
   const (Kwd "-") (fun _ -> minus)
  ] s
-and cont_int_expr s = concat binop int_expr (fun f x y -> f y x) s
+and mul_binop s =
+ choice_list [
+  const (Kwd "*") (fun _ -> mult) ;
+  const (Kwd "/") (fun _ -> div) ;
+ ] s
 
  (* Bool Expression
  * atomic_bool_expr :=
@@ -245,8 +247,7 @@ and atomic_bool_expr s =
   comb_parser (base Bool) (fun expr -> AnyExpr(Bool,expr));
   concat (concat (kwd "(") bool_expr csnd) (kwd ")") cfst ;
   concat (kwd "!") atomic_bool_expr (fun _ -> notb) ;
-  concat int_expr (concat cmpop int_expr (fun f x -> f x)) (fun x f -> f x);
-  concat (choice_list[int_expr; contract_expr]) (concat eqop expr_pars (fun f x -> f x)) (fun x f -> f x);
+  concat int_expr (concat cmpop int_expr (fun f y x -> f x y)) (fun x f -> f x);
  ] s
 and cmpop s =  
  choice_list [
@@ -260,15 +261,19 @@ and eqop s =
   const (Kwd "==") (fun _ -> eq); 
   const (Kwd "!=") (fun _ -> neq);
  ] s
-and bool_expr s =
- concat atomic_bool_expr (option cont_bool_expr) (fun x f -> match f with Some y -> y x | _ -> x) s
-and bin_bool_op s =
+and eq_bool_expr s = nelist (choice_list [atomic_bool_expr ; int_expr ; contract_expr]) eqop s
+and and_bool_expr s = nelist eq_bool_expr and_binop s
+and bool_expr s = nelist and_bool_expr or_binop s
+and and_binop s =
  choice_list [
   const (Kwd "&&") (fun _ -> andb) ;
-  const (Kwd "||") (fun _ -> orb) ;
-  eqop;
  ] s
-and cont_bool_expr s = concat (choice bin_bool_op eqop) bool_expr (fun f x -> f x) s
+and or_binop s =
+ choice_list [
+  const (Kwd "||") (fun _ -> orb) ;
+ ] s
+
+(* ... ::= contract.balance *)
 and balance_pars s =
  concat (concat contract_expr (kwd ".") cfst) (kwd "balance")
   (fun a _ -> balance a) s
