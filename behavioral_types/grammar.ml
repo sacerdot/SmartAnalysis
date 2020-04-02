@@ -22,6 +22,7 @@ let check_type : type a. a MicroSolidity.tag -> any_expr -> a MicroSolidity.expr
 (** symbol table **)
 
 type any_field_or_fun = 
+    | Contract: address -> any_field_or_fun
     | VarOrField: _ MicroSolidity.ident * bool -> any_field_or_fun
     | Fun:  _ MicroSolidity.meth -> any_field_or_fun
 type vartable = any_field_or_fun list
@@ -30,6 +31,7 @@ let print_table l =
  String.concat ""
   (List.map
     (function
+      | Contract a -> MicroSolidity.pp_address a
       | VarOrField (f,_) -> MicroSolidity.pp_field f
       | Fun (meth) -> MicroSolidity.pp_meth meth) l)
 
@@ -64,6 +66,19 @@ let add_fun_to_table : vartable -> any_meth -> vartable =
      match eq_tag_list l l' with
         None -> Fun(t,l,funname)::tbl
       | Some Refl -> raise (Reject (funname ^ " redeclared"))
+
+let rec get_contract : vartable -> string -> address option =
+ fun tbl name -> 
+  match tbl with
+  | [] -> None
+  | Contract name'::_ when name = name' -> Some name
+  | _::tl -> get_contract tl name
+
+let add_contract_to_table : vartable -> address -> vartable =
+ fun tbl name -> 
+  match get_contract tbl name with
+  | None -> Contract name::tbl
+  | Some _ -> raise (Reject ("contract " ^ name ^ " redeclared"))
 
 let remove_local_vars: vartable -> vartable =
  fun tbl  -> List.filter (function
@@ -164,26 +179,26 @@ const x (fun _ ->
          | Some Refl,false -> MicroSolidity.Field(tagfield,name)
          | Some Refl,true -> Var(tagfield,name)
          | None,_ -> raise (Reject (pp_tag tagfield ^ " vs " ^ pp_tag tag)))
-    | None -> 
-(*XXX qua dovrei parsare i nomi dei contratti in indirizzi!
-    (match tag with 
-    | Address -> Value var
-    | _ -> raise Fail)) *) raise (Reject (var ^ " not found")))
+    | None -> raise (Reject (var ^ " not previously declared")))
  | _ -> raise (Reject ("ident expected")) in aux) s t
 
-let value : type a. a MicroSolidity.tag -> Genlex.token -> a MicroSolidity.expr = fun tag tok ->
+let value : type a. a MicroSolidity.tag -> vartable -> Genlex.token -> a MicroSolidity.expr = fun tag tbl tok ->
  match tag,tok with
  | Int,Int x -> Value x
  | Bool,Kwd "true" -> Value true
  | Bool,Kwd "false" -> Value false
- | _ -> raise (Reject ("value expected"))
+ | Address,Ident x ->
+    (match get_contract tbl x with
+        None -> raise (Reject ("value of type " ^ pp_tag tag ^ " expected"))
+      | Some a -> Value a)
+ | _ -> raise (Reject ("value of type " ^ pp_tag tag ^ " expected"))
 
-let value_pars tag s =
+let value_pars tag s tbl =
  let t =
   try
    List.hd s
   with Failure _ -> raise (Fail ("value expected, eof found",s)) in
- const t (value tag) s
+ const t (value tag tbl) s tbl
 
 let this_pars = const (Kwd "this") (fun _ -> MicroSolidity.This)
 
@@ -579,9 +594,31 @@ let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "="; ","; ";"; "fail"; "if"; "else"; "revert"; "{"; "function";
 "}"; "return"; "returns"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
 
+let initialize_table_with_contracts tokens =
+ let rec skip_to_end_of_contract n =
+  function
+     Kwd "{" :: tl -> skip_to_end_of_contract (n+1) tl
+   | Kwd "}" :: tl ->
+      if n = 0 then tl else skip_to_end_of_contract (n-1) tl
+   | [] -> raise (Fail ("} expected, but eof found",[]))
+   | _ :: tl -> skip_to_end_of_contract n tl in
+ let rec aux acc =
+  function
+     [] -> acc
+   | (Kwd "contract" :: Ident id :: Kwd "{" :: tl) as l ->
+      let acc =
+       try add_contract_to_table acc id
+       with Reject msg -> raise (Fail (msg,l)) in
+      aux acc (skip_to_end_of_contract 0 tl)
+   | l -> raise (Fail ("contract declaration expected",l))
+ in
+  List.rev (aux [] tokens)
+
 let test_stream stream =
  try
-  let _s, conf, _error, _tbl = configuration_pars (get_tokens lexer stream) [] in
+  let tokens = get_tokens lexer stream in
+  let tbl = initialize_table_with_contracts tokens in
+  let _s, conf, _error, _tbl = configuration_pars tokens tbl in
 (*
   "######## TOKENS #######\n" ^
   print_token_list s ^

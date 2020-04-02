@@ -35,7 +35,9 @@ contract Bank {
         revert();
       else { return x; }
       b = f();
-      y = f();
+      y = this.f();
+      Thief.f();
+      b = Bank.f();
       return -1 * x - 3 * x + x * 4 * -x;
    }
 
