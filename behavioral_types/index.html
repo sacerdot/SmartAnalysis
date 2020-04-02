@@ -61,6 +61,11 @@ contract Bank {
      return y;
    }
 
+   function test5(int x, int y, bool b) returns (int) {
+     if(b) { x = test(3); } else { y = test(3); }
+     return y;
+   }
+
    function pay(int n) payable {
       if (msg.value &gt;= 1 &amp;&amp; this.balance &gt; n) {
          msg.sender.transfer(n) ;
