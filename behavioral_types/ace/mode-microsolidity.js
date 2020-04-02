@@ -13,7 +13,7 @@ var MicrosolidityHighlightRules = function() {
     var builtinConstants = ("true|false");
 
     var builtinFunctions = (
-        "int|bool|"
+        "int|bool|address"
     );
 
     var keywordMapper = this.createKeywordMapper({

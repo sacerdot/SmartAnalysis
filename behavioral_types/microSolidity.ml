@@ -69,11 +69,13 @@ type configuration = a_contract list
 ## Syntactic differences w.r.t. the paper ##
 1. we differentiate Epsilon (used only in if-then-else branches) from
    Return
+2. return f(); is tail recursive and works if f() returns void too
 2. no transfer function:
    we just call fallback instead
 
 ## Syntactic or typing constraints that are not captured ##
-1. a function can only invoke fields and variables that exist
+1. a function can only invoke functions that exist if contract is known?
+2. calling a function with bad return type?
 *)
 
 type (_,_) eq = Refl : ('a,'a) eq
@@ -169,8 +171,8 @@ let pp_meth (_rtag,_tags,id) =
 
 let pp_lhs =
  function
-  | LField f -> pp_field f ^ " := "
-  | LVar v -> pp_var v ^ " := "
+  | LField f -> pp_field f ^ " = "
+  | LVar v -> pp_var v ^ " = "
   | LDiscard _ -> ""
 
 let pp_rhs tag =

@@ -10,9 +10,6 @@ type any_expr_list = AnyExprList : 'a MicroSolidity.tag_list * 'a MicroSolidity.
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
 type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
-(*
-type any_rhs = AnyRhs: 'a MicroSolidity.tag * 'a MicroSolidity.rhs -> any_rhs
-*)
 
 let pp_any_expr (AnyExpr (t,e)) = pp_expr t e
 
@@ -307,6 +304,7 @@ let type_pars =
  choice_list[
   tag_pars "int" Int;
   tag_pars "bool" Bool;
+  tag_pars "address" Address;
 ]
 
 let field_pars islocal s t = 
@@ -345,140 +343,12 @@ let parse_any_expr_list =
      (kleenestar (concat (kwd ",") expr_pars csnd) [] addel) List.cons)))
   expr_list_of_any_expr_list
 
-(*
-let rec check_expr_list_type: type a. a tag_list -> any_expr list -> a expr_list 
-= fun tl el ->
- match tl,el with
-  | TNil,[] -> ENil
-  | TCons(t,ttail),(h::etail) -> 
-    ECons(check_type t h,check_expr_list_type ttail etail)
-  | TNil,_ -> raise (Reject "too many args")
-  | _,[] -> raise (Reject "not enough args")
-*)
-
-(*
-let concat_list : type b. b tag_list -> (b expr_list -> 'c) -> ('c,'t) parser =
- fun tl f ->
-   comb_parser (comb_parser parse_any_expr_list (check_expr_list_type tl)) f
-
-let get_rhs_from_expr_list = 
- fun m c typ value el -> 
-  let rec aux el rhs =
-   match el with
-   | [] -> rhs
-   | AnyExpr (t,expr) :: tl -> 
-    (match rhs with 
-    | Call(c,(tag,tags,name),value,elist) -> 
-        aux tl
-        (Call(c,(tag,TCons(t,tags),name),value,ECons(expr,elist)))
-    | _ -> raise (Reject ("not a function call")))
-  in aux (List.rev el) (Call(c,(typ,TNil,m),value,ENil))
-*)
-
-(*
-let parse_method_call : string -> any_rhs parser =
- fun m s tbl ->
-  let rec aux = function
-     [] -> raise Fail
-   | (Fun (tag,tags,name))::_ when name = m ->
-       concat_list tags
-       (fun el -> AnyRhs(tag,Call(None,(tag,tags,name),el)))
-      | _::tl -> aux tl
-  in aux tbl s tbl
-*)
-
 let opt_expr : type a. a tag -> any_expr -> a expr option = fun t -> 
  function
   | AnyExpr(texp,e) -> 
     match eq_tag texp t with 
      | Some Refl -> Some e
      | None -> None 
-
-(*
-let check_rhs_type: type a. a tag -> any_rhs -> a rhs =
- fun tag rhs ->
-  match rhs with
-  | AnyRhs(t,r) -> 
-    (match eq_tag t tag with
-        Some Refl -> r
-      | None -> raise (Reject (pp_tag t ^ " vs " ^ pp_tag tag)))
-*)
-
-(*
-let pars_mesg_value s t=
-  comb_parser (
-   option (concat (concat
-    (kwd ".") 
-    (kwd "value") csnd)
-    (brackets_pars int_expr) csnd))
-   (fun x -> Option.bind x (opt_expr Int)) s t
-*)
-
-(*
-let funname s tbl = 
- comb_parser varname
-  (fun var ->
-    match get_fun tbl var with
-       Some _ -> var
-     | None -> raise (Reject (var ^ "(..) not found "))) s tbl
-*)
-
-(*
-(*
-* call_contr ::= contr_expr.varname (.value)? (( (e (, e)* ? )
-*)
-let call_pars s t = 
- let (ns1,str,nt1) = funname s t in 
- let (ns2,value,nt2) = pars_mesg_value ns1 nt1 in
- comb_parser (parse_method_call str)
- (function 
-  | AnyRhs(tag,Call(c,meth,el)) ->
-   (match value with 
-   | Some v -> AnyRhs(tag,CallWithValue(c,meth,el,v))
-   | None -> AnyRhs(tag,Call(c,meth,el)))
-  | _ -> raise Fail) ns2 nt2
-*)
-
-(*
-(*
- * call_contr ::= contr_expr.varname (.value)? (( (e (, e)* ? )
- *)
-let call_with_contr tag s t =
- let (ns0, contr, nt0) = comb_parser (concat contract_expr (kwd ".") cfst)
-  (opt_expr ContractAddress) s t in
- match contr with
- | Some This -> comb_parser call_pars (check_rhs_type tag) ns0 nt0 
- | _ -> 
- let (ns1, funname, nt1) = varname ns0 nt0 in
- let (ns2,value,nt2) = pars_mesg_value ns1 nt1 in
- comb_parser parse_any_expr_list ((fun el -> (fun rhs -> match rhs,value with
- Call(c,meth,el),Some v -> CallWithValue (c,meth,el,v) | _,_ -> rhs) (get_rhs_from_expr_list funname
- contr tag el))) ns2 nt2
-*)
-
-(*
-let rec rhs_toassign_pars this_opt varname s = 
- let aux = fun this_opt varname s tbl ->
- let expr_call_pars = choice call_pars 
-  (comb_parser expr_pars (fun (AnyExpr(et,expr)) -> AnyRhs(et,Expr(expr))))
- in
- (match get_field tbl varname with
-  | Some (AnyField (tag,_),_) -> 
-   choice 
-   (comb_parser (call_with_contr tag) (fun rhs -> Assign((tag,varname),rhs))) 
-   (comb_parser expr_call_pars
-   (fun any_rhs -> match any_rhs with AnyRhs(ft,_) ->
-       Assign((tag,varname),(check_rhs_type tag any_rhs)))) s
-       tbl
-  | None ->
-   let (ns1,any_rhs,ntbl1) = expr_call_pars s tbl in
-   let islocal = match this_opt with Some _ -> false | _ -> true in
-   match any_rhs with AnyRhs(et,_) ->
-   ns1,(Assign((et,varname),(check_rhs_type et any_rhs))),
-   add_field_to_table ntbl1 (AnyField(et,varname)) islocal) in
- choice (concat (concat (kwd "(")
-(rhs_toassign_pars this_opt varname) csnd) (kwd ")") cfst) (aux this_opt varname) s
-*)
 
 let ident_pars s t =
  match s with
@@ -507,14 +377,6 @@ let call_pars tag =
    let AnyExprList(tags,exprs) = params in
    let name = tag,tags,name in
    Call(addr,name,value,exprs))
-
-(*
-(*assign ::= Var = rhs*)
-let assign_pars s tbl =
- let (ns0,this_opt,ntbl0) = option (concat this_pars (kwd ".") cfst) s tbl in
- let (ns1,varname, ntbl1) = concat varname (kwd "=") cfst ns0 ntbl0 in
- rhs_toassign_pars this_opt varname ns1 ntbl1
-*)
 
 let rhs_pars : 'a tag -> ('a rhs,'t) parser = fun tag ->
  choice_list [
@@ -590,10 +452,13 @@ and assign_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
    let s2,(rhs,cont),error2,t2 =
     concat (concat (rhs_pars lhstag) (kwd ";") cfst) (stm_pars tag rettag) couple s1 t1 in
    s2,Assign(lhs,rhs,cont),best (best error1 error2) ("ok",s2),t2 in
-  match Option.bind var (get_field t1) with
+  match Option.map (get_field t1) var with
      None -> aux Unit (LDiscard Unit) s1 t1
-   | Some (AnyIdent(lhstag,id),true) -> aux lhstag (LVar(lhstag,id)) s1 t1
-   | Some (AnyIdent(lhstag,id),false) -> aux lhstag (LField(lhstag,id)) s1 t1
+   | Some None -> raise (Fail (best ("Unknown field/var",s)error1))
+   | Some (Some (AnyIdent(lhstag,id),true)) ->
+      aux lhstag (LVar(lhstag,id)) s1 t1
+   | Some (Some (AnyIdent(lhstag,id),false)) ->
+      aux lhstag (LField(lhstag,id)) s1 t1
 
 let rec add_local_var tbl =
   function 
@@ -637,8 +502,8 @@ let parameter_pars s t =
 *)
 let vars_pars s t = 
  let ns,vl,error,nt = 
-  kleenestar (concat (kwd ",") pars_varlist_singleton csnd) 
-  (AnyVarList(VNil)) varlist_append s t in
+  kleenestar (concat pars_varlist_singleton (kwd ";") cfst) (AnyVarList(VNil))
+   varlist_append s t in
  let x =
   try
    add_local_var nt vl
@@ -705,7 +570,7 @@ let configuration_pars : (configuration,'t) parser =
  concat (kleenestar actor_pars [] addel) eof cfst
 
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
-"<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; 
+"<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; "address";
 "="; ","; ";"; "fail"; "if"; "else"; "revert"; "{"; "function";
 "}"; "return"; "returns"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
 

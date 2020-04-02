@@ -23,9 +23,14 @@ contract Bank {
 
    (* this is a comment; comments can be nested *)
    function identity(int x) returns (int) {
+      int a;
+      bool b;
+      address c;
       if (x &lt; 0 == false || false == x &lt; x &amp;&amp; true == (false &amp;&amp; true))
         revert();
       else { return x; }
+      b = f();
+      y = f();
       return -1 * x - 3 * x + x * 4 * -x;
    }
 
