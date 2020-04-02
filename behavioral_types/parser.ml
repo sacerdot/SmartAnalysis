@@ -470,7 +470,7 @@ and assign_pars : type a b. a tag -> b rettag -> ((a,b) stm,'t) parser =
     concat (concat (rhs_pars lhstag) (kwd ";") cfst) (stm_pars tag rettag) couple s1 t1 in
    s2,Assign(lhs,rhs,cont),best (best error1 error2) ("ok",s2),t2 in
   match Option.map (get_field t1) var with
-     None -> aux Unit (LDiscard Unit) s1 t1
+     None -> aux Unit LDiscard s1 t1
    | Some None -> raise (Fail (best ("Unknown field/var",s)error1))
    | Some (Some (AnyIdent(lhstag,id),true)) ->
       aux lhstag (LVar(lhstag,id)) s1 t1
@@ -614,7 +614,7 @@ let initialize_table_with_contracts tokens =
  in
   List.rev (aux [] tokens)
 
-let test_stream stream =
+let test_stream f stream =
  try
   let tokens = get_tokens lexer stream in
   let tbl = initialize_table_with_contracts tokens in
@@ -626,7 +626,7 @@ let test_stream stream =
   print_table tbl ^
   "######## PROGRAM #######" ^
 *)
-  pp_configuration conf
+  f conf
  with
   | Fail (msg,l) ->
      "######## SYNTAX ERROR #######\n" ^
@@ -636,14 +636,14 @@ let test_stream stream =
      "######## UNHANLDED EXCEPTION #######\n" ^
      Printexc.to_string exn
 
-let test_file filename =
+let test_file f filename =
  let in_channel = open_in filename in
  let stream = Stream.of_channel in_channel in
- test_stream stream
+ test_stream f stream
 
-let test_string s =
+let test_string f s =
  let stream = Stream.of_string s in
- test_stream stream
+ test_stream f stream
 
 (* to avoid warnings for unused functions *)
 let _ = print_table

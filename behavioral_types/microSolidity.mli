@@ -38,7 +38,7 @@ type _ expr_list =
 type _ lhs =
     LField : 'a field -> 'a lhs
   | LVar : 'a var -> 'a lhs
-  | LDiscard : 'a tag -> 'a lhs
+  | LDiscard : unit lhs
 type _ rhs =
     Expr : 'a expr -> 'a rhs
   | Call : address expr * ('a, 'b) meth * int expr option *

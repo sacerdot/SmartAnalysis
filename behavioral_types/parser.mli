@@ -1,2 +1,2 @@
-val test_file : string -> string
-val test_string : string -> string
+val test_file : (MicroSolidity.configuration -> string) -> string -> string
+val test_string : (MicroSolidity.configuration -> string) -> string -> string

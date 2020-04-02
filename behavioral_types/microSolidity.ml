@@ -42,7 +42,7 @@ type _ expr_list =
 type _ lhs =
  | LField : 'a field -> 'a lhs
  | LVar : 'a var -> 'a lhs
- | LDiscard : 'a tag -> 'a lhs
+ | LDiscard : unit lhs
 type _ rhs =
  | Expr : 'a expr -> 'a rhs
  | Call : address expr * ('a,'b) meth * int expr option * 'b expr_list -> 'a rhs
@@ -100,11 +100,11 @@ let rec eq_tag_list : type a b. a tag_list -> b tag_list -> (a,b) eq option =
 
 (*** Utils ***)
 
-let tag_of_lhs =
+let tag_of_lhs : type a. a lhs -> a tag =
  function
     LField f -> fst f
   | LVar v -> fst v
-  | LDiscard t -> t
+  | LDiscard -> Unit
 
 (*** Serialization ***)
 let mk_indent indent = String.make (3 * indent) ' '
@@ -170,11 +170,11 @@ let rec pp_expr_list : type a. a tag_list -> a expr_list -> string list = fun tg
 let pp_meth (_rtag,_tags,id) =
  id(* ^ ":(" ^ String.concat "*" (pp_tag_list tags) ^ " -> " ^ pp_tag rtag ^ ")"*)
 
-let pp_lhs =
+let pp_lhs : type a. a lhs -> string =
  function
   | LField f -> pp_field f ^ " = "
   | LVar v -> pp_var v ^ " = "
-  | LDiscard _ -> ""
+  | LDiscard -> ""
 
 let pp_rhs tag =
  function
