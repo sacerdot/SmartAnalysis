@@ -85,6 +85,11 @@ let remove_local_vars: vartable -> vartable =
   | VarOrField(_, true) -> false
   | _ -> true) tbl
 
+let remove_fields_and_local_vars: vartable -> vartable =
+ fun tbl  -> List.filter (function
+  | Contract _ -> true
+  | _ -> false) tbl
+
 (*Expression *)
 
 let balance e =
@@ -575,16 +580,18 @@ let fallback_pars =
 (*
  * act ::= contract varname { field* meth* }
  *)
-let actor_pars : (a_contract,'t) parser =
- comb_parser (concat (concat (concat (concat (concat (concat
-  (kwd "contract")
-  varname csnd)
-  (kwd "{") cfst)
-  fields_pars couple)
-  methods_pars couple)
-  (option fallback_pars) couple)
-  (kwd "}") cfst)
- (fun (((name,fields),methods),fallback) -> AContract(name,methods,fallback,fields))
+let actor_pars : (a_contract,'t) parser = fun s t ->
+ let s,ast,error,tbl =
+  comb_parser (concat (concat (concat (concat (concat (concat
+   (kwd "contract")
+   varname csnd)
+   (kwd "{") cfst)
+   fields_pars couple)
+   methods_pars couple)
+   (option fallback_pars) couple)
+   (kwd "}") cfst)
+  (fun (((name,fields),methods),fallback) -> AContract(name,methods,fallback,fields)) s t in
+ s,ast,error,remove_fields_and_local_vars tbl
 
 let configuration_pars : (configuration,'t) parser =
  concat (kleenestar actor_pars [] addel) eof cfst
