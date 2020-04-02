@@ -43,11 +43,10 @@ let rec get_field : vartable -> string -> (any_ident  * bool) option =
 let add_field_to_table : vartable -> any_ident -> bool -> vartable =
  fun tbl (AnyIdent(t,fieldname)) is_local -> 
   match get_field tbl fieldname with
-  | None -> List.append ([VarOrField((t,fieldname),is_local)]) tbl 
-  | Some(AnyIdent(tag,_),_) -> 
-   (match MicroSolidity.eq_tag tag t with
-   | Some Refl -> tbl
-   | None -> raise (Reject (MicroSolidity.pp_tag tag ^ " vs " ^ MicroSolidity.pp_tag t)))
+  | None -> VarOrField((t,fieldname),is_local)::tbl 
+  | Some(AnyIdent _,is_local2) when not is_local2 && is_local -> 
+     VarOrField((t,fieldname),is_local)::tbl
+  | _ -> raise (Reject (fieldname ^ " declared twice"))
 
 let rec get_fun : vartable -> string -> any_meth option =
  fun tbl funname -> 
@@ -60,7 +59,7 @@ let rec get_fun : vartable -> string -> any_meth option =
 let add_fun_to_table : vartable -> any_meth -> vartable =
  fun tbl (AnyMeth(t,l,funname)) -> 
   match get_fun tbl funname with
-  | None -> List.append ([Fun(t,l,funname)]) tbl
+  | None -> Fun(t,l,funname)::tbl
   | _ -> raise (Reject (funname ^ "(..) not found"))
 
 let remove_local_vars: vartable -> vartable =
