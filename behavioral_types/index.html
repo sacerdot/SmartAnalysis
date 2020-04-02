@@ -45,7 +45,7 @@ contract Bank {
 
    function pay(int n) payable {
       if (msg.value &gt;= 1 &amp;&amp; this.balance &gt; n) {
-         (*msg.sender.transfer(n) ;*)
+         msg.sender.transfer(n) ;
          msg.sender.ack() ;
       }
    }

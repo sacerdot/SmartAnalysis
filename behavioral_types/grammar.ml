@@ -60,7 +60,10 @@ let add_fun_to_table : vartable -> any_meth -> vartable =
  fun tbl (AnyMeth(t,l,funname)) -> 
   match get_fun tbl funname with
   | None -> Fun(t,l,funname)::tbl
-  | _ -> raise (Reject (funname ^ "(..) not found"))
+  | Some (AnyMeth(_,l',_)) ->
+     match eq_tag_list l l' with
+        None -> Fun(t,l,funname)::tbl
+      | Some Refl -> raise (Reject (funname ^ " redeclared"))
 
 let remove_local_vars: vartable -> vartable =
  fun tbl  -> List.filter (function
@@ -532,8 +535,11 @@ let any_meth_pars s t =
    parameter_pars couple)
    (option2 (AnyTag Unit) ((concat (kwd "returns") (brackets_pars type_pars)) csnd)) couple
    s t in
- let ns2,(block,payable),error2,nt2 = 
-  block_pars t1 vl ns1 (add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))) in
+ let nt1 =
+  try
+   add_fun_to_table nt1 (AnyMeth(t1,get_taglist vl,name))
+  with Reject msg -> raise (Fail (best (msg,s) error1)) in
+ let ns2,(block,payable),error2,nt2 = block_pars t1 vl ns1 nt1 in
  ns2,
   AnyMethodDecl((t1,get_taglist vl,name),block,payable),
   best error1 error2,
