@@ -106,6 +106,11 @@ let tag_of_lhs : type a. a lhs -> a tag =
   | LVar v -> fst v
   | LDiscard -> Unit
 
+let rec expr_list_of_var_list : type a. a var_list -> a expr_list =
+ function
+    VNil -> ENil
+  | VCons(hd,tl) -> ECons(Var hd,expr_list_of_var_list tl)
+
 (*** Serialization ***)
 let mk_indent indent = String.make (3 * indent) ' '
 

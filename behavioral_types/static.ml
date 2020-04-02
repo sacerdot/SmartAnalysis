@@ -21,36 +21,40 @@ let rec stm_concat : type a b c. (a,b) stm -> (a,c) stm -> (a,c) stm =
      let cont = stm_concat cont stm2 in
      IfThenElse(g,retype_stm (stm_concat stma cont),retype_stm (stm_concat stmb cont),Revert)
 
-let rec norm_stm : type a b. (a,b) stm -> methods * (a,b) stm = fun stm ->
+let rec norm_stm : type a b. (a,b) meth -> b var_list -> 'c var_list -> bool -> (a,[`Return]) stm -> methods * (a,[`Return]) stm = fun addr params locals payable stm ->
  match stm with
-    Epsilon
   | ReturnRhs _
   | Return
   | Revert -> [],stm
   | Assign(lhs,rhs,cont) ->
-     let meths,cont = norm_stm cont in
-     meths,
+     let meths,cont = norm_stm addr params locals payable cont in
+     let make_cont () =
+       let sname= Utils.trd3 addr ^ "_" ^ string_of_int (Hashtbl.hash cont) in
+       let name = Utils.fst3 addr,Utils.snd3 addr,sname in
+       let aparams = expr_list_of_var_list params in
+       AnyMethodDecl(name,Block(params,locals,cont),payable)::meths,
+        Assign(lhs,rhs,ReturnRhs(Call (This,name,None,aparams))) in
      (match lhs,cont with
-         LDiscard,Return -> ReturnRhs rhs
+         LDiscard,Return -> meths,ReturnRhs rhs
        | LVar v,ReturnRhs (Expr (Var v')) ->
           (match eq_tag (fst v) (fst v') with
-              Some Refl when snd v = snd v' -> ReturnRhs rhs
-            | _ -> Assign(lhs,rhs,cont))
-       | _ -> Assign(lhs,rhs,cont))
+              Some Refl when snd v = snd v' -> meths,ReturnRhs rhs
+            | _ -> make_cont ())
+       | _ -> make_cont ())
   | IfThenElse(g,stm1,stm2,cont) ->
-     let meths1,stm1 = norm_stm (retype_stm (stm_concat stm1 cont)) in
-     let meths2,stm2 = norm_stm (retype_stm (stm_concat stm2 cont)) in
-     meths1@meths2,IfThenElse(g,stm1,stm2,Revert)
+     let meths1,stm1 = norm_stm addr params locals payable (stm_concat stm1 cont) in
+     let meths2,stm2 = norm_stm addr params locals payable (stm_concat stm2 cont) in
+     meths1@meths2,IfThenElse(g,retype_stm stm1,retype_stm stm2,Revert)
 
-let norm_block (Block(params,locals,stm)) =
- let meths,stm = norm_stm stm in
+let norm_block addr payable (Block(params,locals,stm)) =
+ let meths,stm = norm_stm addr params locals payable stm in
  meths,Block(params,locals,stm)
 
 let rec norm_methods =
  function
     [] -> []
   | AnyMethodDecl(name,block,payable)::tl ->
-     let meths,block = norm_block block in
+     let meths,block = norm_block name payable block in
      meths @ [AnyMethodDecl(name,block,payable)] @ norm_methods tl
 
 let norm_a_contract (AContract(addr,meths,fallback,fields)) =
@@ -59,7 +63,7 @@ let norm_a_contract (AContract(addr,meths,fallback,fields)) =
   match fallback with
      None -> [],None
    | Some fb ->
-      let meths2,fb = norm_block fb in
+      let meths2,fb = norm_block (Unit,TNil,"fallback") true fb in
        meths2,Some fb in
  AContract(addr,meths1@meths2,fallback,fields)
 
