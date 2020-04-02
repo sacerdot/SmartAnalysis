@@ -1,5 +1,5 @@
 open MicroSolidity
-open ParserCombinator
+open ParserCombinators
 open Genlex
 
 (** weakly typed expressions **)

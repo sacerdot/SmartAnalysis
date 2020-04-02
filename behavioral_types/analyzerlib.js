@@ -2378,7 +2378,7 @@
      _cA_=caml_new_string(""),
      _b1_=caml_new_string(";\n"),
      _b2_=caml_new_string(""),
-     _b0_=[0,caml_new_string("microSolidity.ml"),134,12],
+     _b0_=[0,caml_new_string("microSolidity.ml"),132,12],
      _bZ_=caml_new_string(" "),
      _bV_=caml_new_string("?VOID?"),
      _bW_=caml_new_string("int"),
@@ -2388,7 +2388,7 @@
      _bR_=[0,0],
      _bS_=[0,0],
      _dp_=[0,[0,caml_new_string("-")],0],
-     _dD_=[0,caml_new_string("parserCombinator.ml"),100,10],
+     _dD_=[0,caml_new_string("parserCombinators.ml"),100,10],
      _dE_=caml_new_string("kleenestar"),
      _dC_=caml_new_string("ok"),
      _dA_=caml_new_string("ok"),
@@ -2406,8 +2406,8 @@
      _dm_=caml_new_string("ok"),
      _dn_=caml_new_string("ok"),
      _do_=caml_new_string("\n| "),
-     _dk_=caml_new_string("ParserCombinator.Fail"),
-     _dl_=caml_new_string("ParserCombinator.Reject"),
+     _dk_=caml_new_string("ParserCombinators.Fail"),
+     _dl_=caml_new_string("ParserCombinators.Reject"),
      _ew_=caml_new_string("-"),
      _ex_=[0,caml_new_string("-")],
      _ey_=[0,caml_new_string("+")],
@@ -2448,7 +2448,7 @@
      _gi_=caml_new_string("contract"),
      _gk_=caml_new_string("{"),
      _gj_=caml_new_string("contract declaration expected"),
-     _fM_=[0,caml_new_string("grammar.ml"),573,17],
+     _fM_=[0,caml_new_string("parser.ml"),573,17],
      _fI_=caml_new_string("returns"),
      _fJ_=[0,0],
      _fK_=caml_new_string("function"),
@@ -5794,6 +5794,8 @@
     caml_fresh_oo_id(0);
     var html_element=window$0.HTMLElement;
     html_element === undefined$0;
+    var f=[0,prerr_endline];
+    function set_error(g){f[1] = g;return 0}
     function eq_tag(t1,t2)
      {switch(t1)
        {case 1:if(1 === t2)return _bQ_;break;
@@ -7184,8 +7186,6 @@
                   (_gn_,
                    symbol(_gm_,symbol(msg,symbol(_gl_,print_token_list(l)))))}
         return symbol(_go_,to_string(exn))}}
-    var f=[0,prerr_endline];
-    function set_error(g){f[1] = g;return 0}
     var document=window$0.document;
     set_error
      (function(msg)

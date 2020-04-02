@@ -1,5 +1,3 @@
-open Lib
-
 type address = string
 type 'a tag =
  | Unit : unit tag
@@ -186,7 +184,7 @@ let pp_rhs tag =
      "." ^
      pp_meth meth ^
      (match value with None -> "" | Some v -> ".value(" ^ pp_expr Int v ^ ")") ^
-     "(" ^ String.concat "," (pp_expr_list (snd3 meth) exprl) ^ ")"
+     "(" ^ String.concat "," (pp_expr_list (Utils.snd3 meth) exprl) ^ ")"
 
 let rec pp_stm : type a b. indent:int -> ?breakline:bool -> a tag -> (a,b) stm -> string = fun ~indent ?(breakline=true) tag stm ->
  (match stm with Epsilon -> "" | _ -> mk_indent indent) ^
@@ -220,7 +218,7 @@ fun ~indent payable tag (Block (vl,lvl,stm)) ->
 
 let pp_any_method_decl ~indent (AnyMethodDecl(m,b,payable)) =
  mk_indent indent ^
- "function " ^ pp_meth m ^ " " ^ pp_block ~indent payable (fst3 m) b
+ "function " ^ pp_meth m ^ " " ^ pp_block ~indent payable (Utils.fst3 m) b
 
 let pp_methods ~indent l =
  String.concat "\n" (List.map (pp_any_method_decl ~indent) l)
@@ -276,8 +274,8 @@ let lookup_method (type a b) (f : (a,b) meth) (s : methods) : (a,b) block =
      prerr_endline ("Error: call to undefined method " ^ pp_meth f);
      assert false
   | AnyMethodDecl(g,v,_payable)::tl ->
-     match eq_tag (fst3 f) (fst3 g), eq_tag_list (snd3 f) (snd3 g) with
-      | Some Refl, Some Refl when (third3 f)=(third3 g) -> v
+     match eq_tag (Utils.fst3 f) (Utils.fst3 g), eq_tag_list (Utils.snd3 f) (Utils.snd3 g) with
+      | Some Refl, Some Refl when (Utils.trd3 f)=(Utils.trd3 g) -> v
       | _,_ -> aux tl
  in
   aux s
