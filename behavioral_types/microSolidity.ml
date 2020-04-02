@@ -109,6 +109,8 @@ let tag_of_lhs =
   | LDiscard t -> t
 
 (*** Serialization ***)
+let mk_indent indent = String.make (3 * indent) ' '
+
 let pp_tag : type a. a tag -> string =
  function
   | Unit -> "?VOID?"
@@ -135,7 +137,8 @@ let pp_value (type a) (tag : a tag) (v : a) =
   | Address -> pp_address v
 let pp_field = pp_ident
 let pp_any_field (AnyField f) = pp_decl f
-let pp_fields l = String.concat "" (List.map (fun f -> "   " ^ pp_any_field f ^ ";\n") l)
+let pp_fields ~indent l =
+ String.concat "" (List.map (fun f -> mk_indent indent ^ pp_any_field f ^ ";\n") l)
 
 let rec pp_expr : type a. a tag -> a expr -> string =
  fun tag ->
@@ -185,47 +188,53 @@ let pp_rhs tag =
      (match value with None -> "" | Some v -> ".value(" ^ pp_expr Int v ^ ")") ^
      "(" ^ String.concat "," (pp_expr_list (snd3 meth) exprl) ^ ")"
 
-let rec pp_stm : type a b. a tag -> (a,b) stm -> string = fun tag ->
- function
+let rec pp_stm : type a b. indent:int -> ?breakline:bool -> a tag -> (a,b) stm -> string = fun ~indent ?(breakline=true) tag stm ->
+ (match stm with Epsilon -> "" | _ -> mk_indent indent) ^
+ (match stm with
   | Epsilon -> ""
   | ReturnRhs e -> "return " ^ pp_rhs tag e ^ ";"
   | Return -> "return;"
   | Assign(lhs,rhs,stm) ->
      pp_lhs lhs ^
-     pp_rhs (tag_of_lhs lhs) rhs ^
-     ";\n      " ^ pp_stm tag stm
+     pp_rhs (tag_of_lhs lhs) rhs ^ ";" ^
+     (match stm with Epsilon -> "" | _ -> "\n") ^
+     pp_stm ~indent ~breakline:false tag stm
   | IfThenElse(c,stm1,stm2,stm3) ->
-     "if " ^ pp_expr Bool c ^ " {\n      " ^
-     "   " ^ pp_stm tag stm1 ^ "\n      } else {\n       " ^
-     pp_stm tag stm2 ^ "\n      }\n      " ^
-     pp_stm tag stm3
-  | Revert -> "revert();"
+     "if " ^ pp_expr Bool c ^ " {\n" ^
+     pp_stm ~indent:(indent+1) tag stm1 ^
+     mk_indent indent ^ "} else {\n" ^
+     pp_stm ~indent:(indent+1) tag stm2 ^
+     mk_indent indent ^ "}\n" ^
+     pp_stm ~indent ~breakline:false tag stm3
+  | Revert -> "revert();") ^
+ (match stm with Epsilon -> "" | _ when breakline -> "\n" | _ -> "")
 
-let pp_block : type a. bool -> a tag -> (a, 'b) block -> address =
-fun payable tag (Block (vl,lvl,stm)) ->
+let pp_block : type a. indent:int -> bool -> a tag -> (a, 'b) block -> address =
+fun ~indent payable tag (Block (vl,lvl,stm)) ->
  "(" ^ String.concat "," (pp_var_list vl) ^ ") " ^
  (match tag with Unit -> "" | _ -> "returns (" ^ pp_tag tag ^ ") ") ^
  (if payable then "payable " else " ") ^ "{\n" ^
- String.concat "" (List.map (fun s -> "     " ^ s ^ ";\n") (pp_var_list lvl)) ^
- "      " ^ pp_stm tag stm ^
- "\n   }\n\n"
+ String.concat "" (List.map (fun s -> mk_indent (indent+1) ^ s ^ ";\n") (pp_var_list lvl)) ^
+ pp_stm ~indent:(indent+1) tag stm ^
+ mk_indent indent ^ "}\n\n"
 
-let pp_any_method_decl (AnyMethodDecl(m,b,payable)) =
- "   function " ^ pp_meth m ^ " " ^ pp_block payable (fst3 m) b
+let pp_any_method_decl ~indent (AnyMethodDecl(m,b,payable)) =
+ mk_indent indent ^
+ "function " ^ pp_meth m ^ " " ^ pp_block ~indent payable (fst3 m) b
 
-let pp_methods l =
- String.concat "\n" (List.map pp_any_method_decl l)
+let pp_methods ~indent l =
+ String.concat "\n" (List.map (pp_any_method_decl ~indent) l)
 
-let pp_fallback =
+let pp_fallback ~indent =
  function
     None -> ""
-  | Some b -> "   function " ^ pp_block true Unit b
+  | Some b -> mk_indent indent ^ "function " ^ pp_block ~indent true Unit b
 
 let pp_a_contract (AContract (addr,methods,fallback,fields)) =
  "contract " ^ addr ^ " {\n" ^
- pp_fields fields ^ "\n" ^
- pp_methods methods ^
- pp_fallback fallback ^
+ pp_fields ~indent:1 fields ^ "\n" ^
+ pp_methods ~indent:1 methods ^
+ pp_fallback ~indent:1 fallback ^
  "}\n"
 
 let pp_configuration l =
