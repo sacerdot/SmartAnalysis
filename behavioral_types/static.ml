@@ -21,6 +21,8 @@ let rec stm_concat : type a b c. (a,b) stm -> (a,c) stm -> (a,c) stm =
      let cont = stm_concat cont stm2 in
      IfThenElse(g,retype_stm (stm_concat stma cont),retype_stm (stm_concat stmb cont),Revert)
 
+type aux = Aux : 'a lhs option * 'a tagged_expr -> aux
+
 let rec norm_stm : type a b. (a,b) meth -> b var_list -> 'c var_list -> bool -> (a,[`Return]) stm -> methods * (a,[`Return]) stm = fun addr params locals payable stm ->
  match stm with
   | ReturnRhs _
@@ -29,10 +31,24 @@ let rec norm_stm : type a b. (a,b) meth -> b var_list -> 'c var_list -> bool -> 
   | Assign(lhs,rhs,cont) ->
      let meths,cont = norm_stm addr params locals payable cont in
      let make_cont () =
+       let TaggedVarList(varstags,vars) =
+        Parser.tagged_var_list_of_any_var_list
+         (Parser.varlist_append (AnyVarList params) (AnyVarList locals)) in
+       let Aux(klhs,(lhs_tag,ret_param)) =
+        match lhs with
+           LVar v -> Aux(Some lhs,(fst v,Var v))
+         | LField v -> Aux(Some lhs,(fst v,Var v))
+         | LDiscard -> Aux(None,(Int,Value 0)) in
+       let varstags = TCons(lhs_tag,varstags) in
+       let retparam = lhs_tag,"_ret_" in
+       let fparams = VCons(retparam,vars) in
        let sname= Utils.trd3 addr ^ "_" ^ string_of_int (Hashtbl.hash cont) in
-       let name = Utils.fst3 addr,Utils.snd3 addr,sname in
-       let aparams = expr_list_of_var_list params in
-       AnyMethodDecl(name,Block(params,locals,cont),payable)::meths,
+       let name = Utils.fst3 addr,varstags,sname in
+       let aparams = ECons(ret_param,expr_list_of_var_list vars) in
+       let cont =
+        Option.fold ~none:cont
+         ~some:(fun klhs -> Assign(klhs,Expr(Var(retparam)),cont)) klhs in
+       AnyMethodDecl(name,Block(fparams,VNil,cont),payable)::meths,
         Assign(lhs,rhs,ReturnRhs(Call (This,name,None,aparams))) in
      (match lhs,cont with
          LDiscard,Return -> meths,ReturnRhs rhs

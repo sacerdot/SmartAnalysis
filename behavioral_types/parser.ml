@@ -10,6 +10,7 @@ type any_expr_list = AnyExprList : 'a MicroSolidity.tag_list * 'a MicroSolidity.
 type any_tag = AnyTag : 'a MicroSolidity.tag -> any_tag
 type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
 type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
+type tagged_var_list = TaggedVarList : 'a MicroSolidity.tag_list * 'a MicroSolidity.var_list -> tagged_var_list
 
 let pp_any_expr (AnyExpr (t,e)) = pp_expr t e
 
@@ -501,6 +502,14 @@ let rec varlist_append l1 l2 =
  | AnyVarList(VCons(hd,tl)) -> 
    let AnyVarList l = varlist_append (AnyVarList tl) l2 in
    AnyVarList(VCons(hd,l))
+
+let rec tagged_var_list_of_any_var_list =
+ function
+    AnyVarList VNil -> TaggedVarList(TNil,VNil)
+  | AnyVarList (VCons(v,tl)) ->
+     let TaggedVarList(tags,vs) =
+      tagged_var_list_of_any_var_list (AnyVarList tl) in
+     TaggedVarList(TCons(fst v,tags),VCons(v,vs))
 
 let pars_varlist_singleton =
  concat type_pars varname 
