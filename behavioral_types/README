@@ -3,3 +3,7 @@ Editor: ACE https://ace.c9.io/
 https://sacerdot.github.io/SmartAnalysis/behavioral_types/index.html
 
 file:///home/claudio//ricerca/blockchain/smartcontracts/SmartAnalysis/behavioral_types/index.html
+
+
+to read local files:
+google-chrome --allow-file-access-from-files
