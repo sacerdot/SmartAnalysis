@@ -73,7 +73,7 @@ contract Bank {
       }
    }
 
-   function() payable { return; }
+   fallback() payable { return; }
 }
 
 contract Thief {
@@ -82,8 +82,17 @@ contract Thief {
       msg.sender.pay.value(1)(2) ;
    }
 
-   function() payable { }
+   fallback() payable { }
 }
+
+
+(*
+Bank bank(100);
+Thief thief1(50);
+Thief thief2(3);
+function main() {
+}
+*)
 </div>
   </td>
   <td width="50%">

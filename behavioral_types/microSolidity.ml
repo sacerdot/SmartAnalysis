@@ -231,7 +231,7 @@ let pp_methods ~indent l =
 let pp_fallback ~indent =
  function
     None -> ""
-  | Some b -> mk_indent indent ^ "function " ^ pp_block ~indent true Unit b
+  | Some b -> mk_indent indent ^ "fallback " ^ pp_block ~indent true Unit b
 
 let pp_a_contract (AContract (addr,methods,fallback,fields)) =
  "contract " ^ addr ^ " {\n" ^

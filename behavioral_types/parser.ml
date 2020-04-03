@@ -60,6 +60,8 @@ let rec get_fun : vartable -> string -> any_meth option =
 
 let add_fun_to_table : vartable -> any_meth -> vartable =
  fun tbl (AnyMeth(t,l,funname)) -> 
+  if funname = "transfer" then
+   raise (Reject ("The transfer identifier is reseved"));
   match get_fun tbl funname with
   | None -> Fun(t,l,funname)::tbl
   | Some (AnyMeth(_,l',_)) ->
@@ -569,7 +571,7 @@ let methods_pars s = kleenestar any_meth_pars [] addel s
 
 let fallback_pars =
  comb_parser (concat (concat (concat
-  (kwd "function")
+  (kwd "fallback")
   (kwd "(") cfst)
   (kwd ")") cfst)
   (block_pars ~check_payable:true Unit VNil) csnd)
@@ -598,7 +600,7 @@ let configuration_pars : (configuration,'t) parser =
 
 let lexer = make_lexer["+"; "-"; "*"; "/"; "("; ")"; ">"; ">="; "=="; "<";
 "<="; "!="; "&&"; "||"; "!"; "true"; "false"; "int"; "bool"; "address";
-"="; ","; ";"; "fail"; "if"; "else"; "revert"; "{"; "function";
+"="; ","; ";"; "fail"; "if"; "else"; "revert"; "{"; "function"; "fallback";
 "}"; "return"; "returns"; "this"; "."; "value"; "balance"; "msg"; "sender" ; "contract" ; "payable" ]
 
 let initialize_table_with_contracts tokens =
