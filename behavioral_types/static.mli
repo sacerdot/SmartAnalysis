@@ -4,7 +4,12 @@ exception Unbounded of (MicroSolidity.address * MicroSolidity.any_method_decl) l
 
 val get_bounds:
  MicroSolidity.configuration ->
-  ((MicroSolidity.address * MicroSolidity.any_method_decl) * int) list
+  [`Bounds of ((MicroSolidity.address * MicroSolidity.any_method_decl) * int) list
+  |`Unbounded of (MicroSolidity.address * MicroSolidity.any_method_decl) list
+  ]
 
 val pp_bounds:
- ((MicroSolidity.address * MicroSolidity.any_method_decl) * int) list -> string
+  [`Bounds of ((MicroSolidity.address * MicroSolidity.any_method_decl) * int) list
+  |`Unbounded of (MicroSolidity.address * MicroSolidity.any_method_decl) list
+  ]
+  -> string

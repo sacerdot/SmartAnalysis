@@ -113,7 +113,6 @@ let get_bounds_rhs ~f ~cfg this rhs tbl =
  | Call(aexpr,meth,value,_) ->
     let payable = value <> None in
     let methods = match_methods ~this aexpr meth payable cfg in
-Utils.error(pp_meth meth ^ " ==> " ^ string_of_int (List.length methods));
     List.fold_left
      (fun (tbl,b) mdecl ->
        let tbl,b1 = get_bound ~f mdecl tbl in tbl,max b b1)
@@ -151,12 +150,23 @@ let get_bounds_a_contract ~cfg tbl (AContract(addr,methods,fallback,_)) =
     | Some fb -> any_method_decl_of_fallback fb :: methods)
 
 let get_bounds cfg =
- let l = List.fold_left (get_bounds_a_contract ~cfg) [] cfg in
- List.map (function (m,Some b) -> m,b | _ -> assert false) l
+ try
+  let l = List.fold_left (get_bounds_a_contract ~cfg) [] cfg in
+  `Bounds (List.map (function (m,Some b) -> m,b | _ -> assert false) l)
+ with
+  Unbounded l -> `Unbounded l
 
 let pp_bounds =
- List.fold_left
-  (fun acc ((a,AnyMethodDecl(m,_,_)),b) ->
-    acc ^ "\n" ^
-     pp_address a ^ "." ^ pp_meth m ^ ": " ^ string_of_int b)
-  ""
+ function
+  | `Bounds l ->
+      List.fold_left
+       (fun acc ((a,AnyMethodDecl(m,_,_)),b) ->
+         acc ^ "\n" ^
+          pp_address a ^ "." ^ pp_meth m ^ ": " ^ string_of_int b)
+       "" l
+  | `Unbounded l ->
+      "Unbounded usage of call stack possibly detected:\n" ^
+      List.fold_left
+       (fun acc (a,AnyMethodDecl(m,_,_)) ->
+         acc ^ "\n" ^ pp_address a ^ "." ^ pp_meth m ^ " called by")
+       "" l

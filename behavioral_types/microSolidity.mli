@@ -82,7 +82,7 @@ val pp_expr : 'a tag -> 'a expr -> string
 val pp_tagged_expr : 'a tag * 'a expr -> string
 val pp_expr_list : 'a tag_list -> 'a expr_list -> string list
 val pp_tag_list : 'a tag_list -> string list
-val pp_meth : 'a tag * 'b tag_list * string -> string
+val pp_meth : ?verbose:bool -> 'a tag * 'b tag_list * string -> string
 val pp_lhs : 'a lhs -> string
 val pp_rhs : 'a tag -> 'a rhs -> string
 val pp_stm : indent:int -> ?breakline:bool -> 'a tag -> ('a, 'b) stm -> string

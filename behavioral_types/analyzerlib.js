@@ -2280,8 +2280,8 @@
      _bq_=[0,[3,0,0],caml_new_string("%S")],
      _br_=caml_new_string("_"),
      _bE_=caml_new_string("x"),
-     _gF_=caml_new_string("OCAMLRUNPARAM"),
-     _gD_=caml_new_string("CAMLRUNPARAM"),
+     _gN_=caml_new_string("OCAMLRUNPARAM"),
+     _gL_=caml_new_string("CAMLRUNPARAM"),
      _bF_=caml_new_string(""),
      _bI_=caml_new_string(""),
      _bJ_=caml_new_string(""),
@@ -2292,249 +2292,254 @@
      _bH_=caml_new_string("Illegal character "),
      _bO_=caml_new_string("Js_of_ocaml__Js.Error"),
      _bP_=caml_new_string("jsError"),
-     _bT_=[0,0],
      _bU_=[0,0],
-     _b3_=caml_new_string("this"),
-     _b4_=caml_new_string("msg.sender"),
-     _b5_=caml_new_string("msg.value"),
-     _b6_=caml_new_string(")"),
-     _b7_=caml_new_string(" + "),
-     _b8_=caml_new_string("("),
-     _b9_=caml_new_string(")"),
-     _b__=caml_new_string(" - "),
-     _b$_=caml_new_string("("),
-     _ca_=caml_new_string(")"),
-     _cb_=caml_new_string(" * "),
-     _cc_=caml_new_string("("),
-     _cd_=caml_new_string(")"),
-     _ce_=caml_new_string(" / "),
-     _cf_=caml_new_string("("),
-     _cg_=caml_new_string("-"),
-     _ch_=caml_new_string(")"),
-     _ci_=caml_new_string(" >= "),
-     _cj_=caml_new_string("("),
-     _ck_=caml_new_string(")"),
-     _cl_=caml_new_string(" > "),
-     _cm_=caml_new_string("("),
-     _cn_=caml_new_string(")"),
-     _co_=caml_new_string(" == "),
-     _cp_=caml_new_string("("),
-     _cq_=caml_new_string(")"),
-     _cr_=caml_new_string(" && "),
-     _cs_=caml_new_string("("),
-     _ct_=caml_new_string(")"),
-     _cu_=caml_new_string(" || "),
-     _cv_=caml_new_string("("),
-     _cw_=caml_new_string("!"),
-     _cx_=caml_new_string(".balance"),
-     _cI_=caml_new_string(""),
-     _cY_=caml_new_string("\n"),
-     _cZ_=caml_new_string(""),
-     _cJ_=caml_new_string(""),
-     _cL_=caml_new_string("return;"),
-     _cM_=caml_new_string("revert();"),
-     _cN_=caml_new_string(";"),
-     _cO_=caml_new_string("return "),
-     _cP_=[0,0],
-     _cQ_=caml_new_string(""),
-     _cS_=caml_new_string("\n"),
-     _cR_=caml_new_string(";"),
-     _cT_=[0,0],
-     _cU_=caml_new_string("}\n"),
-     _cV_=caml_new_string("} else {\n"),
-     _cW_=caml_new_string(" {\n"),
-     _cX_=caml_new_string("if "),
-     _cK_=caml_new_string(""),
-     _dj_=caml_new_string("\n"),
-     _df_=caml_new_string("}\n"),
-     _dg_=caml_new_string("\n"),
-     _dh_=caml_new_string(" {\n"),
-     _di_=caml_new_string("contract "),
-     _dd_=caml_new_string("fallback "),
-     _de_=caml_new_string(""),
-     _dc_=caml_new_string("\n"),
-     _da_=caml_new_string(" "),
-     _db_=caml_new_string("function "),
-     _c1_=caml_new_string(";\n"),
-     _c0_=caml_new_string("}\n\n"),
-     _c2_=caml_new_string(""),
-     _c3_=caml_new_string("{\n"),
-     _c4_=caml_new_string("payable "),
-     _c$_=caml_new_string(" "),
-     _c9_=caml_new_string(") "),
-     _c__=caml_new_string("returns ("),
-     _c5_=caml_new_string(""),
-     _c6_=caml_new_string(") "),
-     _c7_=caml_new_string(","),
-     _c8_=caml_new_string("("),
-     _cB_=caml_new_string(")"),
-     _cC_=caml_new_string(","),
-     _cD_=caml_new_string("("),
-     _cE_=caml_new_string(")"),
-     _cF_=caml_new_string(".value("),
-     _cH_=caml_new_string(""),
-     _cG_=caml_new_string("."),
-     _cy_=caml_new_string(""),
-     _cz_=caml_new_string(" = "),
-     _cA_=caml_new_string(" = "),
-     _b1_=caml_new_string(";\n"),
-     _b2_=caml_new_string(""),
-     _b0_=[0,caml_new_string("microSolidity.ml"),176,12],
-     _bZ_=caml_new_string(" "),
-     _bV_=caml_new_string("?VOID?"),
-     _bW_=caml_new_string("int"),
-     _bX_=caml_new_string("bool"),
-     _bY_=caml_new_string("address"),
+     _bV_=[0,0],
+     _b4_=caml_new_string("this"),
+     _b5_=caml_new_string("msg.sender"),
+     _b6_=caml_new_string("msg.value"),
+     _b7_=caml_new_string(")"),
+     _b8_=caml_new_string(" + "),
+     _b9_=caml_new_string("("),
+     _b__=caml_new_string(")"),
+     _b$_=caml_new_string(" - "),
+     _ca_=caml_new_string("("),
+     _cb_=caml_new_string(")"),
+     _cc_=caml_new_string(" * "),
+     _cd_=caml_new_string("("),
+     _ce_=caml_new_string(")"),
+     _cf_=caml_new_string(" / "),
+     _cg_=caml_new_string("("),
+     _ch_=caml_new_string("-"),
+     _ci_=caml_new_string(")"),
+     _cj_=caml_new_string(" >= "),
+     _ck_=caml_new_string("("),
+     _cl_=caml_new_string(")"),
+     _cm_=caml_new_string(" > "),
+     _cn_=caml_new_string("("),
+     _co_=caml_new_string(")"),
+     _cp_=caml_new_string(" == "),
+     _cq_=caml_new_string("("),
+     _cr_=caml_new_string(")"),
+     _cs_=caml_new_string(" && "),
+     _ct_=caml_new_string("("),
+     _cu_=caml_new_string(")"),
+     _cv_=caml_new_string(" || "),
+     _cw_=caml_new_string("("),
+     _cx_=caml_new_string("!"),
+     _cy_=caml_new_string(".balance"),
+     _cN_=caml_new_string(""),
+     _c3_=caml_new_string("\n"),
+     _c4_=caml_new_string(""),
+     _cO_=caml_new_string(""),
+     _cQ_=caml_new_string("return;"),
+     _cR_=caml_new_string("revert();"),
+     _cS_=caml_new_string(";"),
+     _cT_=caml_new_string("return "),
+     _cU_=[0,0],
+     _cV_=caml_new_string(""),
+     _cX_=caml_new_string("\n"),
+     _cW_=caml_new_string(";"),
+     _cY_=[0,0],
+     _cZ_=caml_new_string("}\n"),
+     _c0_=caml_new_string("} else {\n"),
+     _c1_=caml_new_string(" {\n"),
+     _c2_=caml_new_string("if "),
+     _cP_=caml_new_string(""),
+     _do_=caml_new_string("\n"),
+     _dk_=caml_new_string("}\n"),
+     _dl_=caml_new_string("\n"),
+     _dm_=caml_new_string(" {\n"),
+     _dn_=caml_new_string("contract "),
+     _di_=caml_new_string("fallback "),
+     _dj_=caml_new_string(""),
+     _dh_=caml_new_string("\n"),
+     _df_=caml_new_string(" "),
+     _dg_=caml_new_string("function "),
+     _c6_=caml_new_string(";\n"),
+     _c5_=caml_new_string("}\n\n"),
+     _c7_=caml_new_string(""),
+     _c8_=caml_new_string("{\n"),
+     _c9_=caml_new_string("payable "),
+     _de_=caml_new_string(" "),
+     _dc_=caml_new_string(") "),
+     _dd_=caml_new_string("returns ("),
+     _c__=caml_new_string(""),
+     _c$_=caml_new_string(") "),
+     _da_=caml_new_string(","),
+     _db_=caml_new_string("("),
+     _cG_=caml_new_string(")"),
+     _cH_=caml_new_string(","),
+     _cI_=caml_new_string("("),
+     _cJ_=caml_new_string(")"),
+     _cK_=caml_new_string(".value("),
+     _cM_=caml_new_string(""),
+     _cL_=caml_new_string("."),
+     _cD_=caml_new_string(""),
+     _cE_=caml_new_string(" = "),
+     _cF_=caml_new_string(" = "),
+     _cz_=caml_new_string(")"),
+     _cA_=caml_new_string(" -> "),
+     _cB_=caml_new_string("*"),
+     _cC_=caml_new_string(":("),
+     _b2_=caml_new_string(";\n"),
+     _b3_=caml_new_string(""),
+     _b1_=[0,caml_new_string("microSolidity.ml"),133,12],
+     _b0_=caml_new_string(" "),
+     _bW_=caml_new_string("?VOID?"),
+     _bX_=caml_new_string("int"),
+     _bY_=caml_new_string("bool"),
+     _bZ_=caml_new_string("address"),
      _bQ_=[0,0],
      _bR_=[0,0],
      _bS_=[0,0],
-     _dp_=[0,[0,caml_new_string("-")],0],
-     _dD_=[0,caml_new_string("parserCombinators.ml"),100,10],
-     _dE_=caml_new_string("kleenestar"),
-     _dC_=caml_new_string("ok"),
-     _dA_=caml_new_string("ok"),
-     _dB_=caml_new_string(" expected"),
-     _dy_=caml_new_string("eof expected"),
-     _dz_=caml_new_string("ok"),
-     _dw_=caml_new_string("\n"),
-     _dx_=caml_new_string(""),
-     _dq_=caml_new_string("Kwd "),
-     _dr_=caml_new_string("Ident "),
-     _ds_=caml_new_string("int "),
-     _dt_=caml_new_string("float "),
-     _du_=caml_new_string("string "),
-     _dv_=caml_new_string("char "),
-     _dm_=caml_new_string("ok"),
-     _dn_=caml_new_string("ok"),
-     _do_=caml_new_string("\n| "),
-     _dk_=caml_new_string("ParserCombinators.Fail"),
-     _dl_=caml_new_string("ParserCombinators.Reject"),
-     _ey_=caml_new_string("-"),
-     _ez_=[0,caml_new_string("-")],
-     _eA_=[0,caml_new_string("+")],
-     _eB_=[0,caml_new_string("/")],
-     _eC_=[0,caml_new_string("*")],
-     _eD_=caml_new_string("!"),
-     _eE_=caml_new_string(")"),
-     _eF_=caml_new_string("("),
-     _eG_=[0,caml_new_string("<=")],
-     _eH_=[0,caml_new_string("<")],
-     _eI_=[0,caml_new_string(">=")],
-     _eJ_=[0,caml_new_string(">")],
-     _eK_=[0,caml_new_string("!=")],
-     _eL_=[0,caml_new_string("==")],
-     _eM_=[0,caml_new_string("&&")],
-     _eN_=[0,caml_new_string("||")],
-     _eO_=caml_new_string("balance"),
-     _eP_=caml_new_string("."),
-     _eQ_=caml_new_string(")"),
-     _eR_=caml_new_string("("),
-     _e4_=[0,0,0],
-     _fr_=caml_new_string("}"),
-     _fs_=caml_new_string("{"),
-     _ft_=caml_new_string("else"),
-     _fu_=caml_new_string("if"),
-     _fw_=caml_new_string(";"),
-     _fx_=caml_new_string("ok"),
-     _fv_=caml_new_string("="),
-     _fy_=caml_new_string("Unknown field/var"),
-     _fz_=[0,0,0],
-     _gc_=caml_new_string(" >>\n"),
-     _gd_=caml_new_string("<< "),
-     _ge_=caml_new_string("######## SYNTAX ERROR #######\n"),
-     _gf_=caml_new_string("######## UNHANLDED EXCEPTION #######\n"),
-     _f8_=caml_new_string("{"),
-     _f9_=caml_new_string("}"),
-     _f__=[0,caml_new_string("} expected, but eof found"),0],
-     _f$_=caml_new_string("contract"),
+     _bT_=[0,0],
+     _du_=[0,[0,caml_new_string("-")],0],
+     _dI_=[0,caml_new_string("parserCombinators.ml"),100,10],
+     _dJ_=caml_new_string("kleenestar"),
+     _dH_=caml_new_string("ok"),
+     _dF_=caml_new_string("ok"),
+     _dG_=caml_new_string(" expected"),
+     _dD_=caml_new_string("eof expected"),
+     _dE_=caml_new_string("ok"),
+     _dB_=caml_new_string("\n"),
+     _dC_=caml_new_string(""),
+     _dv_=caml_new_string("Kwd "),
+     _dw_=caml_new_string("Ident "),
+     _dx_=caml_new_string("int "),
+     _dy_=caml_new_string("float "),
+     _dz_=caml_new_string("string "),
+     _dA_=caml_new_string("char "),
+     _dr_=caml_new_string("ok"),
+     _ds_=caml_new_string("ok"),
+     _dt_=caml_new_string("\n| "),
+     _dp_=caml_new_string("ParserCombinators.Fail"),
+     _dq_=caml_new_string("ParserCombinators.Reject"),
+     _eD_=caml_new_string("-"),
+     _eE_=[0,caml_new_string("-")],
+     _eF_=[0,caml_new_string("+")],
+     _eG_=[0,caml_new_string("/")],
+     _eH_=[0,caml_new_string("*")],
+     _eI_=caml_new_string("!"),
+     _eJ_=caml_new_string(")"),
+     _eK_=caml_new_string("("),
+     _eL_=[0,caml_new_string("<=")],
+     _eM_=[0,caml_new_string("<")],
+     _eN_=[0,caml_new_string(">=")],
+     _eO_=[0,caml_new_string(">")],
+     _eP_=[0,caml_new_string("!=")],
+     _eQ_=[0,caml_new_string("==")],
+     _eR_=[0,caml_new_string("&&")],
+     _eS_=[0,caml_new_string("||")],
+     _eT_=caml_new_string("balance"),
+     _eU_=caml_new_string("."),
+     _eV_=caml_new_string(")"),
+     _eW_=caml_new_string("("),
+     _e9_=[0,0,0],
+     _fw_=caml_new_string("}"),
+     _fx_=caml_new_string("{"),
+     _fy_=caml_new_string("else"),
+     _fz_=caml_new_string("if"),
+     _fB_=caml_new_string(";"),
+     _fC_=caml_new_string("ok"),
+     _fA_=caml_new_string("="),
+     _fD_=caml_new_string("Unknown field/var"),
+     _fE_=[0,0,0],
+     _gh_=caml_new_string(" >>\n"),
+     _gi_=caml_new_string("<< "),
+     _gj_=caml_new_string("######## SYNTAX ERROR #######\n"),
+     _gk_=caml_new_string("######## UNHANLDED EXCEPTION #######\n"),
      _gb_=caml_new_string("{"),
-     _ga_=caml_new_string("contract declaration expected"),
-     _f2_=caml_new_string("}"),
-     _f3_=caml_new_string("{"),
-     _f4_=caml_new_string("contract"),
-     _fO_=[0,caml_new_string("parser.ml"),589,17],
-     _fK_=caml_new_string("returns"),
-     _fL_=[0,0],
-     _fM_=caml_new_string("function"),
-     _fI_=caml_new_string("must be payable"),
-     _fG_=caml_new_string("}"),
-     _fH_=caml_new_string("{"),
-     _fJ_=caml_new_string("payable"),
-     _fE_=[0,0],
-     _fF_=caml_new_string(";"),
-     _fB_=[0,0],
-     _fC_=caml_new_string(","),
-     _fD_=[0,0],
-     _fo_=caml_new_string("return without value of type "),
-     _fp_=caml_new_string(";"),
-     _fq_=caml_new_string("return"),
-     _fn_=caml_new_string("implicit return not allowed here"),
-     _fm_=caml_new_string("ok"),
-     _fl_=caml_new_string("ok"),
-     _fh_=caml_new_string(";"),
-     _fi_=caml_new_string(")"),
-     _fj_=caml_new_string("("),
-     _fk_=caml_new_string("revert"),
-     _ff_=caml_new_string("."),
-     _fg_=[0,3,0],
-     _fd_=caml_new_string("value"),
-     _fe_=caml_new_string("."),
-     _fc_=caml_new_string("ok"),
-     _fb_=caml_new_string("ident expected"),
-     _eX_=caml_new_string(";"),
-     _ep_=[0,1,2],
-     _ed_=caml_new_string(")"),
-     _ee_=caml_new_string("("),
-     _ea_=caml_new_string("value expected, eof found"),
-     _d6_=caml_new_string("false"),
-     _d7_=caml_new_string("true"),
-     _d8_=[13,1],
-     _d9_=[13,0],
-     _d__=caml_new_string(" expected"),
-     _d$_=caml_new_string("value of type "),
-     _d4_=caml_new_string(" expected"),
-     _d5_=caml_new_string("value of type "),
-     _d2_=caml_new_string(" vs "),
-     _d3_=caml_new_string(" not previously declared"),
-     _d1_=caml_new_string("ident expected"),
-     _d0_=caml_new_string("var expected, eof found"),
-     _dZ_=caml_new_string("ok"),
-     _dY_=caml_new_string("expected ident"),
-     _dX_=caml_new_string("!"),
-     _dW_=caml_new_string(" || "),
-     _dV_=caml_new_string(" && "),
-     _dU_=caml_new_string(" == "),
-     _dT_=caml_new_string(" >= "),
-     _dS_=caml_new_string(" > "),
-     _dR_=caml_new_string(" / "),
-     _dQ_=caml_new_string(" * "),
-     _dP_=caml_new_string(" - "),
-     _dO_=caml_new_string("-"),
-     _dN_=caml_new_string(" + "),
-     _dM_=caml_new_string(".balance"),
-     _dK_=caml_new_string(" redeclared"),
-     _dL_=caml_new_string("contract "),
-     _dH_=caml_new_string("transfer"),
-     _dI_=caml_new_string("The transfer identifier is reseved"),
-     _dJ_=caml_new_string(" redeclared"),
-     _dG_=caml_new_string(" declared twice"),
-     _dF_=caml_new_string(" should have type "),
-     _ec_=[0,caml_new_string("this")],
-     _eg_=caml_new_string("sender"),
-     _ei_=caml_new_string("."),
-     _ek_=caml_new_string("msg"),
-     _eq_=caml_new_string("value"),
-     _es_=caml_new_string("."),
-     _eu_=caml_new_string("msg"),
-     _eS_=caml_new_string("address"),
-     _eU_=caml_new_string("bool"),
-     _eW_=caml_new_string("int"),
-     _e6_=caml_new_string(","),
-     _fR_=[0,1],
-     _fT_=caml_new_string(")"),
-     _fV_=caml_new_string("("),
-     _fX_=caml_new_string("fallback"),
-     _f7_=
+     _gc_=caml_new_string("}"),
+     _gd_=[0,caml_new_string("} expected, but eof found"),0],
+     _ge_=caml_new_string("contract"),
+     _gg_=caml_new_string("{"),
+     _gf_=caml_new_string("contract declaration expected"),
+     _f7_=caml_new_string("}"),
+     _f8_=caml_new_string("{"),
+     _f9_=caml_new_string("contract"),
+     _fT_=[0,caml_new_string("parser.ml"),589,17],
+     _fP_=caml_new_string("returns"),
+     _fQ_=[0,0],
+     _fR_=caml_new_string("function"),
+     _fN_=caml_new_string("must be payable"),
+     _fL_=caml_new_string("}"),
+     _fM_=caml_new_string("{"),
+     _fO_=caml_new_string("payable"),
+     _fJ_=[0,0],
+     _fK_=caml_new_string(";"),
+     _fG_=[0,0],
+     _fH_=caml_new_string(","),
+     _fI_=[0,0],
+     _ft_=caml_new_string("return without value of type "),
+     _fu_=caml_new_string(";"),
+     _fv_=caml_new_string("return"),
+     _fs_=caml_new_string("implicit return not allowed here"),
+     _fr_=caml_new_string("ok"),
+     _fq_=caml_new_string("ok"),
+     _fm_=caml_new_string(";"),
+     _fn_=caml_new_string(")"),
+     _fo_=caml_new_string("("),
+     _fp_=caml_new_string("revert"),
+     _fk_=caml_new_string("."),
+     _fl_=[0,3,0],
+     _fi_=caml_new_string("value"),
+     _fj_=caml_new_string("."),
+     _fh_=caml_new_string("ok"),
+     _fg_=caml_new_string("ident expected"),
+     _e2_=caml_new_string(";"),
+     _eu_=[0,1,2],
+     _ei_=caml_new_string(")"),
+     _ej_=caml_new_string("("),
+     _ef_=caml_new_string("value expected, eof found"),
+     _d$_=caml_new_string("false"),
+     _ea_=caml_new_string("true"),
+     _eb_=[13,1],
+     _ec_=[13,0],
+     _ed_=caml_new_string(" expected"),
+     _ee_=caml_new_string("value of type "),
+     _d9_=caml_new_string(" expected"),
+     _d__=caml_new_string("value of type "),
+     _d7_=caml_new_string(" vs "),
+     _d8_=caml_new_string(" not previously declared"),
+     _d6_=caml_new_string("ident expected"),
+     _d5_=caml_new_string("var expected, eof found"),
+     _d4_=caml_new_string("ok"),
+     _d3_=caml_new_string("expected ident"),
+     _d2_=caml_new_string("!"),
+     _d1_=caml_new_string(" || "),
+     _d0_=caml_new_string(" && "),
+     _dZ_=caml_new_string(" == "),
+     _dY_=caml_new_string(" >= "),
+     _dX_=caml_new_string(" > "),
+     _dW_=caml_new_string(" / "),
+     _dV_=caml_new_string(" * "),
+     _dU_=caml_new_string(" - "),
+     _dT_=caml_new_string("-"),
+     _dS_=caml_new_string(" + "),
+     _dR_=caml_new_string(".balance"),
+     _dP_=caml_new_string(" redeclared"),
+     _dQ_=caml_new_string("contract "),
+     _dM_=caml_new_string("transfer"),
+     _dN_=caml_new_string("The transfer identifier is reseved"),
+     _dO_=caml_new_string(" redeclared"),
+     _dL_=caml_new_string(" declared twice"),
+     _dK_=caml_new_string(" should have type "),
+     _eh_=[0,caml_new_string("this")],
+     _el_=caml_new_string("sender"),
+     _en_=caml_new_string("."),
+     _ep_=caml_new_string("msg"),
+     _ev_=caml_new_string("value"),
+     _ex_=caml_new_string("."),
+     _ez_=caml_new_string("msg"),
+     _eX_=caml_new_string("address"),
+     _eZ_=caml_new_string("bool"),
+     _e1_=caml_new_string("int"),
+     _e$_=caml_new_string(","),
+     _fW_=[0,1],
+     _fY_=caml_new_string(")"),
+     _f0_=caml_new_string("("),
+     _f2_=caml_new_string("fallback"),
+     _ga_=
       caml_list_of_js_array
        ([caml_new_string("+"),
          caml_new_string("-"),
@@ -2577,23 +2582,28 @@
          caml_new_string("sender"),
          caml_new_string("contract"),
          caml_new_string("payable")]),
-     _gg_=[0,0,[0,1,[13,0]]],
-     _gh_=caml_new_string("_ret_"),
-     _gi_=caml_new_string("_"),
-     _gm_=[0,caml_new_string("static.ml"),137,9],
-     _gq_=caml_new_string(": "),
-     _gr_=caml_new_string("."),
-     _gs_=caml_new_string("\n"),
-     _gn_=[0,caml_new_string("static.ml"),155,45],
-     _gl_=caml_new_string(" ==> "),
-     _gj_=[0,0,0,caml_new_string("fallback")],
-     _gk_=caml_new_string("Static.Unbounded"),
-     _go_=caml_new_string(""),
-     _gt_=[0,caml_new_string("analyzer.ml"),7,85],
-     _gz_=caml_new_string("ms_parse"),
-     _gA_=caml_new_string("ms_normalize"),
-     _gB_=caml_new_string("ms_get_bounds"),
-     _gC_=caml_new_string("ms_copy_output_to_input");
+     _gl_=[0,0,[0,1,[13,0]]],
+     _gm_=caml_new_string("_ret_"),
+     _gn_=caml_new_string("_"),
+     _gq_=[0,caml_new_string("static.ml"),136,9],
+     _gx_=caml_new_string(" called by"),
+     _gy_=caml_new_string("."),
+     _gz_=caml_new_string("\n"),
+     _gt_=caml_new_string(": "),
+     _gu_=caml_new_string("."),
+     _gv_=caml_new_string("\n"),
+     _gs_=caml_new_string(""),
+     _gw_=caml_new_string(""),
+     _gA_=
+      caml_new_string("Unbounded usage of call stack possibly detected:\n"),
+     _gr_=[0,caml_new_string("static.ml"),155,55],
+     _go_=[0,0,0,caml_new_string("fallback")],
+     _gp_=caml_new_string("Static.Unbounded"),
+     _gB_=[0,caml_new_string("analyzer.ml"),7,85],
+     _gH_=caml_new_string("ms_parse"),
+     _gI_=caml_new_string("ms_normalize"),
+     _gJ_=caml_new_string("ms_get_bounds"),
+     _gK_=caml_new_string("ms_copy_output_to_input");
     function erase_rel(param)
      {if(typeof param === "number")
        return 0;
@@ -2751,10 +2761,10 @@
            {var l=param$0[2],a=param$0[1];
             try
              {caml_ml_flush(a)}
-            catch(_sw_)
-             {_sw_ = caml_wrap_exception(_sw_);
-              if(_sw_[1] !== Sys_error)throw _sw_;
-              var _sv_=_sw_}
+            catch(_sG_)
+             {_sG_ = caml_wrap_exception(_sG_);
+              if(_sG_[1] !== Sys_error)throw _sG_;
+              var _sF_=_sG_}
             var param$0=l;
             continue}
           return 0}}
@@ -2826,13 +2836,13 @@
         else
          {var r=caml_create_bytes(len);
           caml_blit_bytes(b,ofs,r,0,len);
-          var _su_=r,switch$0=1}
+          var _sE_=r,switch$0=1}
        else
         var switch$0=0;
       else
        var switch$0=0;
-      if(! switch$0)var _su_=invalid_arg(_n_);
-      return caml_string_of_bytes(_su_)}
+      if(! switch$0)var _sE_=invalid_arg(_n_);
+      return caml_string_of_bytes(_sE_)}
     function blit(s1,ofs1,s2,ofs2,len)
      {if(0 <= len)
        if(0 <= ofs1)
@@ -2855,31 +2865,31 @@
        {var seplen=caml_ml_string_length(sep),acc=0,param=l,pos$1=0;
         for(;;)
          {if(param)
-           {var _sp_=param[2],_sq_=param[1];
-            if(_sp_)
+           {var _sz_=param[2],_sA_=param[1];
+            if(_sz_)
              {var
-               x=(caml_ml_string_length(_sq_) + seplen | 0) + acc | 0,
+               x=(caml_ml_string_length(_sA_) + seplen | 0) + acc | 0,
                acc$0=acc <= x?x:invalid_arg(_q_),
                acc=acc$0,
-               param=_sp_;
+               param=_sz_;
               continue}
-            var _st_=caml_ml_string_length(_sq_) + acc | 0}
+            var _sD_=caml_ml_string_length(_sA_) + acc | 0}
           else
-           var _st_=acc;
-          var dst=caml_create_bytes(_st_),pos=pos$1,param$0=l;
+           var _sD_=acc;
+          var dst=caml_create_bytes(_sD_),pos=pos$1,param$0=l;
           for(;;)
            {if(param$0)
-             {var _sr_=param$0[2],_ss_=param$0[1];
-              if(_sr_)
-               {caml_blit_string(_ss_,0,dst,pos,caml_ml_string_length(_ss_));
+             {var _sB_=param$0[2],_sC_=param$0[1];
+              if(_sB_)
+               {caml_blit_string(_sC_,0,dst,pos,caml_ml_string_length(_sC_));
                 caml_blit_string
-                 (sep,0,dst,pos + caml_ml_string_length(_ss_) | 0,seplen);
+                 (sep,0,dst,pos + caml_ml_string_length(_sC_) | 0,seplen);
                 var
-                 pos$0=(pos + caml_ml_string_length(_ss_) | 0) + seplen | 0,
+                 pos$0=(pos + caml_ml_string_length(_sC_) | 0) + seplen | 0,
                  pos=pos$0,
-                 param$0=_sr_;
+                 param$0=_sB_;
                 continue}
-              caml_blit_string(_ss_,0,dst,pos,caml_ml_string_length(_ss_))}
+              caml_blit_string(_sC_,0,dst,pos,caml_ml_string_length(_sC_))}
             return caml_string_of_bytes(dst)}}}
       return _r_}
     function index_rec(s,lim,i,c)
@@ -2894,11 +2904,11 @@
       if(0 <= i)
        if(! (l < i))
         try
-         {index_rec(s,l,i,c);var _sn_=1;return _sn_}
-        catch(_so_)
-         {_so_ = caml_wrap_exception(_so_);
-          if(_so_ === Not_found)return 0;
-          throw _so_}
+         {index_rec(s,l,i,c);var _sx_=1;return _sx_}
+        catch(_sy_)
+         {_sy_ = caml_wrap_exception(_sy_);
+          if(_sy_ === Not_found)return 0;
+          throw _sy_}
       return invalid_arg(_s_)}
     function contains(s,c){return contains_from(s,0,c)}
     caml_fresh_oo_id(0);
@@ -2918,16 +2928,16 @@
      Failure$0=[248,_u_,caml_fresh_oo_id(0)],
      Error=[248,_v_,caml_fresh_oo_id(0)];
     function fill_buff(b)
-     {var len=caml_ml_bytes_length(b[2]),_sk_=b[2],_sl_=b[1];
+     {var len=caml_ml_bytes_length(b[2]),_su_=b[2],_sv_=b[1];
       if(0 <= len)
-       if((caml_ml_bytes_length(_sk_) - len | 0) < 0)
+       if((caml_ml_bytes_length(_su_) - len | 0) < 0)
         var switch$0=0;
        else
-        var _sm_=caml_ml_input(_sl_,_sk_,0,len),switch$0=1;
+        var _sw_=caml_ml_input(_sv_,_su_,0,len),switch$0=1;
       else
        var switch$0=0;
-      if(! switch$0)var _sm_=invalid_arg(_e_);
-      b[3] = _sm_;
+      if(! switch$0)var _sw_=invalid_arg(_e_);
+      b[3] = _sw_;
       b[4] = 0;
       return 0}
     function get_data(count,d)
@@ -2946,19 +2956,19 @@
            case 2:
             var
              f=d$0[1],
-             _sg_=caml_obj_tag(f),
-             d$1=250 === _sg_?f[1]:246 === _sg_?force_lazy_block(f):f,
+             _sq_=caml_obj_tag(f),
+             d$1=250 === _sq_?f[1]:246 === _sq_?force_lazy_block(f):f,
              d$0=d$1;
             continue;
            case 3:
-            var _sh_=d$0[1],_si_=_sh_[1];
-            if(_si_)
-             {var _sj_=_si_[1];
-              if(_sj_){var a$0=_sj_[1];_sh_[1] = 0;return [0,a$0,d$0]}
+            var _sr_=d$0[1],_ss_=_sr_[1];
+            if(_ss_)
+             {var _st_=_ss_[1];
+              if(_st_){var a$0=_st_[1];_sr_[1] = 0;return [0,a$0,d$0]}
               return 0}
-            var match$0=caml_call1(_sh_[2],count);
+            var match$0=caml_call1(_sr_[2],count);
             if(match$0){var a$1=match$0[1];return [0,a$1,d$0]}
-            _sh_[1] = _x_;
+            _sr_[1] = _x_;
             return 0;
            case 4:
             var b=d$0[1];
@@ -2971,12 +2981,12 @@
         return d$0}}
     function peek_data(s)
      {for(;;)
-       {var _sb_=s[2];
-        if(typeof _sb_ === "number")
+       {var _sl_=s[2];
+        if(typeof _sl_ === "number")
          return 0;
         else
-         switch(_sb_[0])
-          {case 0:var a=_sb_[1];return [0,a];
+         switch(_sl_[0])
+          {case 0:var a=_sl_[1];return [0,a];
            case 1:
             var d=get_data(s[1],s[2]);
             if(typeof d === "number")
@@ -2986,19 +2996,19 @@
               throw [0,Assert_failure,_y_]}
            case 2:
             var
-             f=_sb_[1],
-             _sc_=caml_obj_tag(f),
-             _sd_=250 === _sc_?f[1]:246 === _sc_?force_lazy_block(f):f;
-            s[2] = _sd_;
+             f=_sl_[1],
+             _sm_=caml_obj_tag(f),
+             _sn_=250 === _sm_?f[1]:246 === _sm_?force_lazy_block(f):f;
+            s[2] = _sn_;
             continue;
            case 3:
-            var _se_=_sb_[1],_sf_=_se_[1];
-            if(_sf_){var a$1=_sf_[1];return a$1}
-            var x=caml_call1(_se_[2],s[1]);
-            _se_[1] = [0,x];
+            var _so_=_sl_[1],_sp_=_so_[1];
+            if(_sp_){var a$1=_sp_[1];return a$1}
+            var x=caml_call1(_so_[2],s[1]);
+            _so_[1] = [0,x];
             return x;
            default:
-            var b=_sb_[1];
+            var b=_sl_[1];
             if(b[3] <= b[4])fill_buff(b);
             return 0 === b[3]
                     ?(s[2] = 0,0)
@@ -3009,17 +3019,17 @@
      {if(param)
        {var data=param[1];
         for(;;)
-         {var _r$_=data[2];
-          if(typeof _r$_ !== "number")
-           switch(_r$_[0])
+         {var _sj_=data[2];
+          if(typeof _sj_ !== "number")
+           switch(_sj_[0])
             {case 0:
-              var d=_r$_[2];data[1] = data[1] + 1 | 0;data[2] = d;return 0;
+              var d=_sj_[2];data[1] = data[1] + 1 | 0;data[2] = d;return 0;
              case 3:
-              var _sa_=_r$_[1];
-              if(_sa_[1]){data[1] = data[1] + 1 | 0;_sa_[1] = 0;return 0}
+              var _sk_=_sj_[1];
+              if(_sk_[1]){data[1] = data[1] + 1 | 0;_sk_[1] = 0;return 0}
               break;
              case 4:
-              var b=_r$_[1];
+              var b=_sj_[1];
               if(b[3] <= b[4])fill_buff(b);
               return 0 === b[3]
                       ?(data[2] = 0,0)
@@ -3062,17 +3072,17 @@
      {var
        len=caml_ml_bytes_length(buf[2]),
        min_len=buf[1] + overhead | 0,
-       _r9_=len < min_len?1:0;
-      if(_r9_)
+       _sh_=len < min_len?1:0;
+      if(_sh_)
        {var
          new_len=max(len * 2 | 0,min_len),
          new_str=caml_create_bytes(new_len);
         blit(buf[2],0,new_str,0,len);
         buf[2] = new_str;
-        var _r__=0}
+        var _si_=0}
       else
-       var _r__=_r9_;
-      return _r__}
+       var _si_=_sh_;
+      return _si_}
     function buffer_add_char(buf,c)
      {buffer_check_size(buf,1);
       caml_bytes_set(buf[2],buf[1],c);
@@ -3196,10 +3206,10 @@
     function fmtty_rel_det(param)
      {if(typeof param === "number")
        {var
-         _rL_=function(param){return 0},
-         _rM_=function(param){return 0},
-         _rN_=function(param){return 0};
-        return [0,function(param){return 0},_rN_,_rM_,_rL_]}
+         _rV_=function(param){return 0},
+         _rW_=function(param){return 0},
+         _rX_=function(param){return 0};
+        return [0,function(param){return 0},_rX_,_rW_,_rV_]}
       else
        switch(param[0])
         {case 0:
@@ -3210,8 +3220,8 @@
            ed=match[3],
            af=match[2],
            fa=match[1],
-           _rO_=function(param){caml_call1(af,0);return 0};
-          return [0,function(param){caml_call1(fa,0);return 0},_rO_,ed,de];
+           _rY_=function(param){caml_call1(af,0);return 0};
+          return [0,function(param){caml_call1(fa,0);return 0},_rY_,ed,de];
          case 1:
           var
            rest$0=param[1],
@@ -3220,10 +3230,10 @@
            ed$0=match$0[3],
            af$0=match$0[2],
            fa$0=match$0[1],
-           _rP_=function(param){caml_call1(af$0,0);return 0};
+           _rZ_=function(param){caml_call1(af$0,0);return 0};
           return [0,
                   function(param){caml_call1(fa$0,0);return 0},
-                  _rP_,
+                  _rZ_,
                   ed$0,
                   de$0];
          case 2:
@@ -3234,10 +3244,10 @@
            ed$1=match$1[3],
            af$1=match$1[2],
            fa$1=match$1[1],
-           _rQ_=function(param){caml_call1(af$1,0);return 0};
+           _r0_=function(param){caml_call1(af$1,0);return 0};
           return [0,
                   function(param){caml_call1(fa$1,0);return 0},
-                  _rQ_,
+                  _r0_,
                   ed$1,
                   de$1];
          case 3:
@@ -3248,10 +3258,10 @@
            ed$2=match$2[3],
            af$2=match$2[2],
            fa$2=match$2[1],
-           _rR_=function(param){caml_call1(af$2,0);return 0};
+           _r1_=function(param){caml_call1(af$2,0);return 0};
           return [0,
                   function(param){caml_call1(fa$2,0);return 0},
-                  _rR_,
+                  _r1_,
                   ed$2,
                   de$2];
          case 4:
@@ -3262,10 +3272,10 @@
            ed$3=match$3[3],
            af$3=match$3[2],
            fa$3=match$3[1],
-           _rS_=function(param){caml_call1(af$3,0);return 0};
+           _r2_=function(param){caml_call1(af$3,0);return 0};
           return [0,
                   function(param){caml_call1(fa$3,0);return 0},
-                  _rS_,
+                  _r2_,
                   ed$3,
                   de$3];
          case 5:
@@ -3276,10 +3286,10 @@
            ed$4=match$4[3],
            af$4=match$4[2],
            fa$4=match$4[1],
-           _rT_=function(param){caml_call1(af$4,0);return 0};
+           _r3_=function(param){caml_call1(af$4,0);return 0};
           return [0,
                   function(param){caml_call1(fa$4,0);return 0},
-                  _rT_,
+                  _r3_,
                   ed$4,
                   de$4];
          case 6:
@@ -3290,10 +3300,10 @@
            ed$5=match$5[3],
            af$5=match$5[2],
            fa$5=match$5[1],
-           _rU_=function(param){caml_call1(af$5,0);return 0};
+           _r4_=function(param){caml_call1(af$5,0);return 0};
           return [0,
                   function(param){caml_call1(fa$5,0);return 0},
-                  _rU_,
+                  _r4_,
                   ed$5,
                   de$5];
          case 7:
@@ -3304,10 +3314,10 @@
            ed$6=match$6[3],
            af$6=match$6[2],
            fa$6=match$6[1],
-           _rV_=function(param){caml_call1(af$6,0);return 0};
+           _r5_=function(param){caml_call1(af$6,0);return 0};
           return [0,
                   function(param){caml_call1(fa$6,0);return 0},
-                  _rV_,
+                  _r5_,
                   ed$6,
                   de$6];
          case 8:
@@ -3318,10 +3328,10 @@
            ed$7=match$7[3],
            af$7=match$7[2],
            fa$7=match$7[1],
-           _rW_=function(param){caml_call1(af$7,0);return 0};
+           _r6_=function(param){caml_call1(af$7,0);return 0};
           return [0,
                   function(param){caml_call1(fa$7,0);return 0},
-                  _rW_,
+                  _r6_,
                   ed$7,
                   de$7];
          case 9:
@@ -3340,15 +3350,15 @@
            dj=match$9[3],
            ga=match$9[2],
            ag=match$9[1],
-           _rX_=function(param){caml_call1(jd,0);caml_call1(de$8,0);return 0},
-           _rY_=function(param){caml_call1(ed$8,0);caml_call1(dj,0);return 0},
-           _rZ_=function(param){caml_call1(ga,0);caml_call1(af$8,0);return 0};
+           _r7_=function(param){caml_call1(jd,0);caml_call1(de$8,0);return 0},
+           _r8_=function(param){caml_call1(ed$8,0);caml_call1(dj,0);return 0},
+           _r9_=function(param){caml_call1(ga,0);caml_call1(af$8,0);return 0};
           return [0,
                   function(param)
                    {caml_call1(fa$8,0);caml_call1(ag,0);return 0},
-                  _rZ_,
-                  _rY_,
-                  _rX_];
+                  _r9_,
+                  _r8_,
+                  _r7_];
          case 10:
           var
            rest$9=param[1],
@@ -3357,10 +3367,10 @@
            ed$9=match$10[3],
            af$9=match$10[2],
            fa$9=match$10[1],
-           _r0_=function(param){caml_call1(af$9,0);return 0};
+           _r__=function(param){caml_call1(af$9,0);return 0};
           return [0,
                   function(param){caml_call1(fa$9,0);return 0},
-                  _r0_,
+                  _r__,
                   ed$9,
                   de$9];
          case 11:
@@ -3371,10 +3381,10 @@
            ed$10=match$11[3],
            af$10=match$11[2],
            fa$10=match$11[1],
-           _r1_=function(param){caml_call1(af$10,0);return 0};
+           _r$_=function(param){caml_call1(af$10,0);return 0};
           return [0,
                   function(param){caml_call1(fa$10,0);return 0},
-                  _r1_,
+                  _r$_,
                   ed$10,
                   de$10];
          case 12:
@@ -3385,10 +3395,10 @@
            ed$11=match$12[3],
            af$11=match$12[2],
            fa$11=match$12[1],
-           _r2_=function(param){caml_call1(af$11,0);return 0};
+           _sa_=function(param){caml_call1(af$11,0);return 0};
           return [0,
                   function(param){caml_call1(fa$11,0);return 0},
-                  _r2_,
+                  _sa_,
                   ed$11,
                   de$11];
          case 13:
@@ -3399,14 +3409,14 @@
            ed$12=match$13[3],
            af$12=match$13[2],
            fa$12=match$13[1],
-           _r3_=function(param){caml_call1(de$12,0);return 0},
-           _r4_=function(param){caml_call1(ed$12,0);return 0},
-           _r5_=function(param){caml_call1(af$12,0);return 0};
+           _sb_=function(param){caml_call1(de$12,0);return 0},
+           _sc_=function(param){caml_call1(ed$12,0);return 0},
+           _sd_=function(param){caml_call1(af$12,0);return 0};
           return [0,
                   function(param){caml_call1(fa$12,0);return 0},
-                  _r5_,
-                  _r4_,
-                  _r3_];
+                  _sd_,
+                  _sc_,
+                  _sb_];
          default:
           var
            rest$13=param[1],
@@ -3415,14 +3425,14 @@
            ed$13=match$14[3],
            af$13=match$14[2],
            fa$13=match$14[1],
-           _r6_=function(param){caml_call1(de$13,0);return 0},
-           _r7_=function(param){caml_call1(ed$13,0);return 0},
-           _r8_=function(param){caml_call1(af$13,0);return 0};
+           _se_=function(param){caml_call1(de$13,0);return 0},
+           _sf_=function(param){caml_call1(ed$13,0);return 0},
+           _sg_=function(param){caml_call1(af$13,0);return 0};
           return [0,
                   function(param){caml_call1(fa$13,0);return 0},
-                  _r8_,
-                  _r7_,
-                  _r6_]}}
+                  _sg_,
+                  _sf_,
+                  _se_]}}
     function trans(ty1,match)
      {if(typeof ty1 === "number")
        if(typeof match === "number")
@@ -3440,12 +3450,12 @@
       else
        switch(ty1[0])
         {case 0:
-          var _rs_=ty1[1];
+          var _rC_=ty1[1];
           if(typeof match === "number")
            var switch$1=1;
           else
            switch(match[0])
-            {case 0:var rest2=match[1];return [0,trans(_rs_,rest2)];
+            {case 0:var rest2=match[1];return [0,trans(_rC_,rest2)];
              case 8:var switch$0=5,switch$1=0;break;
              case 9:var switch$0=6,switch$1=0;break;
              case 10:var switch$0=0,switch$1=0;break;
@@ -3457,12 +3467,12 @@
           if(switch$1)var switch$0=7;
           break;
          case 1:
-          var _rt_=ty1[1];
+          var _rD_=ty1[1];
           if(typeof match === "number")
            var switch$2=1;
           else
            switch(match[0])
-            {case 1:var rest2$0=match[1];return [1,trans(_rt_,rest2$0)];
+            {case 1:var rest2$0=match[1];return [1,trans(_rD_,rest2$0)];
              case 8:var switch$0=5,switch$2=0;break;
              case 9:var switch$0=6,switch$2=0;break;
              case 10:var switch$0=0,switch$2=0;break;
@@ -3474,12 +3484,12 @@
           if(switch$2)var switch$0=7;
           break;
          case 2:
-          var _ru_=ty1[1];
+          var _rE_=ty1[1];
           if(typeof match === "number")
            var switch$3=1;
           else
            switch(match[0])
-            {case 2:var rest2$1=match[1];return [2,trans(_ru_,rest2$1)];
+            {case 2:var rest2$1=match[1];return [2,trans(_rE_,rest2$1)];
              case 8:var switch$0=5,switch$3=0;break;
              case 9:var switch$0=6,switch$3=0;break;
              case 10:var switch$0=0,switch$3=0;break;
@@ -3491,12 +3501,12 @@
           if(switch$3)var switch$0=7;
           break;
          case 3:
-          var _rv_=ty1[1];
+          var _rF_=ty1[1];
           if(typeof match === "number")
            var switch$4=1;
           else
            switch(match[0])
-            {case 3:var rest2$2=match[1];return [3,trans(_rv_,rest2$2)];
+            {case 3:var rest2$2=match[1];return [3,trans(_rF_,rest2$2)];
              case 8:var switch$0=5,switch$4=0;break;
              case 9:var switch$0=6,switch$4=0;break;
              case 10:var switch$0=0,switch$4=0;break;
@@ -3508,12 +3518,12 @@
           if(switch$4)var switch$0=7;
           break;
          case 4:
-          var _rw_=ty1[1];
+          var _rG_=ty1[1];
           if(typeof match === "number")
            var switch$5=1;
           else
            switch(match[0])
-            {case 4:var rest2$3=match[1];return [4,trans(_rw_,rest2$3)];
+            {case 4:var rest2$3=match[1];return [4,trans(_rG_,rest2$3)];
              case 8:var switch$0=5,switch$5=0;break;
              case 9:var switch$0=6,switch$5=0;break;
              case 10:var switch$0=0,switch$5=0;break;
@@ -3525,12 +3535,12 @@
           if(switch$5)var switch$0=7;
           break;
          case 5:
-          var _rx_=ty1[1];
+          var _rH_=ty1[1];
           if(typeof match === "number")
            var switch$6=1;
           else
            switch(match[0])
-            {case 5:var rest2$4=match[1];return [5,trans(_rx_,rest2$4)];
+            {case 5:var rest2$4=match[1];return [5,trans(_rH_,rest2$4)];
              case 8:var switch$0=5,switch$6=0;break;
              case 9:var switch$0=6,switch$6=0;break;
              case 10:var switch$0=0,switch$6=0;break;
@@ -3542,12 +3552,12 @@
           if(switch$6)var switch$0=7;
           break;
          case 6:
-          var _ry_=ty1[1];
+          var _rI_=ty1[1];
           if(typeof match === "number")
            var switch$7=1;
           else
            switch(match[0])
-            {case 6:var rest2$5=match[1];return [6,trans(_ry_,rest2$5)];
+            {case 6:var rest2$5=match[1];return [6,trans(_rI_,rest2$5)];
              case 8:var switch$0=5,switch$7=0;break;
              case 9:var switch$0=6,switch$7=0;break;
              case 10:var switch$0=0,switch$7=0;break;
@@ -3559,12 +3569,12 @@
           if(switch$7)var switch$0=7;
           break;
          case 7:
-          var _rz_=ty1[1];
+          var _rJ_=ty1[1];
           if(typeof match === "number")
            var switch$8=1;
           else
            switch(match[0])
-            {case 7:var rest2$6=match[1];return [7,trans(_rz_,rest2$6)];
+            {case 7:var rest2$6=match[1];return [7,trans(_rJ_,rest2$6)];
              case 8:var switch$0=5,switch$8=0;break;
              case 9:var switch$0=6,switch$8=0;break;
              case 10:var switch$0=0,switch$8=0;break;
@@ -3576,14 +3586,14 @@
           if(switch$8)var switch$0=7;
           break;
          case 8:
-          var _rA_=ty1[2],_rB_=ty1[1];
+          var _rK_=ty1[2],_rL_=ty1[1];
           if(typeof match === "number")
            var switch$9=1;
           else
            switch(match[0])
             {case 8:
-              var rest2$7=match[2],ty2=match[1],_rC_=trans(_rA_,rest2$7);
-              return [8,trans(_rB_,ty2),_rC_];
+              var rest2$7=match[2],ty2=match[1],_rM_=trans(_rK_,rest2$7);
+              return [8,trans(_rL_,ty2),_rM_];
              case 10:var switch$0=0,switch$9=0;break;
              case 11:var switch$0=1,switch$9=0;break;
              case 12:var switch$0=2,switch$9=0;break;
@@ -3593,7 +3603,7 @@
           if(switch$9)throw [0,Assert_failure,_ag_];
           break;
          case 9:
-          var _rD_=ty1[3],_rE_=ty1[2],_rF_=ty1[1];
+          var _rN_=ty1[3],_rO_=ty1[2],_rP_=ty1[1];
           if(typeof match === "number")
            var switch$10=1;
           else
@@ -3604,13 +3614,13 @@
                rest2$8=match[3],
                ty22=match[2],
                ty21=match[1],
-               ty=trans(symm(_rE_),ty21),
+               ty=trans(symm(_rO_),ty21),
                match$0=fmtty_rel_det(ty),
                f4=match$0[4],
                f2=match$0[2];
               caml_call1(f2,0);
               caml_call1(f4,0);
-              return [9,_rF_,ty22,trans(_rD_,rest2$8)];
+              return [9,_rP_,ty22,trans(_rN_,rest2$8)];
              case 10:var switch$0=0,switch$10=0;break;
              case 11:var switch$0=1,switch$10=0;break;
              case 12:var switch$0=2,switch$10=0;break;
@@ -3620,35 +3630,35 @@
           if(switch$10)throw [0,Assert_failure,_ah_];
           break;
          case 10:
-          var _rG_=ty1[1];
+          var _rQ_=ty1[1];
           if(typeof match !== "number" && 10 === match[0])
-           {var rest2$9=match[1];return [10,trans(_rG_,rest2$9)]}
+           {var rest2$9=match[1];return [10,trans(_rQ_,rest2$9)]}
           throw [0,Assert_failure,_ai_];
          case 11:
-          var _rH_=ty1[1];
+          var _rR_=ty1[1];
           if(typeof match === "number")
            var switch$11=1;
           else
            switch(match[0])
             {case 10:var switch$0=0,switch$11=0;break;
-             case 11:var rest2$10=match[1];return [11,trans(_rH_,rest2$10)];
+             case 11:var rest2$10=match[1];return [11,trans(_rR_,rest2$10)];
              default:var switch$11=1}
           if(switch$11)throw [0,Assert_failure,_aj_];
           break;
          case 12:
-          var _rI_=ty1[1];
+          var _rS_=ty1[1];
           if(typeof match === "number")
            var switch$12=1;
           else
            switch(match[0])
             {case 10:var switch$0=0,switch$12=0;break;
              case 11:var switch$0=1,switch$12=0;break;
-             case 12:var rest2$11=match[1];return [12,trans(_rI_,rest2$11)];
+             case 12:var rest2$11=match[1];return [12,trans(_rS_,rest2$11)];
              default:var switch$12=1}
           if(switch$12)throw [0,Assert_failure,_ak_];
           break;
          case 13:
-          var _rJ_=ty1[1];
+          var _rT_=ty1[1];
           if(typeof match === "number")
            var switch$13=1;
           else
@@ -3656,12 +3666,12 @@
             {case 10:var switch$0=0,switch$13=0;break;
              case 11:var switch$0=1,switch$13=0;break;
              case 12:var switch$0=2,switch$13=0;break;
-             case 13:var rest2$12=match[1];return [13,trans(_rJ_,rest2$12)];
+             case 13:var rest2$12=match[1];return [13,trans(_rT_,rest2$12)];
              default:var switch$13=1}
           if(switch$13)throw [0,Assert_failure,_al_];
           break;
          default:
-          var _rK_=ty1[1];
+          var _rU_=ty1[1];
           if(typeof match === "number")
            var switch$14=1;
           else
@@ -3670,7 +3680,7 @@
              case 11:var switch$0=1,switch$14=0;break;
              case 12:var switch$0=2,switch$14=0;break;
              case 13:var switch$0=3,switch$14=0;break;
-             case 14:var rest2$13=match[1];return [14,trans(_rK_,rest2$13)];
+             case 14:var rest2$13=match[1];return [14,trans(_rU_,rest2$13)];
              default:var switch$14=1}
           if(switch$14)throw [0,Assert_failure,_am_]}
       switch(switch$0)
@@ -3697,9 +3707,9 @@
       if(typeof prec === "number")
        {if(0 === prec)
          {var rest=match[2],pad$0=match[1];return [0,pad$0,0,rest]}
-        var _rr_=match[2];
-        if(typeof _rr_ !== "number" && 2 === _rr_[0])
-         {var rest$0=_rr_[1],pad$1=match[1];return [0,pad$1,1,rest$0]}
+        var _rB_=match[2];
+        if(typeof _rB_ !== "number" && 2 === _rB_[0])
+         {var rest$0=_rB_[1],pad$1=match[1];return [0,pad$1,1,rest$0]}
         throw Type_mismatch}
       var rest$1=match[2],pad$2=match[1],p=prec[1];
       return [0,pad$2,[0,p],rest$1]}
@@ -3735,31 +3745,31 @@
           var
            fmt_rest$1=fmt[2],
            pad=fmt[1],
-           _qY_=type_padding(pad,fmtty),
-           _qZ_=_qY_[2],
-           _q0_=_qY_[1];
-          if(typeof _qZ_ !== "number" && 1 === _qZ_[0])
+           _q8_=type_padding(pad,fmtty),
+           _q9_=_q8_[2],
+           _q__=_q8_[1];
+          if(typeof _q9_ !== "number" && 1 === _q9_[0])
            {var
-             fmtty_rest$1=_qZ_[1],
+             fmtty_rest$1=_q9_[1],
              match$1=type_format_gen(fmt_rest$1,fmtty_rest$1),
              fmtty$2=match$1[2],
              fmt$2=match$1[1];
-            return [0,[2,_q0_,fmt$2],fmtty$2]}
+            return [0,[2,_q__,fmt$2],fmtty$2]}
           throw Type_mismatch;
          case 3:
           var
            fmt_rest$2=fmt[2],
            pad$0=fmt[1],
-           _q1_=type_padding(pad$0,fmtty),
-           _q2_=_q1_[2],
-           _q3_=_q1_[1];
-          if(typeof _q2_ !== "number" && 1 === _q2_[0])
+           _q$_=type_padding(pad$0,fmtty),
+           _ra_=_q$_[2],
+           _rb_=_q$_[1];
+          if(typeof _ra_ !== "number" && 1 === _ra_[0])
            {var
-             fmtty_rest$2=_q2_[1],
+             fmtty_rest$2=_ra_[1],
              match$2=type_format_gen(fmt_rest$2,fmtty_rest$2),
              fmtty$3=match$2[2],
              fmt$3=match$2[1];
-            return [0,[3,_q3_,fmt$3],fmtty$3]}
+            return [0,[3,_rb_,fmt$3],fmtty$3]}
           throw Type_mismatch;
          case 4:
           var
@@ -3767,17 +3777,17 @@
            prec=fmt[3],
            pad$1=fmt[2],
            iconv=fmt[1],
-           _q4_=type_padprec(pad$1,prec,fmtty),
-           _q5_=_q4_[3],
-           _q6_=_q4_[2],
-           _q7_=_q4_[1];
-          if(typeof _q5_ !== "number" && 2 === _q5_[0])
+           _rc_=type_padprec(pad$1,prec,fmtty),
+           _rd_=_rc_[3],
+           _re_=_rc_[2],
+           _rf_=_rc_[1];
+          if(typeof _rd_ !== "number" && 2 === _rd_[0])
            {var
-             fmtty_rest$3=_q5_[1],
+             fmtty_rest$3=_rd_[1],
              match$3=type_format_gen(fmt_rest$3,fmtty_rest$3),
              fmtty$4=match$3[2],
              fmt$4=match$3[1];
-            return [0,[4,iconv,_q7_,_q6_,fmt$4],fmtty$4]}
+            return [0,[4,iconv,_rf_,_re_,fmt$4],fmtty$4]}
           throw Type_mismatch;
          case 5:
           var
@@ -3785,17 +3795,17 @@
            prec$0=fmt[3],
            pad$2=fmt[2],
            iconv$0=fmt[1],
-           _q8_=type_padprec(pad$2,prec$0,fmtty),
-           _q9_=_q8_[3],
-           _q__=_q8_[2],
-           _q$_=_q8_[1];
-          if(typeof _q9_ !== "number" && 3 === _q9_[0])
+           _rg_=type_padprec(pad$2,prec$0,fmtty),
+           _rh_=_rg_[3],
+           _ri_=_rg_[2],
+           _rj_=_rg_[1];
+          if(typeof _rh_ !== "number" && 3 === _rh_[0])
            {var
-             fmtty_rest$4=_q9_[1],
+             fmtty_rest$4=_rh_[1],
              match$4=type_format_gen(fmt_rest$4,fmtty_rest$4),
              fmtty$5=match$4[2],
              fmt$5=match$4[1];
-            return [0,[5,iconv$0,_q$_,_q__,fmt$5],fmtty$5]}
+            return [0,[5,iconv$0,_rj_,_ri_,fmt$5],fmtty$5]}
           throw Type_mismatch;
          case 6:
           var
@@ -3803,17 +3813,17 @@
            prec$1=fmt[3],
            pad$3=fmt[2],
            iconv$1=fmt[1],
-           _ra_=type_padprec(pad$3,prec$1,fmtty),
-           _rb_=_ra_[3],
-           _rc_=_ra_[2],
-           _rd_=_ra_[1];
-          if(typeof _rb_ !== "number" && 4 === _rb_[0])
+           _rk_=type_padprec(pad$3,prec$1,fmtty),
+           _rl_=_rk_[3],
+           _rm_=_rk_[2],
+           _rn_=_rk_[1];
+          if(typeof _rl_ !== "number" && 4 === _rl_[0])
            {var
-             fmtty_rest$5=_rb_[1],
+             fmtty_rest$5=_rl_[1],
              match$5=type_format_gen(fmt_rest$5,fmtty_rest$5),
              fmtty$6=match$5[2],
              fmt$6=match$5[1];
-            return [0,[6,iconv$1,_rd_,_rc_,fmt$6],fmtty$6]}
+            return [0,[6,iconv$1,_rn_,_rm_,fmt$6],fmtty$6]}
           throw Type_mismatch;
          case 7:
           var
@@ -3821,17 +3831,17 @@
            prec$2=fmt[3],
            pad$4=fmt[2],
            iconv$2=fmt[1],
-           _re_=type_padprec(pad$4,prec$2,fmtty),
-           _rf_=_re_[3],
-           _rg_=_re_[2],
-           _rh_=_re_[1];
-          if(typeof _rf_ !== "number" && 5 === _rf_[0])
+           _ro_=type_padprec(pad$4,prec$2,fmtty),
+           _rp_=_ro_[3],
+           _rq_=_ro_[2],
+           _rr_=_ro_[1];
+          if(typeof _rp_ !== "number" && 5 === _rp_[0])
            {var
-             fmtty_rest$6=_rf_[1],
+             fmtty_rest$6=_rp_[1],
              match$6=type_format_gen(fmt_rest$6,fmtty_rest$6),
              fmtty$7=match$6[2],
              fmt$7=match$6[1];
-            return [0,[7,iconv$2,_rh_,_rg_,fmt$7],fmtty$7]}
+            return [0,[7,iconv$2,_rr_,_rq_,fmt$7],fmtty$7]}
           throw Type_mismatch;
          case 8:
           var
@@ -3839,32 +3849,32 @@
            prec$3=fmt[3],
            pad$5=fmt[2],
            fconv=fmt[1],
-           _ri_=type_padprec(pad$5,prec$3,fmtty),
-           _rj_=_ri_[3],
-           _rk_=_ri_[2],
-           _rl_=_ri_[1];
-          if(typeof _rj_ !== "number" && 6 === _rj_[0])
+           _rs_=type_padprec(pad$5,prec$3,fmtty),
+           _rt_=_rs_[3],
+           _ru_=_rs_[2],
+           _rv_=_rs_[1];
+          if(typeof _rt_ !== "number" && 6 === _rt_[0])
            {var
-             fmtty_rest$7=_rj_[1],
+             fmtty_rest$7=_rt_[1],
              match$7=type_format_gen(fmt_rest$7,fmtty_rest$7),
              fmtty$8=match$7[2],
              fmt$8=match$7[1];
-            return [0,[8,fconv,_rl_,_rk_,fmt$8],fmtty$8]}
+            return [0,[8,fconv,_rv_,_ru_,fmt$8],fmtty$8]}
           throw Type_mismatch;
          case 9:
           var
            fmt_rest$8=fmt[2],
            pad$6=fmt[1],
-           _rm_=type_padding(pad$6,fmtty),
-           _rn_=_rm_[2],
-           _ro_=_rm_[1];
-          if(typeof _rn_ !== "number" && 7 === _rn_[0])
+           _rw_=type_padding(pad$6,fmtty),
+           _rx_=_rw_[2],
+           _ry_=_rw_[1];
+          if(typeof _rx_ !== "number" && 7 === _rx_[0])
            {var
-             fmtty_rest$8=_rn_[1],
+             fmtty_rest$8=_rx_[1],
              match$8=type_format_gen(fmt_rest$8,fmtty_rest$8),
              fmtty$9=match$8[2],
              fmt$9=match$8[1];
-            return [0,[9,_ro_,fmt$9],fmtty$9]}
+            return [0,[9,_ry_,fmt$9],fmtty$9]}
           throw Type_mismatch;
          case 10:
           var
@@ -3913,8 +3923,8 @@
              fmt_rest$13=fmt[3],
              sub_fmtty$1=fmt[2],
              pad_opt$0=fmt[1],
-             _rp_=[0,erase_rel(sub_fmtty1)];
-            if(caml_notequal([0,erase_rel(sub_fmtty$1)],_rp_))
+             _rz_=[0,erase_rel(sub_fmtty1)];
+            if(caml_notequal([0,erase_rel(sub_fmtty$1)],_rz_))
              throw Type_mismatch;
             var
              match$13=type_format_gen(fmt_rest$13,erase_rel(fmtty_rest$10)),
@@ -4042,11 +4052,11 @@
               var
                sub_fmtty$3=ign[2],
                pad_opt$2=ign[1],
-               _rq_=type_ignored_format_substitution(sub_fmtty$3,rest,fmtty),
-               match$27=_rq_[2],
+               _rA_=type_ignored_format_substitution(sub_fmtty$3,rest,fmtty),
+               match$27=_rA_[2],
                fmtty$22=match$27[2],
                fmt$22=match$27[1],
-               sub_fmtty$4=_rq_[1];
+               sub_fmtty$4=_rA_[1];
               return [0,[23,[9,pad_opt$2,sub_fmtty$4],fmt$22],fmtty$22];
              case 10:return type_ignored_param_one(ign,rest,fmtty);
              default:return type_ignored_param_one(ign,rest,fmtty)}
@@ -4178,11 +4188,11 @@
              sub_fmtty_rest$17=sub_fmtty[3],
              sub2_fmtty$2=sub_fmtty[2],
              sub1_fmtty$0=sub_fmtty[1],
-             _qW_=[0,erase_rel(sub1_fmtty)];
-            if(caml_notequal([0,erase_rel(sub1_fmtty$0)],_qW_))
+             _q6_=[0,erase_rel(sub1_fmtty)];
+            if(caml_notequal([0,erase_rel(sub1_fmtty$0)],_q6_))
              throw Type_mismatch;
-            var _qX_=[0,erase_rel(sub2_fmtty$1)];
-            if(caml_notequal([0,erase_rel(sub2_fmtty$2)],_qX_))
+            var _q7_=[0,erase_rel(sub2_fmtty$1)];
+            if(caml_notequal([0,erase_rel(sub2_fmtty$2)],_q7_))
              throw Type_mismatch;
             var
              sub_fmtty$0=trans(symm(sub1_fmtty),sub2_fmtty$1),
@@ -4257,7 +4267,7 @@
        padty$0=0 <= width?padty:0,
        width$0=abs(width);
       if(width$0 <= len)return str;
-      var _qV_=2 === padty$0?48:32,res=make(width$0,_qV_);
+      var _q5_=2 === padty$0?48:32,res=make(width$0,_q5_);
       switch(padty$0)
        {case 0:blit$0(str,0,res,0,len);break;
         case 1:blit$0(str,0,res,width$0 - len | 0,len);break;
@@ -4357,47 +4367,47 @@
         else
          {var
            match$0=caml_string_unsafe_get(str,i$1),
-           _qT_=match$0 - 32 | 0,
+           _q3_=match$0 - 32 | 0,
            switch$0=
-            59 < _qT_ >>> 0?33 < (_qT_ - 61 | 0) >>> 0?1:0:2 === _qT_?1:0;
+            59 < _q3_ >>> 0?33 < (_q3_ - 61 | 0) >>> 0?1:0:2 === _q3_?1:0;
           if(! switch$0){var i$2=i$1 + 1 | 0,i$1=i$2;continue}
           var
            s$0=caml_bytes_of_string(str),
            n=[0,0],
-           _qM_=caml_ml_bytes_length(s$0) - 1 | 0,
-           _qL_=0;
-          if(! (_qM_ < 0))
-           {var i$0=_qL_;
+           _qW_=caml_ml_bytes_length(s$0) - 1 | 0,
+           _qV_=0;
+          if(! (_qW_ < 0))
+           {var i$0=_qV_;
             for(;;)
              {var match=caml_bytes_unsafe_get(s$0,i$0);
               if(32 <= match)
-               {var _qQ_=match - 34 | 0;
-                if(58 < _qQ_ >>> 0)
-                 if(93 <= _qQ_)var switch$1=0,switch$2=0;else var switch$2=1;
+               {var _q0_=match - 34 | 0;
+                if(58 < _q0_ >>> 0)
+                 if(93 <= _q0_)var switch$1=0,switch$2=0;else var switch$2=1;
                 else
-                 if(56 < (_qQ_ - 1 | 0) >>> 0)
+                 if(56 < (_q0_ - 1 | 0) >>> 0)
                   var switch$1=1,switch$2=0;
                  else
                   var switch$2=1;
-                if(switch$2)var _qR_=1,switch$1=2}
+                if(switch$2)var _q1_=1,switch$1=2}
               else
                var switch$1=11 <= match?13 === match?1:0:8 <= match?1:0;
               switch(switch$1)
-               {case 0:var _qR_=4;break;case 1:var _qR_=2;break}
-              n[1] = n[1] + _qR_ | 0;
-              var _qS_=i$0 + 1 | 0;
-              if(_qM_ !== i$0){var i$0=_qS_;continue}
+               {case 0:var _q1_=4;break;case 1:var _q1_=2;break}
+              n[1] = n[1] + _q1_ | 0;
+              var _q2_=i$0 + 1 | 0;
+              if(_qW_ !== i$0){var i$0=_q2_;continue}
               break}}
           if(n[1] === caml_ml_bytes_length(s$0))
            {var len=caml_ml_bytes_length(s$0),r=caml_create_bytes(len);
             caml_blit_bytes(s$0,0,r,0,len);
-            var _qU_=r}
+            var _q4_=r}
           else
            {var s=caml_create_bytes(n[1]);
             n[1] = 0;
-            var _qO_=caml_ml_bytes_length(s$0) - 1 | 0,_qN_=0;
-            if(! (_qO_ < 0))
-             {var i=_qN_;
+            var _qY_=caml_ml_bytes_length(s$0) - 1 | 0,_qX_=0;
+            if(! (_qY_ < 0))
+             {var i=_qX_;
               for(;;)
                {var c=caml_bytes_unsafe_get(s$0,i);
                 if(35 <= c)
@@ -4454,24 +4464,24 @@
                   case 2:caml_bytes_unsafe_set(s,n[1],c);break
                   }
                 n[1]++;
-                var _qP_=i + 1 | 0;
-                if(_qO_ !== i){var i=_qP_;continue}
+                var _qZ_=i + 1 | 0;
+                if(_qY_ !== i){var i=_qZ_;continue}
                 break}}
-            var _qU_=s}
-          var str$0=caml_string_of_bytes(_qU_)}
+            var _q4_=s}
+          var str$0=caml_string_of_bytes(_q4_)}
         var l=caml_ml_string_length(str$0),res=make(l + 2 | 0,34);
         caml_blit_string(str$0,0,res,1,l);
         return caml_string_of_bytes(res)}}
     function transform_int_alt(iconv,s)
      {if(13 <= iconv)
-       {var n=[0,0],_qG_=caml_ml_string_length(s) - 1 | 0,_qF_=0;
-        if(! (_qG_ < 0))
-         {var i$0=_qF_;
+       {var n=[0,0],_qQ_=caml_ml_string_length(s) - 1 | 0,_qP_=0;
+        if(! (_qQ_ < 0))
+         {var i$0=_qP_;
           for(;;)
            {var match=caml_string_unsafe_get(s,i$0),switcher$0=match - 48 | 0;
             if(! (9 < switcher$0 >>> 0))n[1]++;
-            var _qK_=i$0 + 1 | 0;
-            if(_qG_ !== i$0){var i$0=_qK_;continue}
+            var _qU_=i$0 + 1 | 0;
+            if(_qQ_ !== i$0){var i$0=_qU_;continue}
             break}}
         var
          digits=n[1],
@@ -4481,93 +4491,93 @@
          pos=[0,0],
          put=function(c){caml_bytes_set(buf,pos[1],c);pos[1]++;return 0},
          left=[0,((digits - 1 | 0) % 3 | 0) + 1 | 0],
-         _qI_=caml_ml_string_length(s) - 1 | 0,
-         _qH_=0;
-        if(! (_qI_ < 0))
-         {var i=_qH_;
+         _qS_=caml_ml_string_length(s) - 1 | 0,
+         _qR_=0;
+        if(! (_qS_ < 0))
+         {var i=_qR_;
           for(;;)
            {var c=caml_string_unsafe_get(s,i),switcher=c - 48 | 0;
             if(9 < switcher >>> 0)
              put(c);
             else
              {if(0 === left[1]){put(95);left[1] = 3}left[1] += -1;put(c)}
-            var _qJ_=i + 1 | 0;
-            if(_qI_ !== i){var i=_qJ_;continue}
+            var _qT_=i + 1 | 0;
+            if(_qS_ !== i){var i=_qT_;continue}
             break}}
         return caml_string_of_bytes(buf)}
       return s}
     function convert_int(iconv,n)
      {switch(iconv)
-       {case 1:var _qE_=_ap_;break;
-        case 2:var _qE_=_aq_;break;
-        case 4:var _qE_=_as_;break;
-        case 5:var _qE_=_at_;break;
-        case 6:var _qE_=_au_;break;
-        case 7:var _qE_=_av_;break;
-        case 8:var _qE_=_aw_;break;
-        case 9:var _qE_=_ax_;break;
-        case 10:var _qE_=_ay_;break;
-        case 11:var _qE_=_az_;break;
+       {case 1:var _qO_=_ap_;break;
+        case 2:var _qO_=_aq_;break;
+        case 4:var _qO_=_as_;break;
+        case 5:var _qO_=_at_;break;
+        case 6:var _qO_=_au_;break;
+        case 7:var _qO_=_av_;break;
+        case 8:var _qO_=_aw_;break;
+        case 9:var _qO_=_ax_;break;
+        case 10:var _qO_=_ay_;break;
+        case 11:var _qO_=_az_;break;
         case 0:
-        case 13:var _qE_=_ao_;break;
+        case 13:var _qO_=_ao_;break;
         case 3:
-        case 14:var _qE_=_ar_;break;
-        default:var _qE_=_aA_}
-      return transform_int_alt(iconv,caml_format_int(_qE_,n))}
+        case 14:var _qO_=_ar_;break;
+        default:var _qO_=_aA_}
+      return transform_int_alt(iconv,caml_format_int(_qO_,n))}
     function convert_int32(iconv,n)
      {switch(iconv)
-       {case 1:var _qD_=_aP_;break;
-        case 2:var _qD_=_aQ_;break;
-        case 4:var _qD_=_aS_;break;
-        case 5:var _qD_=_aT_;break;
-        case 6:var _qD_=_aU_;break;
-        case 7:var _qD_=_aV_;break;
-        case 8:var _qD_=_aW_;break;
-        case 9:var _qD_=_aX_;break;
-        case 10:var _qD_=_aY_;break;
-        case 11:var _qD_=_aZ_;break;
+       {case 1:var _qN_=_aP_;break;
+        case 2:var _qN_=_aQ_;break;
+        case 4:var _qN_=_aS_;break;
+        case 5:var _qN_=_aT_;break;
+        case 6:var _qN_=_aU_;break;
+        case 7:var _qN_=_aV_;break;
+        case 8:var _qN_=_aW_;break;
+        case 9:var _qN_=_aX_;break;
+        case 10:var _qN_=_aY_;break;
+        case 11:var _qN_=_aZ_;break;
         case 0:
-        case 13:var _qD_=_aO_;break;
+        case 13:var _qN_=_aO_;break;
         case 3:
-        case 14:var _qD_=_aR_;break;
-        default:var _qD_=_a0_}
-      return transform_int_alt(iconv,caml_format_int(_qD_,n))}
+        case 14:var _qN_=_aR_;break;
+        default:var _qN_=_a0_}
+      return transform_int_alt(iconv,caml_format_int(_qN_,n))}
     function convert_nativeint(iconv,n)
      {switch(iconv)
-       {case 1:var _qC_=_a2_;break;
-        case 2:var _qC_=_a3_;break;
-        case 4:var _qC_=_a5_;break;
-        case 5:var _qC_=_a6_;break;
-        case 6:var _qC_=_a7_;break;
-        case 7:var _qC_=_a8_;break;
-        case 8:var _qC_=_a9_;break;
-        case 9:var _qC_=_a__;break;
-        case 10:var _qC_=_a$_;break;
-        case 11:var _qC_=_ba_;break;
+       {case 1:var _qM_=_a2_;break;
+        case 2:var _qM_=_a3_;break;
+        case 4:var _qM_=_a5_;break;
+        case 5:var _qM_=_a6_;break;
+        case 6:var _qM_=_a7_;break;
+        case 7:var _qM_=_a8_;break;
+        case 8:var _qM_=_a9_;break;
+        case 9:var _qM_=_a__;break;
+        case 10:var _qM_=_a$_;break;
+        case 11:var _qM_=_ba_;break;
         case 0:
-        case 13:var _qC_=_a1_;break;
+        case 13:var _qM_=_a1_;break;
         case 3:
-        case 14:var _qC_=_a4_;break;
-        default:var _qC_=_bb_}
-      return transform_int_alt(iconv,caml_format_int(_qC_,n))}
+        case 14:var _qM_=_a4_;break;
+        default:var _qM_=_bb_}
+      return transform_int_alt(iconv,caml_format_int(_qM_,n))}
     function convert_int64(iconv,n)
      {switch(iconv)
-       {case 1:var _qB_=_aC_;break;
-        case 2:var _qB_=_aD_;break;
-        case 4:var _qB_=_aF_;break;
-        case 5:var _qB_=_aG_;break;
-        case 6:var _qB_=_aH_;break;
-        case 7:var _qB_=_aI_;break;
-        case 8:var _qB_=_aJ_;break;
-        case 9:var _qB_=_aK_;break;
-        case 10:var _qB_=_aL_;break;
-        case 11:var _qB_=_aM_;break;
+       {case 1:var _qL_=_aC_;break;
+        case 2:var _qL_=_aD_;break;
+        case 4:var _qL_=_aF_;break;
+        case 5:var _qL_=_aG_;break;
+        case 6:var _qL_=_aH_;break;
+        case 7:var _qL_=_aI_;break;
+        case 8:var _qL_=_aJ_;break;
+        case 9:var _qL_=_aK_;break;
+        case 10:var _qL_=_aL_;break;
+        case 11:var _qL_=_aM_;break;
         case 0:
-        case 13:var _qB_=_aB_;break;
+        case 13:var _qL_=_aB_;break;
         case 3:
-        case 14:var _qB_=_aE_;break;
-        default:var _qB_=_aN_}
-      return transform_int_alt(iconv,caml_int64_format(_qB_,n))}
+        case 14:var _qL_=_aE_;break;
+        default:var _qL_=_aN_}
+      return transform_int_alt(iconv,caml_int64_format(_qL_,n))}
     function convert_float(fconv,prec$0,x)
      {if(16 <= fconv)
        {if(17 <= fconv)
@@ -4583,30 +4593,30 @@
         if(19 <= fconv)
          {var s=caml_bytes_of_string(s$0),l=caml_ml_bytes_length(s);
           if(0 === l)
-           var _qx_=s;
+           var _qH_=s;
           else
-           {var r=caml_create_bytes(l),_qu_=l - 1 | 0,_qt_=0;
-            if(! (_qu_ < 0))
-             {var i=_qt_;
+           {var r=caml_create_bytes(l),_qE_=l - 1 | 0,_qD_=0;
+            if(! (_qE_ < 0))
+             {var i=_qD_;
               for(;;)
                {var c=caml_bytes_unsafe_get(s,i);
                 if(97 <= c)
                  if(122 < c)
                   var switch$1=0;
                  else
-                  var _qv_=c - 32 | 0,switch$1=1;
+                  var _qF_=c - 32 | 0,switch$1=1;
                 else
                  var switch$1=0;
-                if(! switch$1)var _qv_=c;
-                caml_bytes_unsafe_set(r,i,_qv_);
-                var _qw_=i + 1 | 0;
-                if(_qu_ !== i){var i=_qw_;continue}
+                if(! switch$1)var _qF_=c;
+                caml_bytes_unsafe_set(r,i,_qF_);
+                var _qG_=i + 1 | 0;
+                if(_qE_ !== i){var i=_qG_;continue}
                 break}}
-            var _qx_=r}
-          return caml_string_of_bytes(_qx_)}
+            var _qH_=r}
+          return caml_string_of_bytes(_qH_)}
         return s$0}
       if(15 === fconv)
-       var _qy_=_bc_;
+       var _qI_=_bc_;
       else
        {var prec=abs(prec$0);
         switch(fconv)
@@ -4651,8 +4661,8 @@
         buffer_add_char(buf,46);
         buffer_add_string(buf,caml_new_string("" + prec));
         buffer_add_char(buf,symb);
-        var _qy_=buffer_contents(buf)}
-      var str=caml_format_float(_qy_,x);
+        var _qI_=buffer_contents(buf)}
+      var str=caml_format_float(_qI_,x);
       if(15 === fconv)
        {var len=caml_ml_string_length(str),match$0=caml_classify_float(x);
         if(3 === match$0)return x < 0.?_bd_:_be_;
@@ -4660,16 +4670,16 @@
         var i$0=0;
         for(;;)
          {if(i$0 === len)
-           var _qA_=0;
+           var _qK_=0;
           else
            {var
              match=caml_string_get(str,i$0),
-             _qz_=match - 46 | 0,
+             _qJ_=match - 46 | 0,
              switch$2=
-              23 < _qz_ >>> 0?55 === _qz_?1:0:21 < (_qz_ - 1 | 0) >>> 0?1:0;
+              23 < _qJ_ >>> 0?55 === _qJ_?1:0:21 < (_qJ_ - 1 | 0) >>> 0?1:0;
             if(! switch$2){var i$1=i$0 + 1 | 0,i$0=i$1;continue}
-            var _qA_=1}
-          return _qA_?str:symbol(str,_bg_)}}
+            var _qK_=1}
+          return _qK_?str:symbol(str,_bg_)}}
       return str}
     function make_int_padding_precision(k,acc,fmt,pad,match,trans,iconv)
      {if(typeof pad === "number")
@@ -4687,43 +4697,43 @@
           return make_printf(k,[4,acc,str],fmt)}}
       else
        {if(0 === pad[0])
-         {var _qq_=pad[2],_qr_=pad[1];
+         {var _qA_=pad[2],_qB_=pad[1];
           if(typeof match === "number")
            return 0 === match
                    ?function(x)
-                     {var str=fix_padding(_qr_,_qq_,caml_call2(trans,iconv,x));
+                     {var str=fix_padding(_qB_,_qA_,caml_call2(trans,iconv,x));
                       return make_printf(k,[4,acc,str],fmt)}
                    :function(p,x)
                      {var
                        str=
                         fix_padding
-                         (_qr_,_qq_,fix_int_precision(p,caml_call2(trans,iconv,x)));
+                         (_qB_,_qA_,fix_int_precision(p,caml_call2(trans,iconv,x)));
                       return make_printf(k,[4,acc,str],fmt)};
           var p$0=match[1];
           return function(x)
            {var
              str=
               fix_padding
-               (_qr_,_qq_,fix_int_precision(p$0,caml_call2(trans,iconv,x)));
+               (_qB_,_qA_,fix_int_precision(p$0,caml_call2(trans,iconv,x)));
             return make_printf(k,[4,acc,str],fmt)}}
-        var _qs_=pad[1];
+        var _qC_=pad[1];
         if(typeof match === "number")
          return 0 === match
                  ?function(w,x)
-                   {var str=fix_padding(_qs_,w,caml_call2(trans,iconv,x));
+                   {var str=fix_padding(_qC_,w,caml_call2(trans,iconv,x));
                     return make_printf(k,[4,acc,str],fmt)}
                  :function(w,p,x)
                    {var
                      str=
                       fix_padding
-                       (_qs_,w,fix_int_precision(p,caml_call2(trans,iconv,x)));
+                       (_qC_,w,fix_int_precision(p,caml_call2(trans,iconv,x)));
                     return make_printf(k,[4,acc,str],fmt)};
         var p$1=match[1];
         return function(w,x)
          {var
            str=
             fix_padding
-             (_qs_,w,fix_int_precision(p$1,caml_call2(trans,iconv,x)));
+             (_qC_,w,fix_int_precision(p$1,caml_call2(trans,iconv,x)));
           return make_printf(k,[4,acc,str],fmt)}}}
     function make_padding(k,acc,fmt,pad,trans)
      {if(typeof pad === "number")
@@ -4842,35 +4852,35 @@
                return make_printf(k$0,[4,acc$0,str],rest$7)}}
            else
             {if(0 === pad$5[0])
-              {var _qm_=pad$5[2],_qn_=pad$5[1];
+              {var _qw_=pad$5[2],_qx_=pad$5[1];
                if(typeof prec$3 === "number")
                 return 0 === prec$3
                         ?function(x)
                           {var
                             str=convert_float(fconv,default_float_precision,x),
-                            str$0=fix_padding(_qn_,_qm_,str);
+                            str$0=fix_padding(_qx_,_qw_,str);
                            return make_printf(k$0,[4,acc$0,str$0],rest$7)}
                         :function(p,x)
-                          {var str=fix_padding(_qn_,_qm_,convert_float(fconv,p,x));
+                          {var str=fix_padding(_qx_,_qw_,convert_float(fconv,p,x));
                            return make_printf(k$0,[4,acc$0,str],rest$7)};
                var p$0=prec$3[1];
                return function(x)
-                {var str=fix_padding(_qn_,_qm_,convert_float(fconv,p$0,x));
+                {var str=fix_padding(_qx_,_qw_,convert_float(fconv,p$0,x));
                  return make_printf(k$0,[4,acc$0,str],rest$7)}}
-             var _qo_=pad$5[1];
+             var _qy_=pad$5[1];
              if(typeof prec$3 === "number")
               return 0 === prec$3
                       ?function(w,x)
                         {var
                           str=convert_float(fconv,default_float_precision,x),
-                          str$0=fix_padding(_qo_,w,str);
+                          str$0=fix_padding(_qy_,w,str);
                          return make_printf(k$0,[4,acc$0,str$0],rest$7)}
                       :function(w,p,x)
-                        {var str=fix_padding(_qo_,w,convert_float(fconv,p,x));
+                        {var str=fix_padding(_qy_,w,convert_float(fconv,p,x));
                          return make_printf(k$0,[4,acc$0,str],rest$7)};
              var p$1=prec$3[1];
              return function(w,x)
-              {var str=fix_padding(_qo_,w,convert_float(fconv,p$1,x));
+              {var str=fix_padding(_qy_,w,convert_float(fconv,p$1,x));
                return make_printf(k$0,[4,acc$0,str],rest$7)}}
           case 9:
            var rest$8=fmt$0[2],pad$6=fmt$0[1];
@@ -4905,9 +4915,9 @@
             {var
               fmt$0=param[1],
               fmtty$0=erase_rel(symm(fmtty)),
-              _qp_=type_format_gen(fmt$0,fmtty$0);
-             if(typeof _qp_[2] === "number")
-              {var fmt=_qp_[1];
+              _qz_=type_format_gen(fmt$0,fmtty$0);
+             if(typeof _qz_[2] === "number")
+              {var fmt=_qz_[1];
                return make_printf(k$0,acc$0,concat_fmt(fmt,rest$10))}
              throw Type_mismatch};
           case 15:
@@ -4929,11 +4939,11 @@
             fmt$0=fmt$4;
            continue;
           case 18:
-           var _qk_=fmt$0[1];
-           if(0 === _qk_[0])
+           var _qu_=fmt$0[1];
+           if(0 === _qu_[0])
             {var
               rest$13=fmt$0[2],
-              match=_qk_[1],
+              match=_qu_[1],
               fmt$5=match[1],
               k$3=
                function(acc,k,rest)
@@ -4947,7 +4957,7 @@
              continue}
            var
             rest$14=fmt$0[2],
-            match$0=_qk_[1],
+            match$0=_qu_[1],
             fmt$6=match$0[1],
             k$4=
              function(acc,k,rest)
@@ -5075,12 +5085,12 @@
             rest$19=fmt$0[3],
             f=fmt$0[2],
             arity=fmt$0[1],
-            _ql_=caml_call1(f,0);
+            _qv_=caml_call1(f,0);
            if(counter < 50)
             {var counter$0=counter + 1 | 0;
-             return make_custom$0(counter$0,k$0,acc$0,rest$19,arity,_ql_)}
+             return make_custom$0(counter$0,k$0,acc$0,rest$19,arity,_qv_)}
            return caml_trampoline_return
-                   (make_custom$0,[0,k$0,acc$0,rest$19,arity,_ql_])}}
+                   (make_custom$0,[0,k$0,acc$0,rest$19,arity,_qv_])}}
     function make_from_fmtty$0(counter,k,acc,fmtty,fmt)
      {if(typeof fmtty === "number")
        {if(counter < 50)
@@ -5126,7 +5136,7 @@
            {return make_from_fmtty(k,acc,concat_fmtty(ty,rest$8),fmt)};
          case 10:
           var rest$9=fmtty[1];
-          return function(param,_qj_)
+          return function(param,_qt_)
            {return make_from_fmtty(k,acc,rest$9,fmt)};
          case 11:
           var rest$10=fmtty[1];
@@ -5137,21 +5147,21 @@
          case 13:throw [0,Assert_failure,_bl_];
          default:throw [0,Assert_failure,_bm_]}}
     function make_invalid_arg(counter,k,acc,fmt)
-     {var _qi_=[8,acc,_bn_];
+     {var _qs_=[8,acc,_bn_];
       if(counter < 50)
        {var counter$0=counter + 1 | 0;
-        return make_printf$0(counter$0,k,_qi_,fmt)}
-      return caml_trampoline_return(make_printf$0,[0,k,_qi_,fmt])}
+        return make_printf$0(counter$0,k,_qs_,fmt)}
+      return caml_trampoline_return(make_printf$0,[0,k,_qs_,fmt])}
     function make_custom$0(counter,k,acc,rest,arity,f)
      {if(arity)
        {var arity$0=arity[1];
         return function(x)
          {return make_custom(k,acc,rest,arity$0,caml_call1(f,x))}}
-      var _qh_=[4,acc,f];
+      var _qr_=[4,acc,f];
       if(counter < 50)
        {var counter$0=counter + 1 | 0;
-        return make_printf$0(counter$0,k,_qh_,rest)}
-      return caml_trampoline_return(make_printf$0,[0,k,_qh_,rest])}
+        return make_printf$0(counter$0,k,_qr_,rest)}
+      return caml_trampoline_return(make_printf$0,[0,k,_qr_,rest])}
     function make_printf(k,acc,fmt)
      {return caml_trampoline(make_printf$0(0,k,acc,fmt))}
     function make_from_fmtty(k,acc,fmtty,fmt)
@@ -5184,15 +5194,15 @@
            strput_acc(b,p);
            return add_string(b,s);
           case 1:
-           var _qf_=acc$0[2],_qg_=acc$0[1];
-           if(0 === _qf_[0])
-            {var acc$1=_qf_[1];
-             strput_acc(b,_qg_);
+           var _qp_=acc$0[2],_qq_=acc$0[1];
+           if(0 === _qp_[0])
+            {var acc$1=_qp_[1];
+             strput_acc(b,_qq_);
              add_string(b,_bo_);
              var acc$0=acc$1;
              continue}
-           var acc$2=_qf_[1];
-           strput_acc(b,_qg_);
+           var acc$2=_qp_[1];
+           strput_acc(b,_qq_);
            add_string(b,_bp_);
            var acc$0=acc$2;
            continue;
@@ -5239,25 +5249,25 @@
               :caml_call1(sprintf(_bs_),a)}
     function other_fields(x,i)
      {if(x.length - 1 <= i)return _bt_;
-      var _qd_=other_fields(x,i + 1 | 0),_qe_=field(x,i);
-      return caml_call2(sprintf(_bu_),_qe_,_qd_)}
+      var _qn_=other_fields(x,i + 1 | 0),_qo_=field(x,i);
+      return caml_call2(sprintf(_bu_),_qo_,_qn_)}
     function fields(x)
      {var match=x.length - 1;
       if(2 < match >>> 0)
-       {var _qa_=other_fields(x,2),_qb_=field(x,1);
-        return caml_call2(sprintf(_bv_),_qb_,_qa_)}
+       {var _qk_=other_fields(x,2),_ql_=field(x,1);
+        return caml_call2(sprintf(_bv_),_ql_,_qk_)}
       switch(match)
        {case 0:return _bw_;
         case 1:return _bx_;
-        default:var _qc_=field(x,1);return caml_call1(sprintf(_by_),_qc_)}}
+        default:var _qm_=field(x,1);return caml_call1(sprintf(_by_),_qm_)}}
     function to_string(x)
      {function conv(param)
        {var param$0=param;
         for(;;)
          {if(param$0)
            {var tl=param$0[2],hd=param$0[1];
-            try {var _p__=caml_call1(hd,x),_p9_=_p__}catch(_p$_){var _p9_=0}
-            if(_p9_){var s=_p9_[1];return s}
+            try {var _qi_=caml_call1(hd,x),_qh_=_qi_}catch(_qj_){var _qh_=0}
+            if(_qh_){var s=_qh_[1];return s}
             var param$0=tl;
             continue}
           if(x === Out_of_memory)return _bz_;
@@ -5288,22 +5298,22 @@
       return conv(printers[1])}
     function register_printer(fn){printers[1] = [0,fn,printers[1]];return 0}
     try
-     {var _gG_=caml_sys_getenv(_gF_),params=_gG_}
-    catch(_p7_)
-     {_p7_ = caml_wrap_exception(_p7_);
-      if(_p7_ !== Not_found)throw _p7_;
+     {var _gO_=caml_sys_getenv(_gN_),params=_gO_}
+    catch(_qf_)
+     {_qf_ = caml_wrap_exception(_qf_);
+      if(_qf_ !== Not_found)throw _qf_;
       try
-       {var _gE_=caml_sys_getenv(_gD_),_bG_=_gE_}
-      catch(_p8_)
-       {_p8_ = caml_wrap_exception(_p8_);
-        if(_p8_ !== Not_found)throw _p8_;
+       {var _gM_=caml_sys_getenv(_gL_),_bG_=_gM_}
+      catch(_qg_)
+       {_qg_ = caml_wrap_exception(_qg_);
+        if(_qg_ !== Not_found)throw _qg_;
         var _bG_=_bF_}
       var params=_bG_}
     var
      random=contains(params,82),
      prng=
       [246,
-       function(_p6_)
+       function(_qe_)
         {var
           seed$0=caml_sys_random_seed(0),
           result=[0,caml_make_vect(55,0),0],
@@ -5312,11 +5322,11 @@
           i$0=0;
          for(;;)
           {caml_check_bound(result[1],i$0)[1 + i$0] = i$0;
-           var _p5_=i$0 + 1 | 0;
-           if(54 !== i$0){var i$0=_p5_;continue}
-           var accu=[0,_bE_],_p1_=54 + max(55,l) | 0,_p0_=0;
-           if(! (_p1_ < 0))
-            {var i=_p0_;
+           var _qd_=i$0 + 1 | 0;
+           if(54 !== i$0){var i$0=_qd_;continue}
+           var accu=[0,_bE_],_p$_=54 + max(55,l) | 0,_p__=0;
+           if(! (_p$_ < 0))
+            {var i=_p__;
              for(;;)
               {var
                 j=i % 55 | 0,
@@ -5325,23 +5335,23 @@
                 str=symbol(accu[1],caml_new_string("" + x));
                accu[1] = caml_md5_string(str,0,caml_ml_string_length(str));
                var
-                _p2_=accu[1],
-                _pW_=caml_string_get(_p2_,3) << 24,
-                _pX_=caml_string_get(_p2_,2) << 16,
-                _pY_=caml_string_get(_p2_,1) << 8,
-                _pZ_=
-                 ((caml_string_get(_p2_,0) + _pY_ | 0) + _pX_ | 0)
+                _qa_=accu[1],
+                _p6_=caml_string_get(_qa_,3) << 24,
+                _p7_=caml_string_get(_qa_,2) << 16,
+                _p8_=caml_string_get(_qa_,1) << 8,
+                _p9_=
+                 ((caml_string_get(_qa_,0) + _p8_ | 0) + _p7_ | 0)
                  +
-                 _pW_
+                 _p6_
                  |
                  0,
-                _p3_=
-                 (caml_check_bound(result[1],j)[1 + j] ^ _pZ_)
+                _qb_=
+                 (caml_check_bound(result[1],j)[1 + j] ^ _p9_)
                  &
                  1073741823;
-               caml_check_bound(result[1],j)[1 + j] = _p3_;
-               var _p4_=i + 1 | 0;
-               if(_p1_ !== i){var i=_p4_;continue}
+               caml_check_bound(result[1],j)[1 + j] = _qb_;
+               var _qc_=i + 1 | 0;
+               if(_p$_ !== i){var i=_qc_;continue}
                break}}
            result[2] = 0;
            return result}}];
@@ -5350,7 +5360,7 @@
               ?caml_hash(10,100,h[3],key) & (h[2].length - 1 - 1 | 0)
               :caml_mod(caml_hash_univ_param(10,100,key),h[2].length - 1)}
     function find(h,key)
-     {var _pV_=indexfun(h,key),match=caml_check_bound(h[2],_pV_)[1 + _pV_];
+     {var _p5_=indexfun(h,key),match=caml_check_bound(h[2],_p5_)[1 + _p5_];
       if(match)
        {var k1=match[1],d1=match[2],next1=match[3];
         if(0 === caml_compare(key,k1))return d1;
@@ -5400,22 +5410,22 @@
           {var x$0=x * 2 | 0,x=x$0;continue}
         if(random)
          {var
-           _pl_=caml_obj_tag(prng),
-           _pm_=250 === _pl_?prng[1]:246 === _pl_?force_lazy_block(prng):prng;
-          _pm_[2] = (_pm_[2] + 1 | 0) % 55 | 0;
+           _pv_=caml_obj_tag(prng),
+           _pw_=250 === _pv_?prng[1]:246 === _pv_?force_lazy_block(prng):prng;
+          _pw_[2] = (_pw_[2] + 1 | 0) % 55 | 0;
           var
-           _pg_=_pm_[2],
-           curval=caml_check_bound(_pm_[1],_pg_)[1 + _pg_],
-           _ph_=(_pm_[2] + 24 | 0) % 55 | 0,
+           _pq_=_pw_[2],
+           curval=caml_check_bound(_pw_[1],_pq_)[1 + _pq_],
+           _pr_=(_pw_[2] + 24 | 0) % 55 | 0,
            newval=
-            caml_check_bound(_pm_[1],_ph_)[1 + _ph_]
+            caml_check_bound(_pw_[1],_pr_)[1 + _pr_]
             +
             (curval ^ (curval >>> 25 | 0) & 31)
             |
             0,
            newval30=newval & 1073741823,
-           _pi_=_pm_[2];
-          caml_check_bound(_pm_[1],_pi_)[1 + _pi_] = newval30;
+           _ps_=_pw_[2];
+          caml_check_bound(_pw_[1],_ps_)[1 + _ps_] = newval30;
           var seed=newval30}
         else
          var seed=0;
@@ -5439,13 +5449,13 @@
                {var
                  ndata=caml_make_vect(nsize,0),
                  ndata_tail=caml_make_vect(nsize,0),
-                 _pj_=kwd_table.length - 1 < 4?1:0,
-                 _pk_=_pj_ || (kwd_table[4] < 0?1:0),
-                 inplace=1 - _pk_;
+                 _pt_=kwd_table.length - 1 < 4?1:0,
+                 _pu_=_pt_ || (kwd_table[4] < 0?1:0),
+                 inplace=1 - _pu_;
                 kwd_table[2] = ndata;
-                var _po_=osize - 1 | 0,_pn_=0;
-                if(! (_po_ < 0))
-                 {var i$0=_pn_;
+                var _py_=osize - 1 | 0,_px_=0;
+                if(! (_py_ < 0))
+                 {var i$0=_px_;
                   a:
                   for(;;)
                    {var
@@ -5467,19 +5477,19 @@
                         caml_check_bound(ndata_tail,nidx)[1 + nidx] = cell$0;
                         var cell=next;
                         continue}
-                      var _ps_=i$0 + 1 | 0;
-                      if(_po_ !== i$0){var i$0=_ps_;continue a}
+                      var _pC_=i$0 + 1 | 0;
+                      if(_py_ !== i$0){var i$0=_pC_;continue a}
                       break}
                     break}}
                 if(inplace)
-                 {var _pq_=nsize - 1 | 0,_pp_=0;
-                  if(! (_pq_ < 0))
-                   {var i=_pp_;
+                 {var _pA_=nsize - 1 | 0,_pz_=0;
+                  if(! (_pA_ < 0))
+                   {var i=_pz_;
                     for(;;)
                      {var match$0=caml_check_bound(ndata_tail,i)[1 + i];
                       if(match$0)match$0[3] = 0;
-                      var _pr_=i + 1 | 0;
-                      if(_pq_ !== i){var i=_pr_;continue}
+                      var _pB_=i + 1 | 0;
+                      if(_pA_ !== i){var i=_pB_;continue}
                       break}}}}}
             var param=l;
             continue}
@@ -5487,79 +5497,79 @@
            ident_or_keyword=
             function(id)
              {try
-               {var _pT_=find(kwd_table,id);return _pT_}
-              catch(_pU_)
-               {_pU_ = caml_wrap_exception(_pU_);
-                if(_pU_ === Not_found)return [1,id];
-                throw _pU_}},
+               {var _p3_=find(kwd_table,id);return _p3_}
+              catch(_p4_)
+               {_p4_ = caml_wrap_exception(_p4_);
+                if(_p4_ === Not_found)return [1,id];
+                throw _p4_}},
            keyword_or_error=
             function(c)
              {var s=make$0(1,c);
               try
-               {var _pR_=find(kwd_table,s);return _pR_}
-              catch(_pS_)
-               {_pS_ = caml_wrap_exception(_pS_);
-                if(_pS_ === Not_found)throw [0,Error,symbol(_bH_,s)];
-                throw _pS_}},
+               {var _p1_=find(kwd_table,s);return _p1_}
+              catch(_p2_)
+               {_p2_ = caml_wrap_exception(_p2_);
+                if(_p2_ === Not_found)throw [0,Error,symbol(_bH_,s)];
+                throw _p2_}},
            end_exponent_part=
             function(strm)
              {for(;;)
                {var match=peek(strm);
                 if(match)
-                 {var _pQ_=match[1],switcher=_pQ_ - 48 | 0;
-                  if(! (9 < switcher >>> 0)){junk(strm);store(_pQ_);continue}}
+                 {var _p0_=match[1],switcher=_p0_ - 48 | 0;
+                  if(! (9 < switcher >>> 0)){junk(strm);store(_p0_);continue}}
                 return [0,[3,caml_float_of_string(get_string(0))]]}},
            exponent_part=
             function(strm)
              {var match=peek(strm);
               if(match)
-               {var _pP_=match[1],switch$0=43 === _pP_?0:45 === _pP_?0:1;
+               {var _pZ_=match[1],switch$0=43 === _pZ_?0:45 === _pZ_?0:1;
                 if(! switch$0)
-                 {junk(strm);store(_pP_);return end_exponent_part(strm)}}
+                 {junk(strm);store(_pZ_);return end_exponent_part(strm)}}
               return end_exponent_part(strm)},
            number=
             function(s)
              {for(;;)
                {var match=peek(s);
                 if(match)
-                 {var _pM_=match[1];
-                  if(58 <= _pM_)
-                   {var switch$0=69 === _pM_?0:101 === _pM_?0:1;
+                 {var _pW_=match[1];
+                  if(58 <= _pW_)
+                   {var switch$0=69 === _pW_?0:101 === _pW_?0:1;
                     if(! switch$0){junk(s);store(69);return exponent_part(s)}}
                   else
-                   {if(46 === _pM_)
+                   {if(46 === _pW_)
                      {junk(s);
                       store(46);
                       for(;;)
                        {var match$0=peek(s);
                         if(match$0)
-                         {var _pN_=match$0[1],_pO_=_pN_ - 69 | 0;
-                          if(32 < _pO_ >>> 0)
-                           {var switcher=_pO_ + 21 | 0;
-                            if(! (9 < switcher >>> 0)){junk(s);store(_pN_);continue}}
+                         {var _pX_=match$0[1],_pY_=_pX_ - 69 | 0;
+                          if(32 < _pY_ >>> 0)
+                           {var switcher=_pY_ + 21 | 0;
+                            if(! (9 < switcher >>> 0)){junk(s);store(_pX_);continue}}
                           else
-                           {var switcher$0=_pO_ - 1 | 0;
+                           {var switcher$0=_pY_ - 1 | 0;
                             if(30 < switcher$0 >>> 0)
                              {junk(s);store(69);return exponent_part(s)}}}
                         return [0,[3,caml_float_of_string(get_string(0))]]}}
-                    if(48 <= _pM_){junk(s);store(_pM_);continue}}}
+                    if(48 <= _pW_){junk(s);store(_pW_);continue}}}
                 return [0,[2,caml_int_of_string(get_string(0))]]}},
            ident2=
             function(strm)
              {for(;;)
                {var match=peek(strm);
                 if(match)
-                 {var _pK_=match[1];
-                  if(94 <= _pK_)
+                 {var _pU_=match[1];
+                  if(94 <= _pU_)
                    var
-                    _pL_=_pK_ - 95 | 0,
-                    switch$0=30 < _pL_ >>> 0?32 <= _pL_?1:0:29 === _pL_?0:1;
+                    _pV_=_pU_ - 95 | 0,
+                    switch$0=30 < _pV_ >>> 0?32 <= _pV_?1:0:29 === _pV_?0:1;
                   else
-                   if(65 <= _pK_)
-                    var switch$0=92 === _pK_?0:1;
+                   if(65 <= _pU_)
+                    var switch$0=92 === _pU_?0:1;
                    else
-                    if(33 <= _pK_)
-                     switch(_pK_ - 33 | 0)
+                    if(33 <= _pU_)
+                     switch(_pU_ - 33 | 0)
                       {case 0:
                        case 2:
                        case 3:
@@ -5578,18 +5588,18 @@
                        default:var switch$0=1}
                     else
                      var switch$0=1;
-                  if(! switch$0){junk(strm);store(_pK_);continue}}
+                  if(! switch$0){junk(strm);store(_pU_);continue}}
                 return [0,ident_or_keyword(get_string(0))]}},
            neg_number=
             function(s)
              {var match=peek(s);
               if(match)
-               {var _pJ_=match[1],switcher=_pJ_ - 48 | 0;
+               {var _pT_=match[1],switcher=_pT_ - 48 | 0;
                 if(! (9 < switcher >>> 0))
                  {junk(s);
                   reset_buffer(0);
                   store(45);
-                  store(_pJ_);
+                  store(_pT_);
                   return number(s)}}
               reset_buffer(0);
               store(45);
@@ -5599,32 +5609,32 @@
              {for(;;)
                {var match=peek(strm);
                 if(match)
-                 {var _pH_=match[1];
-                  if(91 <= _pH_)
+                 {var _pR_=match[1];
+                  if(91 <= _pR_)
                    var
-                    _pI_=_pH_ - 95 | 0,
-                    switch$0=27 < _pI_ >>> 0?97 <= _pI_?0:1:1 === _pI_?1:0;
+                    _pS_=_pR_ - 95 | 0,
+                    switch$0=27 < _pS_ >>> 0?97 <= _pS_?0:1:1 === _pS_?1:0;
                   else
                    var
                     switch$0=
-                     48 <= _pH_?6 < (_pH_ - 58 | 0) >>> 0?0:1:39 === _pH_?0:1;
-                  if(! switch$0){junk(strm);store(_pH_);continue}}
+                     48 <= _pR_?6 < (_pR_ - 58 | 0) >>> 0?0:1:39 === _pR_?0:1;
+                  if(! switch$0){junk(strm);store(_pR_);continue}}
                 return [0,ident_or_keyword(get_string(0))]}},
            next_token$0=
             function(counter,strm)
              {for(;;)
                {var match=peek(strm);
                 if(match)
-                 {var _px_=match[1];
-                  if(124 <= _px_)
-                   var switch$0=127 <= _px_?192 <= _px_?1:0:125 === _px_?0:2;
+                 {var _pH_=match[1];
+                  if(124 <= _pH_)
+                   var switch$0=127 <= _pH_?192 <= _pH_?1:0:125 === _pH_?0:2;
                   else
-                   {var _py_=_px_ - 65 | 0;
-                    if(57 < _py_ >>> 0)
-                     if(58 <= _py_)
+                   {var _pI_=_pH_ - 65 | 0;
+                    if(57 < _pI_ >>> 0)
+                     if(58 <= _pI_)
                       var switch$0=0;
                      else
-                      {var switcher=_py_ + 65 | 0;
+                      {var switcher=_pI_ + 65 | 0;
                        switch(switcher)
                         {case 34:
                           junk(strm);
@@ -5632,21 +5642,21 @@
                           for(;;)
                            {var match$1=peek(strm);
                             if(match$1)
-                             {var _pA_=match$1[1];
-                              if(34 === _pA_){junk(strm);return [0,[4,get_string(0)]]}
-                              if(92 === _pA_)
+                             {var _pK_=match$1[1];
+                              if(34 === _pK_){junk(strm);return [0,[4,get_string(0)]]}
+                              if(92 === _pK_)
                                {junk(strm);
                                 try
                                  {var c$0=escape(strm)}
-                                catch(_pG_)
-                                 {_pG_ = caml_wrap_exception(_pG_);
-                                  if(_pG_ === Failure$0)throw [0,Error,_bK_];
-                                  throw _pG_;
-                                  var _pD_=_pG_}
+                                catch(_pQ_)
+                                 {_pQ_ = caml_wrap_exception(_pQ_);
+                                  if(_pQ_ === Failure$0)throw [0,Error,_bK_];
+                                  throw _pQ_;
+                                  var _pN_=_pQ_}
                                 store(c$0);
                                 continue}
                               junk(strm);
-                              store(_pA_);
+                              store(_pK_);
                               continue}
                             throw Failure$0}
                          case 39:
@@ -5654,22 +5664,22 @@
                           try
                            {var match$2=peek(strm);
                             if(! match$2)throw Failure$0;
-                            var _pB_=match$2[1];
-                            if(92 === _pB_)
+                            var _pL_=match$2[1];
+                            if(92 === _pL_)
                              {junk(strm);
                               try
-                               {var _pC_=escape(strm)}
-                              catch(_pF_)
-                               {_pF_ = caml_wrap_exception(_pF_);
-                                if(_pF_ === Failure$0)throw [0,Error,_bL_];
-                                throw _pF_}
-                              var c=_pC_}
+                               {var _pM_=escape(strm)}
+                              catch(_pP_)
+                               {_pP_ = caml_wrap_exception(_pP_);
+                                if(_pP_ === Failure$0)throw [0,Error,_bL_];
+                                throw _pP_}
+                              var c=_pM_}
                             else
-                             {junk(strm);var c=_pB_}}
-                          catch(_pE_)
-                           {_pE_ = caml_wrap_exception(_pE_);
-                            if(_pE_ === Failure$0)throw [0,Error,_bI_];
-                            throw _pE_}
+                             {junk(strm);var c=_pL_}}
+                          catch(_pO_)
+                           {_pO_ = caml_wrap_exception(_pO_);
+                            if(_pO_ === Failure$0)throw [0,Error,_bI_];
+                            throw _pO_}
                           var match$0=peek(strm);
                           if(match$0)
                            if(39 === match$0[1]){junk(strm);return [0,[5,c]]}
@@ -5697,7 +5707,7 @@
                          case 55:
                          case 56:
                          case 57:
-                          junk(strm);reset_buffer(0);store(_px_);return number(strm);
+                          junk(strm);reset_buffer(0);store(_pH_);return number(strm);
                          case 33:
                          case 35:
                          case 36:
@@ -5714,21 +5724,21 @@
                          case 64:var switch$0=2;break;
                          default:var switch$0=0}}
                     else
-                     {var _pz_=_py_ - 26 | 0;
-                      if(5 < _pz_ >>> 0)
+                     {var _pJ_=_pI_ - 26 | 0;
+                      if(5 < _pJ_ >>> 0)
                        var switch$0=1;
                       else
-                       switch(_pz_)
+                       switch(_pJ_)
                         {case 4:var switch$0=1;break;
                          case 1:
                          case 3:var switch$0=2;break;
                          default:var switch$0=0}}}
                   switch(switch$0)
-                   {case 0:junk(strm);return [0,keyword_or_error(_px_)];
+                   {case 0:junk(strm);return [0,keyword_or_error(_pH_)];
                     case 1:
-                     junk(strm);reset_buffer(0);store(_px_);return ident(strm);
+                     junk(strm);reset_buffer(0);store(_pH_);return ident(strm);
                     default:
-                     junk(strm);reset_buffer(0);store(_px_);return ident2(strm)}}
+                     junk(strm);reset_buffer(0);store(_pH_);return ident2(strm)}}
                 return 0}},
            maybe_comment=
             function(counter,strm)
@@ -5748,9 +5758,9 @@
             function(strm)
              {var match=peek(strm);
               if(match)
-               {var _pu_=match[1];
-                if(58 <= _pu_)
-                 {var switcher=_pu_ - 110 | 0;
+               {var _pE_=match[1];
+                if(58 <= _pE_)
+                 {var switcher=_pE_ - 110 | 0;
                   if(! (6 < switcher >>> 0))
                    switch(switcher)
                     {case 0:junk(strm);return 10;
@@ -5758,27 +5768,27 @@
                      case 6:junk(strm);return 9
                      }}
                 else
-                 if(48 <= _pu_)
+                 if(48 <= _pE_)
                   {junk(strm);
                    var match$0=peek(strm);
                    if(match$0)
-                    {var _pv_=match$0[1],switcher$0=_pv_ - 48 | 0;
+                    {var _pF_=match$0[1],switcher$0=_pF_ - 48 | 0;
                      if(! (9 < switcher$0 >>> 0))
                       {junk(strm);
                        var match$1=peek(strm);
                        if(match$1)
-                        {var _pw_=match$1[1],switcher$1=_pw_ - 48 | 0;
+                        {var _pG_=match$1[1],switcher$1=_pG_ - 48 | 0;
                          if(! (9 < switcher$1 >>> 0))
                           {junk(strm);
                            var
                             n=
-                             (((_pu_ - 48 | 0) * 100 | 0)
+                             (((_pE_ - 48 | 0) * 100 | 0)
                               +
-                              ((_pv_ - 48 | 0) * 10 | 0)
+                              ((_pF_ - 48 | 0) * 10 | 0)
                               |
                               0)
                              +
-                             (_pw_ - 48 | 0)
+                             (_pG_ - 48 | 0)
                              |
                              0;
                            if(0 <= n)if(! (255 < n))return n;
@@ -5786,7 +5796,7 @@
                        throw [0,Error,_bN_]}}
                    throw [0,Error,_bM_]}
                 junk(strm);
-                return _pu_}
+                return _pE_}
               throw Failure$0},
            comment=
             function(strm)
@@ -5811,9 +5821,9 @@
                       for(;;)
                        {var match$1=peek(strm);
                         if(match$1)
-                         {var _pt_=match$1[1];
-                          if(41 === _pt_){junk(strm);return 0}
-                          if(42 === _pt_){junk(strm);continue}
+                         {var _pD_=match$1[1];
+                          if(41 === _pD_){junk(strm);return 0}
+                          if(42 === _pD_){junk(strm);continue}
                           junk(strm);
                           continue b}
                         throw Failure$0}}
@@ -5848,10 +5858,10 @@
     function set_error(g){f[1] = g;return 0}
     function eq_tag(t1,t2)
      {switch(t1)
-       {case 1:if(1 === t2)return _bQ_;break;
-        case 2:if(2 === t2)return _bR_;break;
-        case 3:if(3 <= t2)return _bS_;break
-        }
+       {case 0:if(0 === t2)return _bQ_;break;
+        case 1:if(1 === t2)return _bR_;break;
+        case 2:if(2 === t2)return _bS_;break;
+        default:if(3 <= t2)return _bT_}
       return 0}
     function eq_tag_list(tl1,tl2)
      {if(tl1)
@@ -5863,36 +5873,35 @@
            t1=tl1[1],
            match=eq_tag(t1,t2);
           if(match)
-           {var match$0=eq_tag_list(tl1$0,tl2$0);return match$0?_bT_:0}
+           {var match$0=eq_tag_list(tl1$0,tl2$0);return match$0?_bU_:0}
           return 0}}
       else
-       if(! tl2)return _bU_;
+       if(! tl2)return _bV_;
       return 0}
-    function expr_list_of_var_list(param)
-     {if(param)
-       {var tl=param[2],hd=param[1];
-        return [0,[0,hd],expr_list_of_var_list(tl)]}
-      return 0}
-    function any_method_decl_of_fallback(fb){return [0,fallback,fb,1]}
     function mk_indent(indent){return make$0(3 * indent | 0,32)}
     function pp_tag(param)
      {switch(param)
-       {case 0:return _bV_;
-        case 1:return _bW_;
-        case 2:return _bX_;
-        default:return _bY_}}
+       {case 0:return _bW_;
+        case 1:return _bX_;
+        case 2:return _bY_;
+        default:return _bZ_}}
+    function pp_tag_list(param)
+     {if(param)
+       {var tl=param[2],x=param[1],_pp_=pp_tag_list(tl);
+        return [0,pp_tag(x),_pp_]}
+      return 0}
     function pp_decl(param)
-     {var s=param[2],t=param[1],_pf_=symbol(_bZ_,s);
-      return symbol(pp_tag(t),_pf_)}
+     {var s=param[2],t=param[1],_po_=symbol(_b0_,s);
+      return symbol(pp_tag(t),_po_)}
     function pp_var_list(param)
      {if(param)
-       {var tl=param[2],v=param[1],_pe_=pp_var_list(tl);
-        return [0,pp_decl(v),_pe_]}
+       {var tl=param[2],v=param[1],_pn_=pp_var_list(tl);
+        return [0,pp_decl(v),_pn_]}
       return 0}
     function pp_expr(tag,param)
      {if(typeof param === "number")
        switch(param)
-        {case 0:return _b3_;case 1:return _b4_;default:return _b5_}
+        {case 0:return _b4_;case 1:return _b5_;default:return _b6_}
       else
        switch(param[0])
         {case 0:var v=param[1];return v[2];
@@ -5901,67 +5910,67 @@
           var
            e2=param[2],
            e1=param[1],
-           _o7_=symbol(_b7_,symbol(pp_expr(tag,e2),_b6_));
-          return symbol(_b8_,symbol(pp_expr(tag,e1),_o7_));
+           _pe_=symbol(_b8_,symbol(pp_expr(tag,e2),_b7_));
+          return symbol(_b9_,symbol(pp_expr(tag,e1),_pe_));
          case 3:
           var
            e2$0=param[2],
            e1$0=param[1],
-           _o8_=symbol(_b__,symbol(pp_expr(tag,e2$0),_b9_));
-          return symbol(_b$_,symbol(pp_expr(tag,e1$0),_o8_));
+           _pf_=symbol(_b$_,symbol(pp_expr(tag,e2$0),_b__));
+          return symbol(_ca_,symbol(pp_expr(tag,e1$0),_pf_));
          case 4:
           var
            e=param[2],
            c=param[1],
-           _o9_=symbol(_cb_,symbol(pp_expr(tag,e),_ca_));
-          return symbol(_cc_,symbol(pp_expr(tag,c),_o9_));
+           _pg_=symbol(_cc_,symbol(pp_expr(tag,e),_cb_));
+          return symbol(_cd_,symbol(pp_expr(tag,c),_pg_));
          case 5:
           var
            e$0=param[2],
            c$0=param[1],
-           _o__=symbol(_ce_,symbol(pp_expr(tag,e$0),_cd_));
-          return symbol(_cf_,symbol(pp_expr(tag,c$0),_o__));
-         case 6:var e$1=param[1];return symbol(_cg_,pp_expr(tag,e$1));
+           _ph_=symbol(_cf_,symbol(pp_expr(tag,e$0),_ce_));
+          return symbol(_cg_,symbol(pp_expr(tag,c$0),_ph_));
+         case 6:var e$1=param[1];return symbol(_ch_,pp_expr(tag,e$1));
          case 7:
           var
            e2$1=param[2],
            e1$1=param[1],
-           _o$_=symbol(_ci_,symbol(pp_expr(1,e2$1),_ch_));
-          return symbol(_cj_,symbol(pp_expr(1,e1$1),_o$_));
+           _pi_=symbol(_cj_,symbol(pp_expr(1,e2$1),_ci_));
+          return symbol(_ck_,symbol(pp_expr(1,e1$1),_pi_));
          case 8:
           var
            e2$2=param[2],
            e1$2=param[1],
-           _pa_=symbol(_cl_,symbol(pp_expr(1,e2$2),_ck_));
-          return symbol(_cm_,symbol(pp_expr(1,e1$2),_pa_));
+           _pj_=symbol(_cm_,symbol(pp_expr(1,e2$2),_cl_));
+          return symbol(_cn_,symbol(pp_expr(1,e1$2),_pj_));
          case 9:
           var
            e2$3=param[3],
            e1$3=param[2],
            tag$0=param[1],
-           _pb_=symbol(_co_,symbol(pp_expr(tag$0,e2$3),_cn_));
-          return symbol(_cp_,symbol(pp_expr(tag$0,e1$3),_pb_));
+           _pk_=symbol(_cp_,symbol(pp_expr(tag$0,e2$3),_co_));
+          return symbol(_cq_,symbol(pp_expr(tag$0,e1$3),_pk_));
          case 10:
           var
            g2=param[2],
            g1=param[1],
-           _pc_=symbol(_cr_,symbol(pp_expr(tag,g2),_cq_));
-          return symbol(_cs_,symbol(pp_expr(tag,g1),_pc_));
+           _pl_=symbol(_cs_,symbol(pp_expr(tag,g2),_cr_));
+          return symbol(_ct_,symbol(pp_expr(tag,g1),_pl_));
          case 11:
           var
            g2$0=param[2],
            g1$0=param[1],
-           _pd_=symbol(_cu_,symbol(pp_expr(tag,g2$0),_ct_));
-          return symbol(_cv_,symbol(pp_expr(tag,g1$0),_pd_));
-         case 12:var g=param[1];return symbol(_cw_,pp_expr(tag,g));
+           _pm_=symbol(_cv_,symbol(pp_expr(tag,g2$0),_cu_));
+          return symbol(_cw_,symbol(pp_expr(tag,g1$0),_pm_));
+         case 12:var g=param[1];return symbol(_cx_,pp_expr(tag,g));
          case 13:
           var v$0=param[1];
           switch(tag)
-           {case 0:throw [0,Assert_failure,_b0_];
+           {case 0:throw [0,Assert_failure,_b1_];
             case 1:return caml_new_string("" + v$0);
             case 2:return string_of_bool(v$0);
             default:return v$0}
-         default:var e$2=param[1];return symbol(pp_expr(3,e$2),_cx_)}}
+         default:var e$2=param[1];return symbol(pp_expr(3,e$2),_cy_)}}
     function pp_expr_list(tg,match)
      {if(tg)
        {var
@@ -5969,9 +5978,17 @@
          v=match[1],
          tagl=tg[2],
          tag=tg[1],
-         _o6_=pp_expr_list(tagl,tl);
-        return [0,pp_expr(tag,v),_o6_]}
+         _pd_=pp_expr_list(tagl,tl);
+        return [0,pp_expr(tag,v),_pd_]}
       return 0}
+    function pp_meth(opt,param)
+     {var id=param[3],tags=param[2],rtag=param[1];
+      if(opt)var sth=opt[1],verbose=sth;else var verbose=0;
+      if(verbose)
+       {var _pc_=symbol(_cA_,symbol(pp_tag(rtag),_cz_));
+        return symbol
+                (id,symbol(_cC_,symbol(concat(_cB_,pp_tag_list(tags)),_pc_)))}
+      return id}
     function pp_rhs(tag,param)
      {if(0 === param[0]){var e=param[1];return pp_expr(tag,e)}
       var
@@ -5979,54 +5996,56 @@
        value=param[3],
        meth=param[2],
        addr=param[1],
-       _o2_=symbol(_cD_,symbol(concat(_cC_,pp_expr_list(meth[2],exprl)),_cB_));
+       _o__=symbol(_cI_,symbol(concat(_cH_,pp_expr_list(meth[2],exprl)),_cG_));
       if(value)
-       var v=value[1],_o3_=symbol(_cF_,symbol(pp_expr(1,v),_cE_));
+       var v=value[1],_o$_=symbol(_cK_,symbol(pp_expr(1,v),_cJ_));
       else
-       var _o3_=_cH_;
-      var _o4_=symbol(_o3_,_o2_),_o5_=symbol(_cG_,symbol(meth[3],_o4_));
-      return symbol(pp_expr(3,addr),_o5_)}
+       var _o$_=_cM_;
+      var
+       _pa_=symbol(_o$_,_o__),
+       _pb_=symbol(_cL_,symbol(pp_meth(0,meth),_pa_));
+      return symbol(pp_expr(3,addr),_pb_)}
     function pp_stm(indent,opt,tag,stm)
      {if(opt)var sth=opt[1],breakline=sth;else var breakline=1;
       if(typeof stm === "number")
-       if(0 === stm)var _oN_=_cI_,switch$0=1;else var switch$0=0;
+       if(0 === stm)var _oV_=_cN_,switch$0=1;else var switch$0=0;
       else
        var switch$0=0;
-      if(! switch$0)var _oN_=breakline?_cY_:_cZ_;
+      if(! switch$0)var _oV_=breakline?_c3_:_c4_;
       if(typeof stm === "number")
        switch(stm)
-        {case 0:var _oO_=_cJ_;break;
-         case 1:var _oO_=_cL_;break;
-         default:var _oO_=_cM_}
+        {case 0:var _oW_=_cO_;break;
+         case 1:var _oW_=_cQ_;break;
+         default:var _oW_=_cR_}
       else
        switch(stm[0])
         {case 0:
-          var e=stm[1],_oO_=symbol(_cO_,symbol(pp_rhs(tag,e),_cN_));break;
+          var e=stm[1],_oW_=symbol(_cT_,symbol(pp_rhs(tag,e),_cS_));break;
          case 1:
           var
            stm$0=stm[3],
            rhs=stm[2],
            lhs=stm[1],
-           _oR_=pp_stm(indent,_cP_,tag,stm$0);
+           _oZ_=pp_stm(indent,_cU_,tag,stm$0);
           if(typeof stm$0 === "number")
-           if(0 === stm$0)var _oS_=_cQ_,switch$1=1;else var switch$1=0;
+           if(0 === stm$0)var _o0_=_cV_,switch$1=1;else var switch$1=0;
           else
            var switch$1=0;
-          if(! switch$1)var _oS_=_cS_;
-          var _oT_=symbol(_cR_,symbol(_oS_,_oR_));
+          if(! switch$1)var _o0_=_cX_;
+          var _o1_=symbol(_cW_,symbol(_o0_,_oZ_));
           if(typeof lhs === "number")
-           var _oU_=0;
+           var _o2_=0;
           else
-           if(0 === lhs[0])var f=lhs[1],_oU_=f[1];else var v=lhs[1],_oU_=v[1];
-          var _oV_=symbol(pp_rhs(_oU_,rhs),_oT_);
+           if(0 === lhs[0])var f=lhs[1],_o2_=f[1];else var v=lhs[1],_o2_=v[1];
+          var _o3_=symbol(pp_rhs(_o2_,rhs),_o1_);
           if(typeof lhs === "number")
-           var _oW_=_cy_;
+           var _o4_=_cD_;
           else
            if(0 === lhs[0])
-            var f$0=lhs[1],_oW_=symbol(f$0[2],_cz_);
+            var f$0=lhs[1],_o4_=symbol(f$0[2],_cE_);
            else
-            var v$0=lhs[1],_oW_=symbol(v$0[2],_cA_);
-          var _oO_=symbol(_oW_,_oV_);
+            var v$0=lhs[1],_o4_=symbol(v$0[2],_cF_);
+          var _oW_=symbol(_o4_,_o3_);
           break;
          default:
           var
@@ -6034,44 +6053,44 @@
            stm2=stm[3],
            stm1=stm[2],
            c=stm[1],
-           _oX_=symbol(_cU_,pp_stm(indent,_cT_,tag,stm3)),
-           _oY_=symbol(mk_indent(indent),_oX_),
-           _oZ_=symbol(_cV_,symbol(pp_stm(indent + 1 | 0,0,tag,stm2),_oY_)),
-           _o0_=symbol(mk_indent(indent),_oZ_),
-           _o1_=symbol(_cW_,symbol(pp_stm(indent + 1 | 0,0,tag,stm1),_o0_)),
-           _oO_=symbol(_cX_,symbol(pp_expr(2,c),_o1_))}
-      var _oP_=symbol(_oO_,_oN_);
+           _o5_=symbol(_cZ_,pp_stm(indent,_cY_,tag,stm3)),
+           _o6_=symbol(mk_indent(indent),_o5_),
+           _o7_=symbol(_c0_,symbol(pp_stm(indent + 1 | 0,0,tag,stm2),_o6_)),
+           _o8_=symbol(mk_indent(indent),_o7_),
+           _o9_=symbol(_c1_,symbol(pp_stm(indent + 1 | 0,0,tag,stm1),_o8_)),
+           _oW_=symbol(_c2_,symbol(pp_expr(2,c),_o9_))}
+      var _oX_=symbol(_oW_,_oV_);
       if(typeof stm === "number")
-       if(0 === stm)var _oQ_=_cK_,switch$2=1;else var switch$2=0;
+       if(0 === stm)var _oY_=_cP_,switch$2=1;else var switch$2=0;
       else
        var switch$2=0;
-      if(! switch$2)var _oQ_=mk_indent(indent);
-      return symbol(_oQ_,_oP_)}
+      if(! switch$2)var _oY_=mk_indent(indent);
+      return symbol(_oY_,_oX_)}
     function pp_block(indent,payable,tag,param)
      {var
        stm=param[3],
        lvl=param[2],
        vl=param[1],
-       _oE_=symbol(mk_indent(indent),_c0_),
-       _oF_=symbol(pp_stm(indent + 1 | 0,0,tag,stm),_oE_),
-       _oG_=pp_var_list(lvl),
-       _oH_=
+       _oM_=symbol(mk_indent(indent),_c5_),
+       _oN_=symbol(pp_stm(indent + 1 | 0,0,tag,stm),_oM_),
+       _oO_=pp_var_list(lvl),
+       _oP_=
         symbol
-         (_c3_,
+         (_c8_,
           symbol
            (concat
-             (_c2_,
+             (_c7_,
               map
                (function(s)
-                 {var _oM_=symbol(s,_c1_);
-                  return symbol(mk_indent(indent + 1 | 0),_oM_)},
-                _oG_)),
-            _oF_)),
-       _oI_=payable?_c4_:_c$_,
-       _oJ_=symbol(_oI_,_oH_),
-       _oK_=0 === tag?_c5_:symbol(_c__,symbol(pp_tag(tag),_c9_)),
-       _oL_=symbol(_c6_,symbol(_oK_,_oJ_));
-      return symbol(_c8_,symbol(concat(_c7_,pp_var_list(vl)),_oL_))}
+                 {var _oU_=symbol(s,_c6_);
+                  return symbol(mk_indent(indent + 1 | 0),_oU_)},
+                _oO_)),
+            _oN_)),
+       _oQ_=payable?_c9_:_de_,
+       _oR_=symbol(_oQ_,_oP_),
+       _oS_=0 === tag?_c__:symbol(_dd_,symbol(pp_tag(tag),_dc_)),
+       _oT_=symbol(_c$_,symbol(_oS_,_oR_));
+      return symbol(_db_,symbol(concat(_da_,pp_var_list(vl)),_oT_))}
     function pp_a_contract(param)
      {var
        fields=param[4],
@@ -6082,95 +6101,101 @@
       if(fallback)
        var
         b=fallback[1],
-        _ox_=symbol(_dd_,pp_block(indent,1,0,b)),
-        _oy_=symbol(mk_indent(indent),_ox_);
+        _oF_=symbol(_di_,pp_block(indent,1,0,b)),
+        _oG_=symbol(mk_indent(indent),_oF_);
       else
-       var _oy_=_de_;
+       var _oG_=_dj_;
       var
-       _oz_=symbol(_oy_,_df_),
+       _oH_=symbol(_oG_,_dk_),
        indent$0=1,
-       _oA_=
+       _oI_=
         symbol
-         (_dg_,
+         (_dl_,
           symbol
            (concat
-             (_dc_,
+             (_dh_,
               map
                (function(param)
                  {var
                    payable=param[3],
                    b=param[2],
                    m=param[1],
-                   _oC_=symbol(_da_,pp_block(indent$0,payable,m[1],b)),
-                   _oD_=symbol(_db_,symbol(m[3],_oC_));
-                  return symbol(mk_indent(indent$0),_oD_)},
+                   _oK_=symbol(_df_,pp_block(indent$0,payable,m[1],b)),
+                   _oL_=symbol(_dg_,symbol(pp_meth(0,m),_oK_));
+                  return symbol(mk_indent(indent$0),_oL_)},
                 methods)),
-            _oz_)),
+            _oH_)),
        indent$1=1;
       return symbol
-              (_di_,
+              (_dn_,
                symbol
                 (addr,
                  symbol
-                  (_dh_,
+                  (_dm_,
                    symbol
                     (concat
-                      (_b2_,
+                      (_b3_,
                        map
                         (function(f$0)
-                          {var f=f$0[1],_oB_=symbol(pp_decl(f),_b1_);
-                           return symbol(mk_indent(indent$1),_oB_)},
+                          {var f=f$0[1],_oJ_=symbol(pp_decl(f),_b2_);
+                           return symbol(mk_indent(indent$1),_oJ_)},
                          fields)),
-                     _oA_))))}
-    function pp_configuration(l){return concat(_dj_,map(pp_a_contract,l))}
+                     _oI_))))}
+    function pp_configuration(l){return concat(_do_,map(pp_a_contract,l))}
+    function expr_list_of_var_list(param)
+     {if(param)
+       {var tl=param[2],hd=param[1];
+        return [0,[0,hd],expr_list_of_var_list(tl)]}
+      return 0}
+    function any_method_decl_of_fallback(fb){return [0,fallback,fb,1]}
     var
-     Fail=[248,_dk_,caml_fresh_oo_id(0)],
-     Reject=[248,_dl_,caml_fresh_oo_id(0)];
+     Fail=[248,_dp_,caml_fresh_oo_id(0)],
+     Reject=[248,_dq_,caml_fresh_oo_id(0)];
     function best(err1,err2)
-     {if(caml_string_equal(err1[1],_dm_))return err2;
-      if(caml_string_equal(err2[1],_dn_))return err1;
-      var _ot_=length(err2[2]);
-      if(length(err1[2]) < _ot_)return err1;
-      var _ou_=length(err2[2]);
-      if(length(err1[2]) === _ou_)
-       {var _ov_=err1[2],_ow_=symbol(_do_,err2[1]);
-        return [0,symbol(err1[1],_ow_),_ov_]}
+     {if(caml_string_equal(err1[1],_dr_))return err2;
+      if(caml_string_equal(err2[1],_ds_))return err1;
+      var _oB_=length(err2[2]);
+      if(length(err1[2]) < _oB_)return err1;
+      var _oC_=length(err2[2]);
+      if(length(err1[2]) === _oC_)
+       {var _oD_=err1[2],_oE_=symbol(_dt_,err2[1]);
+        return [0,symbol(err1[1],_oE_),_oD_]}
       return err2}
     function cfst(x,param){return x}
     function csnd(param,x){return x}
     function addel(l,el){return append(l,[0,el,0])}
     function remove_minspace(param)
      {if(param)
-       {var _os_=param[1];
-        if(2 === _os_[0])
-         {var tl$0=param[2],x=_os_[1];
+       {var _oA_=param[1];
+        if(2 === _oA_[0])
+         {var tl$0=param[2],x=_oA_[1];
           if(! (0 <= x))
-           return append(_dp_,append([0,[2,- x | 0],0],remove_minspace(tl$0)))}
+           return append(_du_,append([0,[2,- x | 0],0],remove_minspace(tl$0)))}
         var tl=param[2];
-        return append([0,_os_,0],remove_minspace(tl))}
+        return append([0,_oA_,0],remove_minspace(tl))}
       return 0}
     function get_tokens(lexer,file)
      {var streamt=caml_call1(lexer,file);
       function aux(acc,s)
        {try
-         {var _oq_=aux([0,next(s),acc],s);return _oq_}
-        catch(_or_)
-         {_or_ = caml_wrap_exception(_or_);
-          if(_or_ === Failure$0)return acc;
-          throw _or_}}
+         {var _oy_=aux([0,next(s),acc],s);return _oy_}
+        catch(_oz_)
+         {_oz_ = caml_wrap_exception(_oz_);
+          if(_oz_ === Failure$0)return acc;
+          throw _oz_}}
       return remove_minspace(rev(aux(0,streamt)))}
     function string_of_token(param)
      {switch(param[0])
-       {case 0:var x=param[1];return symbol(_dq_,x);
-        case 1:var x$0=param[1];return symbol(_dr_,x$0);
-        case 2:var n=param[1];return symbol(_ds_,caml_new_string("" + n));
-        case 3:var f=param[1];return symbol(_dt_,string_of_float(f));
-        case 4:var s=param[1];return symbol(_du_,s);
-        default:var c=param[1];return symbol(_dv_,make$0(1,c))}}
+       {case 0:var x=param[1];return symbol(_dv_,x);
+        case 1:var x$0=param[1];return symbol(_dw_,x$0);
+        case 2:var n=param[1];return symbol(_dx_,caml_new_string("" + n));
+        case 3:var f=param[1];return symbol(_dy_,string_of_float(f));
+        case 4:var s=param[1];return symbol(_dz_,s);
+        default:var c=param[1];return symbol(_dA_,make$0(1,c))}}
     function print_token_list(l)
      {return concat
-              (_dx_,
-               map(function(t){return symbol(string_of_token(t),_dw_)},l))}
+              (_dC_,
+               map(function(t){return symbol(string_of_token(t),_dB_)},l))}
     function comb_parser(pars,f,s,tbl)
      {var
        match=caml_call2(pars,s,tbl),
@@ -6187,7 +6212,7 @@
         throw exn}
       return [0,ns,x,error,nt]}
     function eof(s,t)
-     {if(s)throw [0,Fail,[0,_dy_,s]];return [0,s,0,[0,_dz_,s],t]}
+     {if(s)throw [0,Fail,[0,_dD_,s]];return [0,s,0,[0,_dE_,s],t]}
     function const$0(kwd,f,s,tbl)
      {if(s)
        {var tl=s[2],t=s[1];
@@ -6198,12 +6223,12 @@
            {exn = caml_wrap_exception(exn);
             if(exn[1] === Reject){var msg=exn[2];throw [0,Fail,[0,msg,s]]}
             throw exn}
-          return [0,tl,x,[0,_dA_,tl],tbl]}}
-      throw [0,Fail,[0,symbol(string_of_token(kwd),_dB_),s]]}
+          return [0,tl,x,[0,_dF_,tl],tbl]}}
+      throw [0,Fail,[0,symbol(string_of_token(kwd),_dG_),s]]}
     function kwd(str)
-     {function _ol_(_op_){return 0}
-      var _om_=[0,str];
-      return function(_on_,_oo_){return const$0(_om_,_ol_,_on_,_oo_)}}
+     {function _ot_(_ox_){return 0}
+      var _ou_=[0,str];
+      return function(_ov_,_ow_){return const$0(_ou_,_ot_,_ov_,_ow_)}}
     function option(p,s,tbl)
      {try
        {var
@@ -6212,8 +6237,8 @@
          error$0=match[3],
          res=match[2],
          next=match[1],
-         _ok_=[0,next,[0,res],error$0,ntbl];
-        return _ok_}
+         _os_=[0,next,[0,res],error$0,ntbl];
+        return _os_}
       catch(exn)
        {exn = caml_wrap_exception(exn);
         if(exn[1] === Fail){var error=exn[2];return [0,s,0,error,tbl]}
@@ -6226,22 +6251,22 @@
          error$0=match[3],
          res=match[2],
          next=match[1],
-         _oj_=[0,next,res,error$0,ntbl];
-        return _oj_}
+         _or_=[0,next,res,error$0,ntbl];
+        return _or_}
       catch(exn)
        {exn = caml_wrap_exception(exn);
         if(exn[1] === Fail)
-         {var error=exn[2];return [0,s,d,best(error,[0,_dC_,s]),tbl]}
+         {var error=exn[2];return [0,s,d,best(error,[0,_dH_,s]),tbl]}
         throw exn}}
     function choice(p1,p2,s,tbl)
      {try
-       {var _oi_=caml_call2(p1,s,tbl);return _oi_}
+       {var _oq_=caml_call2(p1,s,tbl);return _oq_}
       catch(exn)
        {exn = caml_wrap_exception(exn);
         if(exn[1] === Fail)
          {var error1=exn[2];
           try
-           {var _oh_=caml_call2(p2,s,tbl);return _oh_}
+           {var _op_=caml_call2(p2,s,tbl);return _op_}
           catch(exn)
            {exn = caml_wrap_exception(exn);
             if(exn[1] === Fail)
@@ -6250,12 +6275,12 @@
         throw exn}}
     function choice_list(param)
      {if(param)
-       {var _oc_=param[2],_od_=param[1];
-        if(_oc_)
-         {var _oe_=choice_list(_oc_);
-          return function(_of_,_og_){return choice(_od_,_oe_,_of_,_og_)}}
-        return _od_}
-      throw [0,Assert_failure,_dD_]}
+       {var _ok_=param[2],_ol_=param[1];
+        if(_ok_)
+         {var _om_=choice_list(_ok_);
+          return function(_on_,_oo_){return choice(_ol_,_om_,_on_,_oo_)}}
+        return _ol_}
+      throw [0,Assert_failure,_dI_]}
     function concat$0(p1,p2,f,s,tbl)
      {var
        match=caml_call2(p1,s,tbl),
@@ -6278,8 +6303,8 @@
            {var msg=exn[2];
             throw [0,Fail,best(best(error1,error2$0),[0,msg,s])]}
           throw exn}
-        var _ob_=[0,rest2,x,best(error1,error2$0),tbl2];
-        return _ob_}
+        var _oj_=[0,rest2,x,best(error1,error2$0),tbl2];
+        return _oj_}
       catch(exn)
        {exn = caml_wrap_exception(exn);
         if(exn[1] === Fail)
@@ -6301,39 +6326,39 @@
             if(exn[1] === Reject)
              {var msg=exn[2];throw [0,Fail,best(error1$0,[0,msg,s1])]}
             throw exn}
-          var _oa_=aux(rest1,x,best(error1$0,error),ntbl);
-          return _oa_}
+          var _oi_=aux(rest1,x,best(error1$0,error),ntbl);
+          return _oi_}
         catch(exn)
          {exn = caml_wrap_exception(exn);
           if(exn[1] === Fail)
            {var error1=exn[2];return [0,s1,acc,best(error1,error),tbl]}
           throw exn}}
-      return aux(s,empty_ast,[0,_dE_,s],t)}
+      return aux(s,empty_ast,[0,_dJ_,s],t)}
     function x_cont(x_expr,x_binop,s)
-     {function _n0_(f1,f2,x){return caml_call1(f2,caml_call1(f1,x))}
-      function _n1_(_n$_){return x_cont(x_expr,x_binop,_n$_)}
-      function _n2_(f,x,y){return caml_call2(f,y,x)}
-      function _n3_(_n9_,_n__){return concat$0(x_binop,x_expr,_n2_,_n9_,_n__)}
-      function _n4_(_n7_,_n8_){return concat$0(_n3_,_n1_,_n0_,_n7_,_n8_)}
-      function _n5_(x){return x}
-      return function(_n6_){return option2(_n5_,_n4_,s,_n6_)}}
+     {function _n8_(f1,f2,x){return caml_call1(f2,caml_call1(f1,x))}
+      function _n9_(_oh_){return x_cont(x_expr,x_binop,_oh_)}
+      function _n__(f,x,y){return caml_call2(f,y,x)}
+      function _n$_(_of_,_og_){return concat$0(x_binop,x_expr,_n__,_of_,_og_)}
+      function _oa_(_od_,_oe_){return concat$0(_n$_,_n9_,_n8_,_od_,_oe_)}
+      function _ob_(x){return x}
+      return function(_oc_){return option2(_ob_,_oa_,s,_oc_)}}
     function nelist(x_expr,x_binop)
-     {function _nV_(x,f){return caml_call1(f,x)}
-      function _nW_(_nZ_){return x_cont(x_expr,x_binop,_nZ_)}
-      return function(_nX_,_nY_){return concat$0(x_expr,_nW_,_nV_,_nX_,_nY_)}}
+     {function _n3_(x,f){return caml_call1(f,x)}
+      function _n4_(_n7_){return x_cont(x_expr,x_binop,_n7_)}
+      return function(_n5_,_n6_){return concat$0(x_expr,_n4_,_n3_,_n5_,_n6_)}}
     function pp_any_expr(param){var e=param[2],t=param[1];return pp_expr(t,e)}
     function check_type(tag,param)
      {var e=param[2],t=param[1],match=eq_tag(tag,t);
       if(match)return e;
-      var _nU_=symbol(_dF_,pp_tag(tag));
-      throw [0,Reject,symbol(pp_expr(t,e),_nU_)]}
+      var _n2_=symbol(_dK_,pp_tag(tag));
+      throw [0,Reject,symbol(pp_expr(t,e),_n2_)]}
     function get_field(tbl,varname)
      {var tbl$0=tbl;
       for(;;)
        {if(tbl$0)
-         {var _nT_=tbl$0[1];
-          if(1 === _nT_[0])
-           {var islocal=_nT_[2],match=_nT_[1],name=match[2],tag=match[1];
+         {var _n1_=tbl$0[1];
+          if(1 === _n1_[0])
+           {var islocal=_n1_[2],match=_n1_[1],name=match[2],tag=match[1];
             if(caml_string_equal(varname,name))
              return [0,[0,[0,[0,tag,name]],islocal]]}
           var tbl$1=tbl$0[2],tbl$0=tbl$1;
@@ -6349,17 +6374,17 @@
        {var match$1=match$0[1],is_local2=match$1[2];
         if(! is_local2)
          if(is_local)return [0,[1,[0,t,fieldname],is_local],tbl];
-        throw [0,Reject,symbol(fieldname,_dG_)]}
+        throw [0,Reject,symbol(fieldname,_dL_)]}
       return [0,[1,[0,t,fieldname],is_local],tbl]}
     function add_fun_to_table(tbl$1,param)
      {var match$0=param[1],funname=match$0[3],l=match$0[2],t=match$0[1];
-      if(caml_string_equal(funname,_dH_))throw [0,Reject,_dI_];
+      if(caml_string_equal(funname,_dM_))throw [0,Reject,_dN_];
       var tbl=tbl$1;
       for(;;)
        {if(tbl)
-         {var _nS_=tbl[1];
-          if(2 === _nS_[0])
-           {var match=_nS_[1],name=match[3],tagl=match[2],rettag=match[1];
+         {var _n0_=tbl[1];
+          if(2 === _n0_[0])
+           {var match=_n0_[1],name=match[3],tagl=match[2],rettag=match[1];
             if(caml_string_equal(funname,name))
              var match$1=[0,[0,[0,rettag,tagl,name]]],switch$0=1;
             else
@@ -6371,23 +6396,23 @@
          var match$1=0;
         if(match$1)
          {var match$2=match$1[1][1],l$0=match$2[2],match$3=eq_tag_list(l,l$0);
-          if(match$3)throw [0,Reject,symbol(funname,_dJ_)];
+          if(match$3)throw [0,Reject,symbol(funname,_dO_)];
           return [0,[2,[0,t,l,funname]],tbl$1]}
         return [0,[2,[0,t,l,funname]],tbl$1]}}
     function get_contract(tbl,name)
      {var tbl$0=tbl;
       for(;;)
        {if(tbl$0)
-         {var _nR_=tbl$0[1];
-          if(0 === _nR_[0])
-           {var name$0=_nR_[1];
+         {var _nZ_=tbl$0[1];
+          if(0 === _nZ_[0])
+           {var name$0=_nZ_[1];
             if(caml_string_equal(name,name$0))return [0,name]}
           var tbl$1=tbl$0[2],tbl$0=tbl$1;
           continue}
         return 0}}
     function add_contract_to_table(tbl,name)
      {var match=get_contract(tbl,name);
-      if(match)throw [0,Reject,symbol(_dL_,symbol(name,_dK_))];
+      if(match)throw [0,Reject,symbol(_dQ_,symbol(name,_dP_))];
       return [0,[0,name],tbl]}
     function remove_local_vars(tbl)
      {return caml_call1
@@ -6398,102 +6423,102 @@
     function plus(e1,e2)
      {if(1 === e1[1])
        if(1 === e2[1]){var v2=e2[2],v1=e1[2];return [0,1,[2,v1,v2]]}
-      var _nQ_=symbol(_dN_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nQ_)]}
+      var _nY_=symbol(_dS_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nY_)]}
     function uminus(e)
      {if(1 === e[1]){var e$0=e[2];return [0,1,[6,e$0]]}
-      throw [0,Reject,symbol(_dO_,pp_any_expr(e))]}
+      throw [0,Reject,symbol(_dT_,pp_any_expr(e))]}
     function minus(e1,e2)
      {if(1 === e1[1])
        if(1 === e2[1]){var v2=e2[2],v1=e1[2];return [0,1,[3,v1,v2]]}
-      var _nP_=symbol(_dP_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nP_)]}
+      var _nX_=symbol(_dU_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nX_)]}
     function mult(e1,e2)
      {if(1 === e1[1])
        if(1 === e2[1]){var v2=e2[2],v1=e1[2];return [0,1,[4,v1,v2]]}
-      var _nO_=symbol(_dQ_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nO_)]}
+      var _nW_=symbol(_dV_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nW_)]}
     function div(e1,e2)
      {if(1 === e1[1])
        if(1 === e2[1]){var v2=e2[2],v1=e1[2];return [0,1,[5,v1,v2]]}
-      var _nN_=symbol(_dR_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nN_)]}
+      var _nV_=symbol(_dW_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nV_)]}
     function gt(e1,e2)
      {if(1 === e1[1])
        if(1 === e2[1]){var v2=e2[2],v1=e1[2];return [0,2,[8,v1,v2]]}
-      var _nM_=symbol(_dS_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nM_)]}
+      var _nU_=symbol(_dX_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nU_)]}
     function ge(e1,e2)
      {if(1 === e1[1])
        if(1 === e2[1]){var v2=e2[2],v1=e1[2];return [0,2,[7,v1,v2]]}
-      var _nL_=symbol(_dT_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nL_)]}
+      var _nT_=symbol(_dY_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nT_)]}
     function eq(e1,e2)
      {var v2=e2[2],t2=e2[1],v1=e1[2],t1=e1[1],match=eq_tag(t1,t2);
       if(match)return [0,2,[9,t1,v1,v2]];
-      var _nK_=symbol(_dU_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nK_)]}
+      var _nS_=symbol(_dZ_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nS_)]}
     function lt(e1,e2){return gt(e2,e1)}
     function le(e1,e2){return ge(e2,e1)}
     function andb(e1,e2)
      {if(2 === e1[1])
        if(2 === e2[1]){var v2=e2[2],v1=e1[2];return [0,2,[10,v1,v2]]}
-      var _nJ_=symbol(_dV_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nJ_)]}
+      var _nR_=symbol(_d0_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nR_)]}
     function orb(e1,e2)
      {if(2 === e1[1])
        if(2 === e2[1]){var v2=e2[2],v1=e1[2];return [0,2,[11,v1,v2]]}
-      var _nI_=symbol(_dW_,pp_any_expr(e2));
-      throw [0,Reject,symbol(pp_any_expr(e1),_nI_)]}
+      var _nQ_=symbol(_d1_,pp_any_expr(e2));
+      throw [0,Reject,symbol(pp_any_expr(e1),_nQ_)]}
     function notb(e)
      {if(2 === e[1]){var v=e[2];return [0,2,[12,v]]}
-      throw [0,Reject,symbol(_dX_,pp_any_expr(e))]}
+      throw [0,Reject,symbol(_d2_,pp_any_expr(e))]}
     function neq(e1,e2){return notb(eq(e1,e2))}
     function varname(s,t)
      {if(s)
-       {var _nH_=s[1];
-        if(1 === _nH_[0]){var tl=s[2],x=_nH_[1];return [0,tl,x,[0,_dZ_,tl],t]}}
-      throw [0,Fail,[0,_dY_,s]]}
+       {var _nP_=s[1];
+        if(1 === _nP_[0]){var tl=s[2],x=_nP_[1];return [0,tl,x,[0,_d4_,tl],t]}}
+      throw [0,Fail,[0,_d3_,s]]}
     function couple(el1,el2){return [0,el1,el2]}
     function var_pars(tag,s,tbl)
      {try
        {var x=hd(s)}
-      catch(_nG_)
-       {_nG_ = caml_wrap_exception(_nG_);
-        if(_nG_[1] === Failure)throw [0,Fail,[0,_d0_,s]];
-        throw _nG_}
+      catch(_nO_)
+       {_nO_ = caml_wrap_exception(_nO_);
+        if(_nO_[1] === Failure)throw [0,Fail,[0,_d5_,s]];
+        throw _nO_}
       return const$0
               (x,
                function(param)
                 {if(s)
-                  {var _nC_=s[1];
-                   if(1 === _nC_[0])
-                    {var var$0=_nC_[1],match=get_field(tbl,var$0);
+                  {var _nK_=s[1];
+                   if(1 === _nK_[0])
+                    {var var$0=_nK_[1],match=get_field(tbl,var$0);
                      if(match)
                       {var
-                        _nD_=match[1],
-                        islocal=_nD_[2],
-                        match$0=_nD_[1][1],
+                        _nL_=match[1],
+                        islocal=_nL_[2],
+                        match$0=_nL_[1][1],
                         name=match$0[2],
                         tagfield=match$0[1];
                        if(eq_tag(tagfield,tag))
                         {var
-                          _nE_=
+                          _nM_=
                            0 === islocal?[1,[0,tagfield,name]]:[0,[0,tagfield,name]];
-                         return _nE_}
-                       var _nF_=symbol(_d2_,pp_tag(tag));
-                       throw [0,Reject,symbol(pp_tag(tagfield),_nF_)]}
-                     throw [0,Reject,symbol(var$0,_d3_)]}}
-                 throw [0,Reject,_d1_]},
+                         return _nM_}
+                       var _nN_=symbol(_d7_,pp_tag(tag));
+                       throw [0,Reject,symbol(pp_tag(tagfield),_nN_)]}
+                     throw [0,Reject,symbol(var$0,_d8_)]}}
+                 throw [0,Reject,_d6_]},
                s,
                tbl)}
     function value_pars(tag,s,tbl)
      {try
        {var t=hd(s)}
-      catch(_nB_)
-       {_nB_ = caml_wrap_exception(_nB_);
-        if(_nB_[1] === Failure)throw [0,Fail,[0,_ea_,s]];
-        throw _nB_}
+      catch(_nJ_)
+       {_nJ_ = caml_wrap_exception(_nJ_);
+        if(_nJ_[1] === Failure)throw [0,Fail,[0,_ef_,s]];
+        throw _nJ_}
       return const$0
               (t,
                function(match$0)
@@ -6502,60 +6527,60 @@
                     if(2 === match$0[0]){var x=match$0[1];return [13,x]}break;
                    case 2:
                     if(0 === match$0[0])
-                     {var _nA_=match$0[1];
-                      if(! caml_string_notequal(_nA_,_d6_))return _d9_;
-                      if(! caml_string_notequal(_nA_,_d7_))return _d8_}
+                     {var _nI_=match$0[1];
+                      if(! caml_string_notequal(_nI_,_d$_))return _ec_;
+                      if(! caml_string_notequal(_nI_,_ea_))return _eb_}
                     break;
                    case 3:
                     if(1 === match$0[0])
                      {var x$0=match$0[1],match=get_contract(tbl,x$0);
                       if(match){var a=match[1];return [13,a]}
-                      throw [0,Reject,symbol(_d$_,symbol(pp_tag(tag),_d__))]}
+                      throw [0,Reject,symbol(_ee_,symbol(pp_tag(tag),_ed_))]}
                     break
                    }
-                 throw [0,Reject,symbol(_d5_,symbol(pp_tag(tag),_d4_))]},
+                 throw [0,Reject,symbol(_d__,symbol(pp_tag(tag),_d9_))]},
                s,
                tbl)}
-    function _eb_(param){return 0}
-    function this_pars(_ny_,_nz_){return const$0(_ec_,_eb_,_ny_,_nz_)}
+    function _eg_(param){return 0}
+    function this_pars(_nG_,_nH_){return const$0(_eh_,_eg_,_nG_,_nH_)}
     function brackets_pars(pars)
-     {var _nr_=kwd(_ed_),_ns_=kwd(_ee_);
-      function _nt_(_nw_,_nx_){return concat$0(_ns_,pars,csnd,_nw_,_nx_)}
-      return function(_nu_,_nv_){return concat$0(_nt_,_nr_,cfst,_nu_,_nv_)}}
-    function _ef_(param){return 1}
-    var _eh_=kwd(_eg_),_ej_=kwd(_ei_),_el_=kwd(_ek_);
-    function _em_(_np_,_nq_){return concat$0(_el_,_ej_,csnd,_np_,_nq_)}
-    function _en_(_nn_,_no_){return concat$0(_em_,_eh_,csnd,_nn_,_no_)}
-    function msg_sender_pars(_nl_,_nm_)
-     {return comb_parser(_en_,_ef_,_nl_,_nm_)}
-    function _eo_(param){return _ep_}
-    var _er_=kwd(_eq_),_et_=kwd(_es_),_ev_=kwd(_eu_);
-    function _ew_(_nj_,_nk_){return concat$0(_ev_,_et_,csnd,_nj_,_nk_)}
-    function _ex_(_nh_,_ni_){return concat$0(_ew_,_er_,csnd,_nh_,_ni_)}
-    function msg_value_pars(_nf_,_ng_)
-     {return comb_parser(_ex_,_eo_,_nf_,_ng_)}
+     {var _nz_=kwd(_ei_),_nA_=kwd(_ej_);
+      function _nB_(_nE_,_nF_){return concat$0(_nA_,pars,csnd,_nE_,_nF_)}
+      return function(_nC_,_nD_){return concat$0(_nB_,_nz_,cfst,_nC_,_nD_)}}
+    function _ek_(param){return 1}
+    var _em_=kwd(_el_),_eo_=kwd(_en_),_eq_=kwd(_ep_);
+    function _er_(_nx_,_ny_){return concat$0(_eq_,_eo_,csnd,_nx_,_ny_)}
+    function _es_(_nv_,_nw_){return concat$0(_er_,_em_,csnd,_nv_,_nw_)}
+    function msg_sender_pars(_nt_,_nu_)
+     {return comb_parser(_es_,_ek_,_nt_,_nu_)}
+    function _et_(param){return _eu_}
+    var _ew_=kwd(_ev_),_ey_=kwd(_ex_),_eA_=kwd(_ez_);
+    function _eB_(_nr_,_ns_){return concat$0(_eA_,_ey_,csnd,_nr_,_ns_)}
+    function _eC_(_np_,_nq_){return concat$0(_eB_,_ew_,csnd,_np_,_nq_)}
+    function msg_value_pars(_nn_,_no_)
+     {return comb_parser(_eC_,_et_,_nn_,_no_)}
     function base(tag,s,tbl)
      {var
-       _m$_=0,
-       _na_=[0,function(_nd_,_ne_){return value_pars(tag,_nd_,_ne_)},_m$_];
+       _nh_=0,
+       _ni_=[0,function(_nl_,_nm_){return value_pars(tag,_nl_,_nm_)},_nh_];
       return caml_call2
               (choice_list
-                ([0,function(_nb_,_nc_){return var_pars(tag,_nb_,_nc_)},_na_]),
+                ([0,function(_nj_,_nk_){return var_pars(tag,_nj_,_nk_)},_ni_]),
                s,
                tbl)}
     function atomic_int_expr(s)
-     {var _mY_=[0,brackets_pars(int_expr),0];
-      function _mZ_(param){return uminus}
+     {var _m6_=[0,brackets_pars(int_expr),0];
+      function _m7_(param){return uminus}
       var
-       _m0_=kwd(_ey_),
-       _m1_=
+       _m8_=kwd(_eD_),
+       _m9_=
         [0,
-         function(_m9_,_m__)
-          {return concat$0(_m0_,atomic_int_expr,_mZ_,_m9_,_m__)},
-         _mY_];
-      function _m2_(expr){return [0,1,expr]}
-      var _m3_=1;
-      function _m4_(_m7_,_m8_){return base(_m3_,_m7_,_m8_)}
+         function(_nf_,_ng_)
+          {return concat$0(_m8_,atomic_int_expr,_m7_,_nf_,_ng_)},
+         _m6_];
+      function _m__(expr){return [0,1,expr]}
+      var _m$_=1;
+      function _na_(_nd_,_ne_){return base(_m$_,_nd_,_ne_)}
       return caml_call1
               (choice_list
                 ([0,
@@ -6563,106 +6588,106 @@
                   [0,
                    balance_pars,
                    [0,
-                    function(_m5_,_m6_){return comb_parser(_m4_,_m2_,_m5_,_m6_)},
-                    _m1_]]]),
+                    function(_nb_,_nc_){return comb_parser(_na_,_m__,_nb_,_nc_)},
+                    _m9_]]]),
                s)}
     function mul_int_expr(s)
      {return caml_call1(nelist(atomic_int_expr,mul_binop),s)}
     function int_expr(s){return caml_call1(nelist(mul_int_expr,add_binop),s)}
     function add_binop(s)
-     {var _mQ_=0;
-      function _mR_(param){return minus}
+     {var _mY_=0;
+      function _mZ_(param){return minus}
       var
-       _mS_=
-        [0,function(_mW_,_mX_){return const$0(_ez_,_mR_,_mW_,_mX_)},_mQ_];
-      function _mT_(param){return plus}
+       _m0_=
+        [0,function(_m4_,_m5_){return const$0(_eE_,_mZ_,_m4_,_m5_)},_mY_];
+      function _m1_(param){return plus}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_mU_,_mV_){return const$0(_eA_,_mT_,_mU_,_mV_)},
-                  _mS_]),
+                  function(_m2_,_m3_){return const$0(_eF_,_m1_,_m2_,_m3_)},
+                  _m0_]),
                s)}
     function mul_binop(s)
-     {var _mI_=0;
-      function _mJ_(param){return div}
+     {var _mQ_=0;
+      function _mR_(param){return div}
       var
-       _mK_=
-        [0,function(_mO_,_mP_){return const$0(_eB_,_mJ_,_mO_,_mP_)},_mI_];
-      function _mL_(param){return mult}
+       _mS_=
+        [0,function(_mW_,_mX_){return const$0(_eG_,_mR_,_mW_,_mX_)},_mQ_];
+      function _mT_(param){return mult}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_mM_,_mN_){return const$0(_eC_,_mL_,_mM_,_mN_)},
-                  _mK_]),
+                  function(_mU_,_mV_){return const$0(_eH_,_mT_,_mU_,_mV_)},
+                  _mS_]),
                s)}
     function atomic_bool_expr(s)
-     {var _mf_=0;
-      function _mg_(x,f){return caml_call1(f,x)}
-      function _mh_(f,y,x){return caml_call2(f,x,y)}
-      function _mi_(_mG_,_mH_){return concat$0(cmpop,int_expr,_mh_,_mG_,_mH_)}
+     {var _mn_=0;
+      function _mo_(x,f){return caml_call1(f,x)}
+      function _mp_(f,y,x){return caml_call2(f,x,y)}
+      function _mq_(_mO_,_mP_){return concat$0(cmpop,int_expr,_mp_,_mO_,_mP_)}
       var
-       _mj_=
+       _mr_=
         [0,
-         function(_mE_,_mF_){return concat$0(int_expr,_mi_,_mg_,_mE_,_mF_)},
-         _mf_];
-      function _mk_(param){return notb}
+         function(_mM_,_mN_){return concat$0(int_expr,_mq_,_mo_,_mM_,_mN_)},
+         _mn_];
+      function _ms_(param){return notb}
       var
-       _ml_=kwd(_eD_),
-       _mm_=
+       _mt_=kwd(_eI_),
+       _mu_=
         [0,
-         function(_mC_,_mD_)
-          {return concat$0(_ml_,atomic_bool_expr,_mk_,_mC_,_mD_)},
-         _mj_],
-       _mn_=kwd(_eE_),
-       _mo_=kwd(_eF_);
-      function _mp_(_mA_,_mB_){return concat$0(_mo_,bool_expr,csnd,_mA_,_mB_)}
+         function(_mK_,_mL_)
+          {return concat$0(_mt_,atomic_bool_expr,_ms_,_mK_,_mL_)},
+         _mr_],
+       _mv_=kwd(_eJ_),
+       _mw_=kwd(_eK_);
+      function _mx_(_mI_,_mJ_){return concat$0(_mw_,bool_expr,csnd,_mI_,_mJ_)}
       var
-       _mq_=
+       _my_=
         [0,
-         function(_my_,_mz_){return concat$0(_mp_,_mn_,cfst,_my_,_mz_)},
-         _mm_];
-      function _mr_(expr){return [0,2,expr]}
-      var _ms_=2;
-      function _mt_(_mw_,_mx_){return base(_ms_,_mw_,_mx_)}
+         function(_mG_,_mH_){return concat$0(_mx_,_mv_,cfst,_mG_,_mH_)},
+         _mu_];
+      function _mz_(expr){return [0,2,expr]}
+      var _mA_=2;
+      function _mB_(_mE_,_mF_){return base(_mA_,_mE_,_mF_)}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_mu_,_mv_){return comb_parser(_mt_,_mr_,_mu_,_mv_)},
-                  _mq_]),
+                  function(_mC_,_mD_){return comb_parser(_mB_,_mz_,_mC_,_mD_)},
+                  _my_]),
                s)}
     function cmpop(s)
-     {var _l1_=0;
-      function _l2_(param){return le}
+     {var _l9_=0;
+      function _l__(param){return le}
       var
-       _l3_=
-        [0,function(_md_,_me_){return const$0(_eG_,_l2_,_md_,_me_)},_l1_];
-      function _l4_(param){return lt}
+       _l$_=
+        [0,function(_ml_,_mm_){return const$0(_eL_,_l__,_ml_,_mm_)},_l9_];
+      function _ma_(param){return lt}
       var
-       _l5_=
-        [0,function(_mb_,_mc_){return const$0(_eH_,_l4_,_mb_,_mc_)},_l3_];
-      function _l6_(param){return ge}
+       _mb_=
+        [0,function(_mj_,_mk_){return const$0(_eM_,_ma_,_mj_,_mk_)},_l$_];
+      function _mc_(param){return ge}
       var
-       _l7_=
-        [0,function(_l$_,_ma_){return const$0(_eI_,_l6_,_l$_,_ma_)},_l5_];
-      function _l8_(param){return gt}
+       _md_=
+        [0,function(_mh_,_mi_){return const$0(_eN_,_mc_,_mh_,_mi_)},_mb_];
+      function _me_(param){return gt}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_l9_,_l__){return const$0(_eJ_,_l8_,_l9_,_l__)},
-                  _l7_]),
+                  function(_mf_,_mg_){return const$0(_eO_,_me_,_mf_,_mg_)},
+                  _md_]),
                s)}
     function eqop(s)
-     {var _lT_=0;
-      function _lU_(param){return neq}
+     {var _l1_=0;
+      function _l2_(param){return neq}
       var
-       _lV_=
-        [0,function(_lZ_,_l0_){return const$0(_eK_,_lU_,_lZ_,_l0_)},_lT_];
-      function _lW_(param){return eq}
+       _l3_=
+        [0,function(_l7_,_l8_){return const$0(_eP_,_l2_,_l7_,_l8_)},_l1_];
+      function _l4_(param){return eq}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_lX_,_lY_){return const$0(_eL_,_lW_,_lX_,_lY_)},
-                  _lV_]),
+                  function(_l5_,_l6_){return const$0(_eQ_,_l4_,_l5_,_l6_)},
+                  _l3_]),
                s)}
     function eq_bool_expr(s)
      {return caml_call1
@@ -6675,72 +6700,72 @@
      {return caml_call1(nelist(eq_bool_expr,and_binop),s)}
     function bool_expr(s){return caml_call1(nelist(and_bool_expr,or_binop),s)}
     function and_binop(s)
-     {var _lP_=0;
-      function _lQ_(param){return andb}
+     {var _lX_=0;
+      function _lY_(param){return andb}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_lR_,_lS_){return const$0(_eM_,_lQ_,_lR_,_lS_)},
-                  _lP_]),
+                  function(_lZ_,_l0_){return const$0(_eR_,_lY_,_lZ_,_l0_)},
+                  _lX_]),
                s)}
     function or_binop(s)
-     {var _lL_=0;
-      function _lM_(param){return orb}
+     {var _lT_=0;
+      function _lU_(param){return orb}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_lN_,_lO_){return const$0(_eN_,_lM_,_lN_,_lO_)},
-                  _lL_]),
+                  function(_lV_,_lW_){return const$0(_eS_,_lU_,_lV_,_lW_)},
+                  _lT_]),
                s)}
     function balance_pars(s)
-     {function _lE_(a$0,param)
+     {function _lM_(a$0,param)
        {if(3 <= a$0[1]){var a=a$0[2];return [0,1,[14,a]]}
-        throw [0,Reject,symbol(pp_any_expr(a$0),_dM_)]}
-      var _lF_=kwd(_eO_),_lG_=kwd(_eP_);
-      function _lH_(_lJ_,_lK_)
-       {return concat$0(contract_expr,_lG_,cfst,_lJ_,_lK_)}
-      return function(_lI_){return concat$0(_lH_,_lF_,_lE_,s,_lI_)}}
+        throw [0,Reject,symbol(pp_any_expr(a$0),_dR_)]}
+      var _lN_=kwd(_eT_),_lO_=kwd(_eU_);
+      function _lP_(_lR_,_lS_)
+       {return concat$0(contract_expr,_lO_,cfst,_lR_,_lS_)}
+      return function(_lQ_){return concat$0(_lP_,_lN_,_lM_,s,_lQ_)}}
     function contract_expr(s)
      {function aux(s)
-       {var _lA_=[0,this_pars,[0,brackets_pars(aux),0]],_lB_=3;
+       {var _lI_=[0,this_pars,[0,brackets_pars(aux),0]],_lJ_=3;
         return caml_call1
                 (choice_list
                   ([0,
                     msg_sender_pars,
-                    [0,function(_lC_,_lD_){return base(_lB_,_lC_,_lD_)},_lA_]]),
+                    [0,function(_lK_,_lL_){return base(_lJ_,_lK_,_lL_)},_lI_]]),
                  s)}
-      function _ly_(expr){return [0,3,expr]}
-      return function(_lz_){return comb_parser(aux,_ly_,s,_lz_)}}
+      function _lG_(expr){return [0,3,expr]}
+      return function(_lH_){return comb_parser(aux,_lG_,s,_lH_)}}
     function expr_pars(s)
      {var
-       _lr_=kwd(_eQ_),
-       _lq_=[0,int_expr,[0,bool_expr,[0,contract_expr,0]]],
-       _ls_=kwd(_eR_);
-      function _lt_(_lw_,_lx_){return concat$0(_ls_,expr_pars,csnd,_lw_,_lx_)}
+       _lz_=kwd(_eV_),
+       _ly_=[0,int_expr,[0,bool_expr,[0,contract_expr,0]]],
+       _lA_=kwd(_eW_);
+      function _lB_(_lE_,_lF_){return concat$0(_lA_,expr_pars,csnd,_lE_,_lF_)}
       return caml_call1
               (choice_list
                 ([0,
-                  function(_lu_,_lv_)
-                   {return concat$0(_lt_,_lr_,cfst,_lu_,_lv_)},
-                  _lq_]),
+                  function(_lC_,_lD_)
+                   {return concat$0(_lB_,_lz_,cfst,_lC_,_lD_)},
+                  _ly_]),
                s)}
     function tag_pars(str,tag)
-     {function _lm_(param){return [0,tag]}
-      var _ln_=[0,str];
-      return function(_lo_,_lp_){return const$0(_ln_,_lm_,_lo_,_lp_)}}
+     {function _lu_(param){return [0,tag]}
+      var _lv_=[0,str];
+      return function(_lw_,_lx_){return const$0(_lv_,_lu_,_lw_,_lx_)}}
     var
-     _eT_=[0,tag_pars(_eS_,3),0],
-     _eV_=[0,tag_pars(_eU_,2),_eT_],
-     type_pars=choice_list([0,tag_pars(_eW_,1),_eV_]);
+     _eY_=[0,tag_pars(_eX_,3),0],
+     _e0_=[0,tag_pars(_eZ_,2),_eY_],
+     type_pars=choice_list([0,tag_pars(_e1_,1),_e0_]);
     function field_pars(islocal,s,t)
-     {var _li_=kwd(_eX_);
-      function _lj_(param,v){var t=param[1];return [0,[0,t,v]]}
+     {var _lq_=kwd(_e2_);
+      function _lr_(param,v){var t=param[1];return [0,[0,t,v]]}
       var
        match=
         concat$0
-         (function(_lk_,_ll_)
-           {return concat$0(type_pars,varname,_lj_,_lk_,_ll_)},
-          _li_,
+         (function(_ls_,_lt_)
+           {return concat$0(type_pars,varname,_lr_,_ls_,_lt_)},
+          _lq_,
           cfst,
           s,
           t),
@@ -6756,13 +6781,13 @@
          {var msg=exn[2];throw [0,Fail,best(error,[0,msg,s])]}
         throw exn}
       return [0,ns,field,error,x]}
-    function _eY_(param)
+    function _e3_(param)
      {var match=param[1],id=match[2],tag=match[1];return [0,[0,tag,id]]}
-    function _eZ_(_lh_){return map(_eY_,_lh_)}
-    var _e0_=0,_e1_=0;
-    function _e2_(_lf_,_lg_){return field_pars(_e1_,_lf_,_lg_)}
-    function _e3_(_ld_,_le_){return kleenestar(_e2_,_e0_,addel,_ld_,_le_)}
-    function fields_pars(_lb_,_lc_){return comb_parser(_e3_,_eZ_,_lb_,_lc_)}
+    function _e4_(_lp_){return map(_e3_,_lp_)}
+    var _e5_=0,_e6_=0;
+    function _e7_(_ln_,_lo_){return field_pars(_e6_,_ln_,_lo_)}
+    function _e8_(_ll_,_lm_){return kleenestar(_e7_,_e5_,addel,_ll_,_lm_)}
+    function fields_pars(_lj_,_lk_){return comb_parser(_e8_,_e4_,_lj_,_lk_)}
     function expr_list_of_any_expr_list(param)
      {if(param)
        {var
@@ -6774,42 +6799,42 @@
          es=match$0[2],
          ts=match$0[1];
         return [0,[0,t,ts],[0,e,es]]}
-      return _e4_}
-    var _e5_=0,_e7_=kwd(_e6_);
-    function _e8_(_k$_,_la_){return concat$0(_e7_,expr_pars,csnd,_k$_,_la_)}
-    function _e9_(_k9_,_k__){return kleenestar(_e8_,_e5_,addel,_k9_,_k__)}
-    function _e__(_k7_,_k8_){return concat$0(expr_pars,_e9_,cons,_k7_,_k8_)}
+      return _e9_}
+    var _e__=0,_fa_=kwd(_e$_);
+    function _fb_(_lh_,_li_){return concat$0(_fa_,expr_pars,csnd,_lh_,_li_)}
+    function _fc_(_lf_,_lg_){return kleenestar(_fb_,_e__,addel,_lf_,_lg_)}
+    function _fd_(_ld_,_le_){return concat$0(expr_pars,_fc_,cons,_ld_,_le_)}
     var
-     _e$_=0,
-     _fa_=
-      brackets_pars(function(_k5_,_k6_){return option2(_e$_,_e__,_k5_,_k6_)});
-    function parse_any_expr_list(_k3_,_k4_)
-     {return comb_parser(_fa_,expr_list_of_any_expr_list,_k3_,_k4_)}
+     _fe_=0,
+     _ff_=
+      brackets_pars(function(_lb_,_lc_){return option2(_fe_,_fd_,_lb_,_lc_)});
+    function parse_any_expr_list(_k$_,_la_)
+     {return comb_parser(_ff_,expr_list_of_any_expr_list,_k$_,_la_)}
     function ident_pars(s,t)
      {if(s)
-       {var _k2_=s[1];
-        if(1 === _k2_[0]){var tl=s[2],i=_k2_[1];return [0,tl,i,[0,_fc_,tl],t]}}
-      throw [0,Fail,[0,_fb_,s]]}
+       {var _k__=s[1];
+        if(1 === _k__[0]){var tl=s[2],i=_k__[1];return [0,tl,i,[0,_fh_,tl],t]}}
+      throw [0,Fail,[0,_fg_,s]]}
     function dot_value_pars(s,t)
-     {function _kQ_(x)
+     {function _kY_(x)
        {var t=1;
         if(x)
          {var v=x[1],e=v[2],texp=v[1],match=eq_tag(texp,t);
           return match?[0,e]:0}
         return 0}
-      var _kR_=brackets_pars(int_expr),_kS_=kwd(_fd_),_kT_=kwd(_fe_);
-      function _kU_(_k0_,_k1_){return concat$0(_kT_,_kS_,csnd,_k0_,_k1_)}
-      function _kV_(_kY_,_kZ_){return concat$0(_kU_,_kR_,csnd,_kY_,_kZ_)}
+      var _kZ_=brackets_pars(int_expr),_k0_=kwd(_fi_),_k1_=kwd(_fj_);
+      function _k2_(_k8_,_k9_){return concat$0(_k1_,_k0_,csnd,_k8_,_k9_)}
+      function _k3_(_k6_,_k7_){return concat$0(_k2_,_kZ_,csnd,_k6_,_k7_)}
       return comb_parser
-              (function(_kW_,_kX_){return option(_kV_,_kW_,_kX_)},_kQ_,s,t)}
+              (function(_k4_,_k5_){return option(_k3_,_k4_,_k5_)},_kY_,s,t)}
     function rhs_pars(tag)
-     {var _ky_=0;
-      function _kr_(param)
+     {var _kG_=0;
+      function _kz_(param)
        {var
          params=param[2],
-         _kP_=param[1],
-         value=_kP_[2],
-         match=_kP_[1],
+         _kX_=param[1],
+         value=_kX_[2],
+         match=_kX_[1],
          name=match[2],
          addr=match[1],
          addr$0=check_type(3,addr),
@@ -6817,80 +6842,80 @@
          tags=params[1],
          name$0=[0,tag,tags,name];
         return [1,addr$0,name$0,value,exprs]}
-      var _ks_=kwd(_ff_);
-      function _kt_(_kN_,_kO_)
-       {return concat$0(contract_expr,_ks_,cfst,_kN_,_kO_)}
-      function _ku_(_kL_,_kM_){return option2(_fg_,_kt_,_kL_,_kM_)}
-      function _kv_(_kJ_,_kK_)
-       {return concat$0(_ku_,ident_pars,couple,_kJ_,_kK_)}
-      function _kw_(_kH_,_kI_)
-       {return concat$0(_kv_,dot_value_pars,couple,_kH_,_kI_)}
-      function _kx_(_kF_,_kG_)
-       {return concat$0(_kw_,parse_any_expr_list,couple,_kF_,_kG_)}
+      var _kA_=kwd(_fk_);
+      function _kB_(_kV_,_kW_)
+       {return concat$0(contract_expr,_kA_,cfst,_kV_,_kW_)}
+      function _kC_(_kT_,_kU_){return option2(_fl_,_kB_,_kT_,_kU_)}
+      function _kD_(_kR_,_kS_)
+       {return concat$0(_kC_,ident_pars,couple,_kR_,_kS_)}
+      function _kE_(_kP_,_kQ_)
+       {return concat$0(_kD_,dot_value_pars,couple,_kP_,_kQ_)}
+      function _kF_(_kN_,_kO_)
+       {return concat$0(_kE_,parse_any_expr_list,couple,_kN_,_kO_)}
       var
-       _kz_=
-        [0,function(_kD_,_kE_){return comb_parser(_kx_,_kr_,_kD_,_kE_)},_ky_];
-      function _kA_(expr){return [0,check_type(tag,expr)]}
+       _kH_=
+        [0,function(_kL_,_kM_){return comb_parser(_kF_,_kz_,_kL_,_kM_)},_kG_];
+      function _kI_(expr){return [0,check_type(tag,expr)]}
       return choice_list
               ([0,
-                function(_kB_,_kC_)
-                 {return comb_parser(expr_pars,_kA_,_kB_,_kC_)},
-                _kz_])}
+                function(_kJ_,_kK_)
+                 {return comb_parser(expr_pars,_kI_,_kJ_,_kK_)},
+                _kH_])}
     function stm_pars(tag,rettag,s,t)
      {var
-       _i9_=0,
-       _i__=
+       _jf_=0,
+       _jg_=
         [0,
          function(s,t)
-          {if(0 === rettag)return [0,s,0,[0,_fl_,s],t];
-           if(0 === tag)return [0,s,1,[0,_fm_,s],t];
-           throw [0,Fail,[0,_fn_,s]]},
-         _i9_],
-       _i$_=kwd(_fr_);
-      function _ja_(_kp_,_kq_){return stm_pars(tag,rettag,_kp_,_kq_)}
-      function _jb_(_kn_,_ko_){return concat$0(_ja_,_i$_,cfst,_kn_,_ko_)}
+          {if(0 === rettag)return [0,s,0,[0,_fq_,s],t];
+           if(0 === tag)return [0,s,1,[0,_fr_,s],t];
+           throw [0,Fail,[0,_fs_,s]]},
+         _jf_],
+       _jh_=kwd(_fw_);
+      function _ji_(_kx_,_ky_){return stm_pars(tag,rettag,_kx_,_ky_)}
+      function _jj_(_kv_,_kw_){return concat$0(_ji_,_jh_,cfst,_kv_,_kw_)}
       var
-       _jc_=kwd(_fs_),
-       _jd_=
+       _jk_=kwd(_fx_),
+       _jl_=
         [0,
-         function(_kl_,_km_){return concat$0(_jc_,_jb_,csnd,_kl_,_km_)},
-         _i__];
-      function _je_(param)
+         function(_kt_,_ku_){return concat$0(_jk_,_jj_,csnd,_kt_,_ku_)},
+         _jg_];
+      function _jm_(param)
        {var
          stm3=param[2],
-         _kk_=param[1],
-         stm2=_kk_[2],
-         match=_kk_[1],
+         _ks_=param[1],
+         stm2=_ks_[2],
+         match=_ks_[1],
          stm1=match[2],
          bexpr=match[1],
          default$0=0;
         if(stm2)var v=stm2[1],stm2$0=v;else var stm2$0=default$0;
         return [2,check_type(2,bexpr),stm1,stm2$0,stm3]}
-      function _jf_(_ki_,_kj_){return stm_pars(tag,rettag,_ki_,_kj_)}
-      var _jg_=0;
-      function _jh_(_kg_,_kh_){return stm_pars(tag,_jg_,_kg_,_kh_)}
-      var _ji_=kwd(_ft_);
-      function _jj_(_ke_,_kf_){return concat$0(_ji_,_jh_,csnd,_ke_,_kf_)}
-      function _jk_(_kc_,_kd_){return option(_jj_,_kc_,_kd_)}
-      var _jl_=0;
-      function _jm_(_ka_,_kb_){return stm_pars(tag,_jl_,_ka_,_kb_)}
-      var _jn_=kwd(_fu_);
-      function _jo_(_j__,_j$_){return concat$0(_jn_,bool_expr,csnd,_j__,_j$_)}
-      function _jp_(_j8_,_j9_){return concat$0(_jo_,_jm_,couple,_j8_,_j9_)}
-      function _jq_(_j6_,_j7_){return concat$0(_jp_,_jk_,couple,_j6_,_j7_)}
-      function _jr_(_j4_,_j5_){return concat$0(_jq_,_jf_,couple,_j4_,_j5_)}
+      function _jn_(_kq_,_kr_){return stm_pars(tag,rettag,_kq_,_kr_)}
+      var _jo_=0;
+      function _jp_(_ko_,_kp_){return stm_pars(tag,_jo_,_ko_,_kp_)}
+      var _jq_=kwd(_fy_);
+      function _jr_(_km_,_kn_){return concat$0(_jq_,_jp_,csnd,_km_,_kn_)}
+      function _js_(_kk_,_kl_){return option(_jr_,_kk_,_kl_)}
+      var _jt_=0;
+      function _ju_(_ki_,_kj_){return stm_pars(tag,_jt_,_ki_,_kj_)}
+      var _jv_=kwd(_fz_);
+      function _jw_(_kg_,_kh_){return concat$0(_jv_,bool_expr,csnd,_kg_,_kh_)}
+      function _jx_(_ke_,_kf_){return concat$0(_jw_,_ju_,couple,_ke_,_kf_)}
+      function _jy_(_kc_,_kd_){return concat$0(_jx_,_js_,couple,_kc_,_kd_)}
+      function _jz_(_ka_,_kb_){return concat$0(_jy_,_jn_,couple,_ka_,_kb_)}
       var
-       _js_=
-        [0,function(_j2_,_j3_){return comb_parser(_jr_,_je_,_j2_,_j3_)},_jd_],
-       _jt_=
+       _jA_=
+        [0,function(_j__,_j$_){return comb_parser(_jz_,_jm_,_j__,_j$_)},_jl_],
+       _jB_=
         [0,
          function(s,t)
           {var
-            _jM_=kwd(_fv_),
+            _jU_=kwd(_fA_),
             match=
              option
-              (function(_j0_,_j1_)
-                {return concat$0(varname,_jM_,cfst,_j0_,_j1_)},
+              (function(_j8_,_j9_)
+                {return concat$0(varname,_jU_,cfst,_j8_,_j9_)},
                s,
                t),
             t1=match[4],
@@ -6898,86 +6923,86 @@
             var$0=match[2],
             s1=match[1];
            function aux(lhstag,lhs,s1,t1)
-            {function _jS_(_jY_,_jZ_){return stm_pars(tag,rettag,_jY_,_jZ_)}
+            {function _j0_(_j6_,_j7_){return stm_pars(tag,rettag,_j6_,_j7_)}
              var
-              _jT_=kwd(_fw_),
-              _jU_=rhs_pars(lhstag),
-              _jV_=
+              _j1_=kwd(_fB_),
+              _j2_=rhs_pars(lhstag),
+              _j3_=
                concat$0
-                (function(_jW_,_jX_)
-                  {return concat$0(_jU_,_jT_,cfst,_jW_,_jX_)},
-                 _jS_,
+                (function(_j4_,_j5_)
+                  {return concat$0(_j2_,_j1_,cfst,_j4_,_j5_)},
+                 _j0_,
                  couple,
                  s1,
                  t1),
-              t2=_jV_[4],
-              error2=_jV_[3],
-              match=_jV_[2],
+              t2=_j3_[4],
+              error2=_j3_[3],
+              match=_j3_[2],
               cont=match[2],
               rhs=match[1],
-              s2=_jV_[1];
+              s2=_j3_[1];
              return [0,
                      s2,
                      [1,lhs,rhs,cont],
-                     best(best(error1,error2),[0,_fx_,s2]),
+                     best(best(error1,error2),[0,_fC_,s2]),
                      t2]}
            if(var$0)
             var v=var$0[1],match$0=[0,get_field(t1,v)];
            else
             var match$0=0;
            if(match$0)
-            {var _jN_=match$0[1];
-             if(_jN_)
-              {var _jO_=_jN_[1],_jP_=_jO_[1][1],_jQ_=_jP_[2],_jR_=_jP_[1];
-               return 0 === _jO_[2]
-                       ?aux(_jR_,[0,[0,_jR_,_jQ_]],s1,t1)
-                       :aux(_jR_,[1,[0,_jR_,_jQ_]],s1,t1)}
-             throw [0,Fail,best([0,_fy_,s],error1)]}
+            {var _jV_=match$0[1];
+             if(_jV_)
+              {var _jW_=_jV_[1],_jX_=_jW_[1][1],_jY_=_jX_[2],_jZ_=_jX_[1];
+               return 0 === _jW_[2]
+                       ?aux(_jZ_,[0,[0,_jZ_,_jY_]],s1,t1)
+                       :aux(_jZ_,[1,[0,_jZ_,_jY_]],s1,t1)}
+             throw [0,Fail,best([0,_fD_,s],error1)]}
            return aux(0,0,s1,t1)},
-         _js_];
-      function _i3_(rhs,param)
+         _jA_];
+      function _i$_(rhs,param)
        {if(rhs){var rhs$0=rhs[1];return [0,rhs$0]}
         if(0 === tag)return 1;
-        throw [0,Reject,symbol(_fo_,pp_tag(tag))]}
-      var _i4_=kwd(_fp_),_i5_=rhs_pars(tag);
-      function _i6_(_jK_,_jL_){return option(_i5_,_jK_,_jL_)}
-      var _i7_=kwd(_fq_);
-      function _i8_(_jI_,_jJ_){return concat$0(_i7_,_i6_,csnd,_jI_,_jJ_)}
+        throw [0,Reject,symbol(_ft_,pp_tag(tag))]}
+      var _ja_=kwd(_fu_),_jb_=rhs_pars(tag);
+      function _jc_(_jS_,_jT_){return option(_jb_,_jS_,_jT_)}
+      var _jd_=kwd(_fv_);
+      function _je_(_jQ_,_jR_){return concat$0(_jd_,_jc_,csnd,_jQ_,_jR_)}
       var
-       _ju_=
+       _jC_=
         [0,
-         function(_jG_,_jH_){return concat$0(_i8_,_i4_,_i3_,_jG_,_jH_)},
-         _jt_];
+         function(_jO_,_jP_){return concat$0(_je_,_ja_,_i$_,_jO_,_jP_)},
+         _jB_];
       return caml_call2
               (choice_list
                 ([0,
                   function(s,t)
-                   {function _jv_(param,_jF_){return 2}
+                   {function _jD_(param,_jN_){return 2}
                     var
-                     _jw_=kwd(_fh_),
-                     _jx_=kwd(_fi_),
-                     _jy_=kwd(_fj_),
-                     _jz_=kwd(_fk_);
-                    function _jA_(_jD_,_jE_)
-                     {return concat$0(_jz_,_jy_,csnd,_jD_,_jE_)}
+                     _jE_=kwd(_fm_),
+                     _jF_=kwd(_fn_),
+                     _jG_=kwd(_fo_),
+                     _jH_=kwd(_fp_);
+                    function _jI_(_jL_,_jM_)
+                     {return concat$0(_jH_,_jG_,csnd,_jL_,_jM_)}
                     return concat$0
-                            (function(_jB_,_jC_)
-                              {return concat$0(_jA_,_jx_,csnd,_jB_,_jC_)},
-                             _jw_,
-                             _jv_,
+                            (function(_jJ_,_jK_)
+                              {return concat$0(_jI_,_jF_,csnd,_jJ_,_jK_)},
+                             _jE_,
+                             _jD_,
                              s,
                              t)},
-                  _ju_]),
+                  _jC_]),
                s,
                t)}
     function add_local_var(tbl,param)
      {var tbl$0=tbl,param$0=param;
       for(;;)
-       {var _i2_=param$0[1];
-        if(_i2_)
+       {var _i__=param$0[1];
+        if(_i__)
          {var
-           tl=_i2_[2],
-           h=_i2_[1],
+           tl=_i__[2],
+           h=_i__[1],
            param$1=[0,tl],
            tbl$1=add_field_to_table(tbl$0,[0,h],1),
            tbl$0=tbl$1,
@@ -6990,38 +7015,38 @@
         return [0,t,get_taglist(tl)]}
       return 0}
     function varlist_append(l1,l2)
-     {var _i1_=l1[1];
-      if(_i1_)
-       {var tl=_i1_[2],hd=_i1_[1],match=varlist_append([0,tl],l2),l=match[1];
+     {var _i9_=l1[1];
+      if(_i9_)
+       {var tl=_i9_[2],hd=_i9_[1],match=varlist_append([0,tl],l2),l=match[1];
         return [0,[0,hd,l]]}
       return l2}
     function tagged_var_list_of_any_var_list(param)
-     {var _i0_=param[1];
-      if(_i0_)
+     {var _i8_=param[1];
+      if(_i8_)
        {var
-         tl=_i0_[2],
-         v=_i0_[1],
+         tl=_i8_[2],
+         v=_i8_[1],
          match=tagged_var_list_of_any_var_list([0,tl]),
          vs=match[2],
          tags=match[1];
         return [0,[0,v[1],tags],[0,v,vs]]}
-      return _fz_}
-    function _fA_(param,s){var t=param[1];return [0,[0,[0,t,s],0]]}
-    function pars_varlist_singleton(_iY_,_iZ_)
-     {return concat$0(type_pars,varname,_fA_,_iY_,_iZ_)}
+      return _fE_}
+    function _fF_(param,s){var t=param[1];return [0,[0,[0,t,s],0]]}
+    function pars_varlist_singleton(_i6_,_i7_)
+     {return concat$0(type_pars,varname,_fF_,_i6_,_i7_)}
     function parameter_pars(s,t)
-     {var _iM_=kwd(_fC_);
-      function _iN_(_iW_,_iX_)
-       {return concat$0(_iM_,pars_varlist_singleton,csnd,_iW_,_iX_)}
-      function _iO_(_iU_,_iV_)
-       {return kleenestar(_iN_,_fB_,varlist_append,_iU_,_iV_)}
-      function _iP_(_iS_,_iT_)
-       {return concat$0(pars_varlist_singleton,_iO_,varlist_append,_iS_,_iT_)}
+     {var _iU_=kwd(_fH_);
+      function _iV_(_i4_,_i5_)
+       {return concat$0(_iU_,pars_varlist_singleton,csnd,_i4_,_i5_)}
+      function _iW_(_i2_,_i3_)
+       {return kleenestar(_iV_,_fG_,varlist_append,_i2_,_i3_)}
+      function _iX_(_i0_,_i1_)
+       {return concat$0(pars_varlist_singleton,_iW_,varlist_append,_i0_,_i1_)}
       var
        match=
         caml_call2
          (brackets_pars
-           (function(_iQ_,_iR_){return option2(_fD_,_iP_,_iQ_,_iR_)}),
+           (function(_iY_,_iZ_){return option2(_fI_,_iX_,_iY_,_iZ_)}),
           s,
           t),
        nt=match[4],
@@ -7038,12 +7063,12 @@
       return [0,ns,vl,error,x]}
     function vars_pars(s,t)
      {var
-       _iJ_=kwd(_fF_),
+       _iR_=kwd(_fK_),
        match=
         kleenestar
-         (function(_iK_,_iL_)
-           {return concat$0(pars_varlist_singleton,_iJ_,cfst,_iK_,_iL_)},
-          _fE_,
+         (function(_iS_,_iT_)
+           {return concat$0(pars_varlist_singleton,_iR_,cfst,_iS_,_iT_)},
+          _fJ_,
           varlist_append,
           s,
           t),
@@ -7061,59 +7086,59 @@
       return [0,ns,vl,error,x]}
     function block_pars(opt,tag,vl,s,t)
      {if(opt)var sth=opt[1],check_payable=sth;else var check_payable=0;
-      var _ik_=kwd(_fG_),_il_=1;
-      function _im_(_iH_,_iI_){return stm_pars(tag,_il_,_iH_,_iI_)}
-      var _in_=kwd(_fH_);
-      function _io_(param)
-       {if(param)return 1;if(check_payable)throw [0,Reject,_fI_];return 0}
-      var _ip_=kwd(_fJ_);
-      function _iq_(_iF_,_iG_){return option(_ip_,_iF_,_iG_)}
-      function _ir_(_iD_,_iE_){return comb_parser(_iq_,_io_,_iD_,_iE_)}
-      function _is_(_iB_,_iC_){return concat$0(_ir_,_in_,cfst,_iB_,_iC_)}
-      function _it_(_iz_,_iA_)
-       {return concat$0(_is_,vars_pars,couple,_iz_,_iA_)}
+      var _is_=kwd(_fL_),_it_=1;
+      function _iu_(_iP_,_iQ_){return stm_pars(tag,_it_,_iP_,_iQ_)}
+      var _iv_=kwd(_fM_);
+      function _iw_(param)
+       {if(param)return 1;if(check_payable)throw [0,Reject,_fN_];return 0}
+      var _ix_=kwd(_fO_);
+      function _iy_(_iN_,_iO_){return option(_ix_,_iN_,_iO_)}
+      function _iz_(_iL_,_iM_){return comb_parser(_iy_,_iw_,_iL_,_iM_)}
+      function _iA_(_iJ_,_iK_){return concat$0(_iz_,_iv_,cfst,_iJ_,_iK_)}
+      function _iB_(_iH_,_iI_)
+       {return concat$0(_iA_,vars_pars,couple,_iH_,_iI_)}
       var
-       _iu_=
+       _iC_=
         concat$0
-         (function(_ix_,_iy_){return concat$0(_it_,_im_,couple,_ix_,_iy_)},
-          _ik_,
+         (function(_iF_,_iG_){return concat$0(_iB_,_iu_,couple,_iF_,_iG_)},
+          _is_,
           cfst,
           s,
           t),
-       nt2=_iu_[4],
-       error2=_iu_[3],
-       _iv_=_iu_[2],
-       stm=_iv_[2],
-       _iw_=_iv_[1],
-       match=_iw_[2],
+       nt2=_iC_[4],
+       error2=_iC_[3],
+       _iD_=_iC_[2],
+       stm=_iD_[2],
+       _iE_=_iD_[1],
+       match=_iE_[2],
        lvl=match[1],
-       payable=_iw_[1],
-       ns2=_iu_[1];
+       payable=_iE_[1],
+       ns2=_iC_[1];
       return [0,ns2,[0,[0,vl,lvl,stm],payable],error2,remove_local_vars(nt2)]}
     function any_meth_pars(s,t)
-     {var _h2_=brackets_pars(type_pars),_h3_=kwd(_fK_);
-      function _h4_(_ii_,_ij_){return concat$0(_h3_,_h2_,csnd,_ii_,_ij_)}
-      function _h5_(_ig_,_ih_){return option2(_fL_,_h4_,_ig_,_ih_)}
-      var _h6_=kwd(_fM_);
-      function _h7_(_ie_,_if_){return concat$0(_h6_,varname,csnd,_ie_,_if_)}
+     {var _h__=brackets_pars(type_pars),_h$_=kwd(_fP_);
+      function _ia_(_iq_,_ir_){return concat$0(_h$_,_h__,csnd,_iq_,_ir_)}
+      function _ib_(_io_,_ip_){return option2(_fQ_,_ia_,_io_,_ip_)}
+      var _ic_=kwd(_fR_);
+      function _id_(_im_,_in_){return concat$0(_ic_,varname,csnd,_im_,_in_)}
       var
-       _h8_=
+       _ie_=
         concat$0
-         (function(_ic_,_id_)
-           {return concat$0(_h7_,parameter_pars,couple,_ic_,_id_)},
-          _h5_,
+         (function(_ik_,_il_)
+           {return concat$0(_id_,parameter_pars,couple,_ik_,_il_)},
+          _ib_,
           couple,
           s,
           t),
-       nt1=_h8_[4],
-       error1=_h8_[3],
-       _h9_=_h8_[2],
-       t1=_h9_[2][1],
-       _h__=_h9_[1],
-       match=_h__[2],
+       nt1=_ie_[4],
+       error1=_ie_[3],
+       _if_=_ie_[2],
+       t1=_if_[2][1],
+       _ig_=_if_[1],
+       match=_ig_[2],
        vl=match[1],
-       name=_h__[1],
-       ns1=_h8_[1];
+       name=_ig_[1],
+       ns1=_ie_[1];
       try
        {var nt1$0=add_fun_to_table(nt1,[0,[0,t1,get_taglist(vl),name]])}
       catch(exn)
@@ -7122,56 +7147,56 @@
          {var msg=exn[2];throw [0,Fail,best([0,msg,s],error1)]}
         throw exn}
       var
-       _h$_=block_pars(0,t1,vl,ns1,nt1$0),
-       nt2=_h$_[4],
-       error2=_h$_[3],
-       match$0=_h$_[2],
+       _ih_=block_pars(0,t1,vl,ns1,nt1$0),
+       nt2=_ih_[4],
+       error2=_ih_[3],
+       match$0=_ih_[2],
        payable=match$0[2],
        block=match$0[1],
-       ns2=_h$_[1],
-       _ia_=remove_local_vars(nt2),
-       _ib_=best(error1,error2);
-      return [0,ns2,[0,[0,t1,get_taglist(vl),name],block,payable],_ib_,_ia_]}
+       ns2=_ih_[1],
+       _ii_=remove_local_vars(nt2),
+       _ij_=best(error1,error2);
+      return [0,ns2,[0,[0,t1,get_taglist(vl),name],block,payable],_ij_,_ii_]}
     function methods_pars(s)
-     {var _h0_=0;
-      return function(_h1_)
-       {return kleenestar(any_meth_pars,_h0_,addel,s,_h1_)}}
-    function _fN_(param)
-     {var _hZ_=param[1];
-      if(0 === param[2])throw [0,Assert_failure,_fO_];
-      return _hZ_}
-    var _fP_=0,_fQ_=0;
-    function _fS_(_hX_,_hY_){return block_pars(_fR_,_fQ_,_fP_,_hX_,_hY_)}
-    var _fU_=kwd(_fT_),_fW_=kwd(_fV_),_fY_=kwd(_fX_);
-    function _fZ_(_hV_,_hW_){return concat$0(_fY_,_fW_,cfst,_hV_,_hW_)}
-    function _f0_(_hT_,_hU_){return concat$0(_fZ_,_fU_,cfst,_hT_,_hU_)}
-    function _f1_(_hR_,_hS_){return concat$0(_f0_,_fS_,csnd,_hR_,_hS_)}
-    function fallback_pars(_hP_,_hQ_){return comb_parser(_f1_,_fN_,_hP_,_hQ_)}
+     {var _h8_=0;
+      return function(_h9_)
+       {return kleenestar(any_meth_pars,_h8_,addel,s,_h9_)}}
+    function _fS_(param)
+     {var _h7_=param[1];
+      if(0 === param[2])throw [0,Assert_failure,_fT_];
+      return _h7_}
+    var _fU_=0,_fV_=0;
+    function _fX_(_h5_,_h6_){return block_pars(_fW_,_fV_,_fU_,_h5_,_h6_)}
+    var _fZ_=kwd(_fY_),_f1_=kwd(_f0_),_f3_=kwd(_f2_);
+    function _f4_(_h3_,_h4_){return concat$0(_f3_,_f1_,cfst,_h3_,_h4_)}
+    function _f5_(_h1_,_h2_){return concat$0(_f4_,_fZ_,cfst,_h1_,_h2_)}
+    function _f6_(_hZ_,_h0_){return concat$0(_f5_,_fX_,csnd,_hZ_,_h0_)}
+    function fallback_pars(_hX_,_hY_){return comb_parser(_f6_,_fS_,_hX_,_hY_)}
     function actor_pars(s,t)
-     {function _hq_(param)
+     {function _hy_(param)
        {var
          fallback=param[2],
-         _hO_=param[1],
-         methods=_hO_[2],
-         match=_hO_[1],
+         _hW_=param[1],
+         methods=_hW_[2],
+         match=_hW_[1],
          fields=match[2],
          name=match[1];
         return [0,name,methods,fallback,fields]}
-      var _hr_=kwd(_f2_);
-      function _hs_(_hM_,_hN_){return option(fallback_pars,_hM_,_hN_)}
-      var _ht_=kwd(_f3_),_hu_=kwd(_f4_);
-      function _hv_(_hK_,_hL_){return concat$0(_hu_,varname,csnd,_hK_,_hL_)}
-      function _hw_(_hI_,_hJ_){return concat$0(_hv_,_ht_,cfst,_hI_,_hJ_)}
-      function _hx_(_hG_,_hH_)
-       {return concat$0(_hw_,fields_pars,couple,_hG_,_hH_)}
-      function _hy_(_hE_,_hF_)
-       {return concat$0(_hx_,methods_pars,couple,_hE_,_hF_)}
-      function _hz_(_hC_,_hD_){return concat$0(_hy_,_hs_,couple,_hC_,_hD_)}
+      var _hz_=kwd(_f7_);
+      function _hA_(_hU_,_hV_){return option(fallback_pars,_hU_,_hV_)}
+      var _hB_=kwd(_f8_),_hC_=kwd(_f9_);
+      function _hD_(_hS_,_hT_){return concat$0(_hC_,varname,csnd,_hS_,_hT_)}
+      function _hE_(_hQ_,_hR_){return concat$0(_hD_,_hB_,cfst,_hQ_,_hR_)}
+      function _hF_(_hO_,_hP_)
+       {return concat$0(_hE_,fields_pars,couple,_hO_,_hP_)}
+      function _hG_(_hM_,_hN_)
+       {return concat$0(_hF_,methods_pars,couple,_hM_,_hN_)}
+      function _hH_(_hK_,_hL_){return concat$0(_hG_,_hA_,couple,_hK_,_hL_)}
       var
        match=
         comb_parser
-         (function(_hA_,_hB_){return concat$0(_hz_,_hr_,cfst,_hA_,_hB_)},
-          _hq_,
+         (function(_hI_,_hJ_){return concat$0(_hH_,_hz_,cfst,_hI_,_hJ_)},
+          _hy_,
           s,
           t),
        tbl=match[4],
@@ -7184,55 +7209,55 @@
               error,
               caml_call1
                (find_all(function(param){return 0 === param[0]?1:0}),tbl)]}
-    var _f5_=0;
-    function _f6_(_ho_,_hp_)
-     {return kleenestar(actor_pars,_f5_,addel,_ho_,_hp_)}
-    function configuration_pars(_hm_,_hn_)
-     {return concat$0(_f6_,eof,cfst,_hm_,_hn_)}
-    var lexer=make_lexer(_f7_);
+    var _f__=0;
+    function _f$_(_hw_,_hx_)
+     {return kleenestar(actor_pars,_f__,addel,_hw_,_hx_)}
+    function configuration_pars(_hu_,_hv_)
+     {return concat$0(_f$_,eof,cfst,_hu_,_hv_)}
+    var lexer=make_lexer(_ga_);
     function initialize_table_with_contracts(tokens)
      {function skip_to_end_of_contract(n,param)
        {var n$0=n,param$0=param;
         for(;;)
          {if(param$0)
-           {var _hk_=param$0[1];
-            if(0 === _hk_[0])
-             {var _hl_=_hk_[1];
-              if(! caml_string_notequal(_hl_,_f8_))
+           {var _hs_=param$0[1];
+            if(0 === _hs_[0])
+             {var _ht_=_hs_[1];
+              if(! caml_string_notequal(_ht_,_gb_))
                {var
                  param$2=param$0[2],
                  n$2=n$0 + 1 | 0,
                  n$0=n$2,
                  param$0=param$2;
                 continue}
-              if(! caml_string_notequal(_hl_,_f9_))
+              if(! caml_string_notequal(_ht_,_gc_))
                {var tl=param$0[2];
                 if(0 === n$0)return tl;
                 var n$1=n$0 - 1 | 0,n$0=n$1,param$0=tl;
                 continue}}
             var param$1=param$0[2],param$0=param$1;
             continue}
-          throw [0,Fail,_f__]}}
+          throw [0,Fail,_gd_]}}
       function aux(acc,l)
        {var acc$0=acc,l$0=l;
         for(;;)
          {if(l$0)
-           {var _he_=l$0[1];
-            if(0 === _he_[0])
-             if(! caml_string_notequal(_he_[1],_f$_))
-              {var _hf_=l$0[2];
-               if(_hf_)
-                {var _hg_=_hf_[1];
-                 if(1 === _hg_[0])
-                  {var _hh_=_hf_[2];
-                   if(_hh_)
-                    {var _hi_=_hh_[1];
-                     if(0 === _hi_[0])
-                      {var _hj_=_hg_[1];
-                       if(! caml_string_notequal(_hi_[1],_gb_))
-                        {var tl=_hh_[2];
+           {var _hm_=l$0[1];
+            if(0 === _hm_[0])
+             if(! caml_string_notequal(_hm_[1],_ge_))
+              {var _hn_=l$0[2];
+               if(_hn_)
+                {var _ho_=_hn_[1];
+                 if(1 === _ho_[0])
+                  {var _hp_=_hn_[2];
+                   if(_hp_)
+                    {var _hq_=_hp_[1];
+                     if(0 === _hq_[0])
+                      {var _hr_=_ho_[1];
+                       if(! caml_string_notequal(_hq_[1],_gg_))
+                        {var tl=_hp_[2];
                          try
-                          {var acc$1=add_contract_to_table(acc$0,_hj_)}
+                          {var acc$1=add_contract_to_table(acc$0,_hr_)}
                          catch(exn$0)
                           {exn$0 = caml_wrap_exception(exn$0);
                            if(exn$0[1] === Reject)
@@ -7241,7 +7266,7 @@
                            var exn=exn$0}
                          var l$1=skip_to_end_of_contract(0,tl),acc$0=acc$1,l$0=l$1;
                          continue}}}}}}
-            throw [0,Fail,[0,_ga_,l$0]]}
+            throw [0,Fail,[0,_gf_,l$0]]}
           return acc$0}}
       return rev(aux(0,tokens))}
     function test_stream(f,stream)
@@ -7251,16 +7276,16 @@
          tbl=initialize_table_with_contracts(tokens),
          match$0=configuration_pars(tokens,tbl),
          conf=match$0[2],
-         _hd_=caml_call1(f,conf);
-        return _hd_}
+         _hl_=caml_call1(f,conf);
+        return _hl_}
       catch(exn)
        {exn = caml_wrap_exception(exn);
         if(exn[1] === Fail)
          {var match=exn[2],l=match[2],msg=match[1];
           return symbol
-                  (_ge_,
-                   symbol(_gd_,symbol(msg,symbol(_gc_,print_token_list(l)))))}
-        return symbol(_gf_,to_string(exn))}}
+                  (_gj_,
+                   symbol(_gi_,symbol(msg,symbol(_gh_,print_token_list(l)))))}
+        return symbol(_gk_,to_string(exn))}}
     function test_string(f,s)
      {var
        count=[0,0],
@@ -7299,8 +7324,8 @@
            stma=stm1[2],
            g=stm1[1],
            cont$1=stm_concat(cont$0,stm2),
-           _hc_=retype_stm(stm_concat(stmb,cont$1));
-          return [2,g,retype_stm(stm_concat(stma,cont$1)),_hc_,2]}}
+           _hk_=retype_stm(stm_concat(stmb,cont$1));
+          return [2,g,retype_stm(stm_concat(stma,cont$1)),_hk_,2]}}
     function norm_stm(addr,params,locals,payable,stm)
      {if(typeof stm !== "number")
        switch(stm[0])
@@ -7321,23 +7346,23 @@
                vars=match[2],
                varstags=match[1];
               if(typeof lhs === "number")
-               var _ha_=_gg_;
+               var _hi_=_gl_;
               else
                if(0 === lhs[0])
-                var v$0=lhs[1],_ha_=[0,[0,lhs],[0,v$0[1],[0,v$0]]];
+                var v$0=lhs[1],_hi_=[0,[0,lhs],[0,v$0[1],[0,v$0]]];
                else
-                var v$1=lhs[1],_ha_=[0,[0,lhs],[0,v$1[1],[0,v$1]]];
+                var v$1=lhs[1],_hi_=[0,[0,lhs],[0,v$1[1],[0,v$1]]];
               var
-               match$0=_ha_[2],
+               match$0=_hi_[2],
                ret_param=match$0[2],
                lhs_tag=match$0[1],
-               klhs=_ha_[1],
+               klhs=_hi_[1],
                varstags$0=[0,lhs_tag,varstags],
-               retparam=[0,lhs_tag,_gh_],
+               retparam=[0,lhs_tag,_gm_],
                fparams=[0,retparam,vars],
-               _hb_=
-                symbol(_gi_,caml_new_string("" + caml_hash(10,100,0,cont$0))),
-               sname=symbol(addr[3],_hb_),
+               _hj_=
+                symbol(_gn_,caml_new_string("" + caml_hash(10,100,0,cont$0))),
+               sname=symbol(addr[3],_hj_),
                name=[0,addr[1],varstags$0,sname],
                aparams=[0,ret_param,expr_list_of_var_list(vars)];
               if(klhs)
@@ -7353,13 +7378,13 @@
           else
            if(1 === lhs[0])
             if(typeof cont$0 !== "number" && 0 === cont$0[0])
-             {var _g7_=cont$0[1],_g8_=lhs[1];
-              if(0 === _g7_[0])
-               {var _g9_=_g7_[1];
-                if(typeof _g9_ !== "number" && 0 === _g9_[0])
-                 {var v=_g9_[1],match$0=eq_tag(_g8_[1],v[1]);
+             {var _hd_=cont$0[1],_he_=lhs[1];
+              if(0 === _hd_[0])
+               {var _hf_=_hd_[1];
+                if(typeof _hf_ !== "number" && 0 === _hf_[0])
+                 {var v=_hf_[1],match$0=eq_tag(_he_[1],v[1]);
                   if(match$0)
-                   if(caml_string_equal(_g8_[2],v[2]))return [0,meths,[0,rhs]];
+                   if(caml_string_equal(_he_[2],v[2]))return [0,meths,[0,rhs]];
                   return make_cont(0)}}}
           return make_cont(0);
          case 2:
@@ -7376,9 +7401,9 @@
             norm_stm(addr,params,locals,payable,stm_concat(stm2,cont$1)),
            stm2$0=match$2[2],
            meths2=match$2[1],
-           _g__=retype_stm(stm2$0),
-           _g$_=[2,g,retype_stm(stm1$0),_g__,2];
-          return [0,append(meths1,meths2),_g$_]
+           _hg_=retype_stm(stm2$0),
+           _hh_=[2,g,retype_stm(stm1$0),_hg_,2];
+          return [0,append(meths1,meths2),_hh_]
          }
       return [0,0,stm]}
     function norm_block(addr,payable,param)
@@ -7415,7 +7440,7 @@
       if(fallback)
        var
         fb=fallback[1],
-        match=norm_block(_gj_,1,fb),
+        match=norm_block(_go_,1,fb),
         fb$0=match[2],
         meths2=match[1],
         meths2$0=meths2,
@@ -7423,8 +7448,8 @@
       else
        var meths2$0=0,fallback$0=0;
       return [0,addr,append(meths1,meths2$0),fallback$0,fields]}
-    function normalize(_g6_){return map(norm_a_contract,_g6_)}
-    var Unbounded=[248,_gk_,caml_fresh_oo_id(0)];
+    function normalize(_hc_){return map(norm_a_contract,_hc_)}
+    var Unbounded=[248,_gp_,caml_fresh_oo_id(0)];
     function get_bound(f,m,param$1)
      {var param=param$1;
       for(;;)
@@ -7435,8 +7460,8 @@
         else
          var match$1=0;
         if(match$1)
-         {var _g5_=match$1[1];
-          if(_g5_){var b$0=_g5_[1];return [0,param$1,b$0]}
+         {var _hb_=match$1[1];
+          if(_hb_){var b$0=_hb_[1];return [0,param$1,b$0]}
           var accu=0,param$0=param$1;
           for(;;)
            {if(param$0)
@@ -7459,7 +7484,7 @@
          tbl=match$2[1],
          tbl$0=remove_assoc(m,tbl);
         return [0,[0,[0,m,[0,b$1]],tbl$0],b$1]}}
-    function get_bounds_rhs(f$0,cfg,this$0,rhs,tbl)
+    function get_bounds_rhs(f,cfg,this$0,rhs,tbl)
      {if(0 === rhs[0])return [0,tbl,0];
       var
        value=rhs[3],
@@ -7477,16 +7502,16 @@
                ms$0=map(function(x){return [0,a$0,x]},ms);
               if(typeof aexpr === "number")
                if(0 === aexpr)
-                var _g4_=caml_string_equal(a$0,this$0),switch$0=1;
+                var _ha_=caml_string_equal(a$0,this$0),switch$0=1;
                else
                 var switch$0=0;
               else
                if(13 === aexpr[0])
-                var a=aexpr[1],_g4_=caml_string_equal(a$0,a),switch$0=1;
+                var a=aexpr[1],_ha_=caml_string_equal(a$0,a),switch$0=1;
                else
                 var switch$0=0;
-              if(! switch$0)var _g4_=1;
-              if(_g4_)
+              if(! switch$0)var _ha_=1;
+              if(_ha_)
                {if(fb)
                  {var fb$0=fb[1];
                   return [0,[0,a$0,any_method_decl_of_fallback(fb$0)],ms$0]}
@@ -7501,36 +7526,33 @@
                match=param[2],
                payable$0=match[3],
                m=match[1],
-               _gY_=1 - payable,
-               _gZ_=_gY_ || payable$0;
-              if(_gZ_)
+               _g6_=1 - payable,
+               _g7_=_g6_ || payable$0;
+              if(_g7_)
                {var
-                 _g0_=0 !== eq_tag(meth[1],0)?1:0,
-                 _g1_=_g0_ || (0 !== eq_tag(meth[1],m[1])?1:0);
-                if(_g1_)
+                 _g8_=0 !== eq_tag(meth[1],0)?1:0,
+                 _g9_=_g8_ || (0 !== eq_tag(meth[1],m[1])?1:0);
+                if(_g9_)
                  var
-                  _g2_=caml_string_equal(meth[3],m[3]),
-                  _g3_=_g2_?0 !== eq_tag_list(meth[2],m[2])?1:0:_g2_;
+                  _g__=caml_string_equal(meth[3],m[3]),
+                  _g$_=_g__?0 !== eq_tag_list(meth[2],m[2])?1:0:_g__;
                 else
-                 var _g3_=_g1_}
+                 var _g$_=_g9_}
               else
-               var _g3_=_gZ_;
-              return _g3_}),
+               var _g$_=_g7_;
+              return _g$_}),
           methods),
-       _gW_=symbol(_gl_,caml_new_string("" + length(methods$0))),
-       s=symbol(meth[3],_gW_);
-      caml_call1(f[1],s);
-      var _gX_=[0,tbl,0];
+       _g5_=[0,tbl,0];
       return fold_left
               (function(param,mdecl)
                 {var
                   b=param[2],
                   tbl=param[1],
-                  match=get_bound(f$0,mdecl,tbl),
+                  match=get_bound(f,mdecl,tbl),
                   b1=match[2],
                   tbl$0=match[1];
                  return [0,tbl$0,max(b,b1)]},
-               _gX_,
+               _g5_,
                methods$0)}
     function get_bounds_stm(f,cfg,addr,stm,tbl)
      {var stm$0=stm;
@@ -7541,13 +7563,13 @@
          switch(stm$0[0])
           {case 0:var rhs=stm$0[1];return get_bounds_rhs(f,cfg,addr,rhs,tbl);
            case 1:
-            var _gT_=stm$0[2];
-            if(0 === _gT_[0]){var stm$1=stm$0[3],stm$0=stm$1;continue}
-            var _gU_=stm$0[3];
-            if(typeof _gU_ !== "number" && 0 === _gU_[0])
+            var _g2_=stm$0[2];
+            if(0 === _g2_[0]){var stm$1=stm$0[3],stm$0=stm$1;continue}
+            var _g3_=stm$0[3];
+            if(typeof _g3_ !== "number" && 0 === _g3_[0])
              {var
-               rhs2=_gU_[1],
-               match=get_bounds_rhs(f,cfg,addr,_gT_,tbl),
+               rhs2=_g3_[1],
+               match=get_bounds_rhs(f,cfg,addr,_g2_,tbl),
                b1=match[2],
                tbl$0=match[1],
                match$0=get_bounds_rhs(f,cfg,addr,rhs2,tbl$0),
@@ -7556,9 +7578,9 @@
               return [0,tbl$1,max(1 + b1 | 0,b2)]}
             break;
            default:
-            var _gV_=stm$0[4];
-            if(typeof _gV_ === "number")
-             if(2 <= _gV_)
+            var _g4_=stm$0[4];
+            if(typeof _g4_ === "number")
+             if(2 <= _g4_)
               {var
                 stm2=stm$0[3],
                 stm1=stm$0[2],
@@ -7569,21 +7591,50 @@
                 b2$0=match$2[2],
                 tbl$3=match$2[1];
                return [0,tbl$3,max(b1$0,b2$0)]}}
-        throw [0,Assert_failure,_gm_]}}
-    function _gp_(acc,param)
-     {var
-       b=param[2],
-       _gR_=param[1],
-       match=_gR_[2],
-       m=match[1],
-       a=_gR_[1],
-       _gS_=symbol(_gq_,caml_new_string("" + b));
-      return symbol(acc,symbol(_gs_,symbol(a,symbol(_gr_,symbol(m[3],_gS_)))))}
+        throw [0,Assert_failure,_gq_]}}
+    function get_bounds(cfg)
+     {try
+       {var
+         _gX_=0,
+         l$0=
+          fold_left
+           (function(tbl,param)
+             {var fallback=param[3],methods=param[2],addr=param[1];
+              if(fallback)
+               var
+                fb=fallback[1],
+                _g1_=[0,any_method_decl_of_fallback(fb),methods];
+              else
+               var _g1_=methods;
+              return fold_left
+                      (function(tbl,m)
+                        {function f(param,tbl)
+                          {var match=param[2],b=match[2],addr=param[1],stm=b[3];
+                           return get_bounds_stm(f,cfg,addr,stm,tbl)}
+                         return get_bound(f,[0,addr,m],tbl)[1]},
+                       tbl,
+                       _g1_)},
+            _gX_,
+            cfg),
+         _gY_=
+          [0,
+           447871637,
+           map
+            (function(param)
+              {var _gZ_=param[2],_g0_=param[1];
+               if(_gZ_){var b=_gZ_[1];return [0,_g0_,b]}
+               throw [0,Assert_failure,_gr_]},
+             l$0)];
+        return _gY_}
+      catch(exn)
+       {exn = caml_wrap_exception(exn);
+        if(exn[1] === Unbounded){var l=exn[2];return [0,294451908,l]}
+        throw exn}}
     var document=window$0.document;
     set_error
      (function(msg)
        {var errors=document.getElementById("errors");
-        if(errors == no_handler)throw [0,Assert_failure,_gt_];
+        if(errors == no_handler)throw [0,Assert_failure,_gB_];
         appendChild(errors,document.createTextNode(msg.toString()));
         return appendChild(errors,document.createElement("br"))});
     function transform(f,param)
@@ -7596,54 +7647,52 @@
        doc_out=window.doc_out;
       doc_out.setValue(y);
       return 0}
-    function _gu_(_gQ_){return test_string(pp_configuration,_gQ_)}
-    function parse(_gP_){return transform(_gu_,_gP_)}
-    function _gv_(c){return pp_configuration(normalize(c))}
-    function _gw_(_gO_){return test_string(_gv_,_gO_)}
-    function normalize$0(_gN_){return transform(_gw_,_gN_)}
-    function _gx_(c)
-     {var
-       cfg=normalize(c),
-       _gJ_=0,
-       l=
-        fold_left
-         (function(tbl,param)
-           {var fallback=param[3],methods=param[2],addr=param[1];
-            if(fallback)
-             var
-              fb=fallback[1],
-              _gM_=[0,any_method_decl_of_fallback(fb),methods];
-            else
-             var _gM_=methods;
-            return fold_left
-                    (function(tbl,m)
-                      {function f(param,tbl)
-                        {var match=param[2],b=match[2],addr=param[1],stm=b[3];
-                         return get_bounds_stm(f,cfg,addr,stm,tbl)}
-                       return get_bound(f,[0,addr,m],tbl)[1]},
-                     tbl,
-                     _gM_)},
-          _gJ_,
-          cfg);
-      return fold_left
-              (_gp_,
-               _go_,
-               map
-                (function(param)
-                  {var _gK_=param[2],_gL_=param[1];
-                   if(_gK_){var b=_gK_[1];return [0,_gL_,b]}
-                   throw [0,Assert_failure,_gn_]},
-                 l))}
-    function _gy_(_gI_){return test_string(_gx_,_gI_)}
-    function get_bounds(_gH_){return transform(_gy_,_gH_)}
+    function _gC_(_gW_){return test_string(pp_configuration,_gW_)}
+    function parse(_gV_){return transform(_gC_,_gV_)}
+    function _gD_(c){return pp_configuration(normalize(c))}
+    function _gE_(_gU_){return test_string(_gD_,_gU_)}
+    function normalize$0(_gT_){return transform(_gE_,_gT_)}
+    function _gF_(c)
+     {var param=get_bounds(normalize(c));
+      if(447871637 <= param[1])
+       {var l=param[2];
+        return fold_left
+                (function(acc,param)
+                  {var
+                    b=param[2],
+                    _gR_=param[1],
+                    match=_gR_[2],
+                    m=match[1],
+                    a=_gR_[1],
+                    _gS_=symbol(_gt_,caml_new_string("" + b));
+                   return symbol
+                           (acc,
+                            symbol
+                             (_gv_,symbol(a,symbol(_gu_,symbol(pp_meth(0,m),_gS_)))))},
+                 _gs_,
+                 l)}
+      var l$0=param[2];
+      return symbol
+              (_gA_,
+               fold_left
+                (function(acc,param)
+                  {var match=param[2],m=match[1],a=param[1];
+                   return symbol
+                           (acc,
+                            symbol
+                             (_gz_,symbol(a,symbol(_gy_,symbol(pp_meth(0,m),_gx_)))))},
+                 _gw_,
+                 l$0))}
+    function _gG_(_gQ_){return test_string(_gF_,_gQ_)}
+    function get_bounds$0(_gP_){return transform(_gG_,_gP_)}
     function copy_output_to_input(param)
      {var doc_in=window.doc_out,x=doc_in.getValue(),doc_out=window.doc_in;
       doc_out.setValue(x);
       return 0}
-    export$0(_gz_,caml_js_wrap_callback(parse));
-    export$0(_gA_,caml_js_wrap_callback(normalize$0));
-    export$0(_gB_,caml_js_wrap_callback(get_bounds));
-    export$0(_gC_,caml_js_wrap_callback(copy_output_to_input));
+    export$0(_gH_,caml_js_wrap_callback(parse));
+    export$0(_gI_,caml_js_wrap_callback(normalize$0));
+    export$0(_gJ_,caml_js_wrap_callback(get_bounds$0));
+    export$0(_gK_,caml_js_wrap_callback(copy_output_to_input));
     do_at_exit(0);
     return}
   (function(){return this}()));
