@@ -168,5 +168,6 @@ let pp_bounds =
       "Unbounded usage of call stack possibly detected:\n" ^
       List.fold_left
        (fun acc (a,AnyMethodDecl(m,_,_)) ->
-         acc ^ "\n" ^ pp_address a ^ "." ^ pp_meth m ^ " called by")
+         acc ^ "\n" ^ pp_address a ^ "." ^ pp_meth m ^ " possibly called by")
        "" l
+       ^ "\n..."
