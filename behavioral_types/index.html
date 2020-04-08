@@ -44,6 +44,18 @@ contract Bank {
       return -1 * x - 3 * x + x * 4 * -x;
    }
 
+   function foo(int x) returns (int) {
+       return foo(x);
+   }
+
+   function foo1(int x) returns (int) {
+       return foo2(x);
+   }
+
+   function foo2(int x) returns (int) {
+       return foo1(x);
+   }
+
    function test(int x) returns (int) {
       return identity(x);
    }
