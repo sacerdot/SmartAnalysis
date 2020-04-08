@@ -111,6 +111,45 @@ let rec expr_list_of_var_list : type a. a var_list -> a expr_list =
     VNil -> ENil
   | VCons(hd,tl) -> ECons(Var hd,expr_list_of_var_list tl)
 
+let any_method_decl_of_fallback fb =
+ let fallback = Unit,TNil,"(fallback)" in
+ AnyMethodDecl(fallback,fb,true)
+
+(* warning: methods whose name and input types match, but whose output or
+   payability does not are not returned *)
+let match_methods : this:address -> address expr -> ('a,'b) meth -> bool -> configuration -> (address * any_method_decl) list
+= fun ~this addr meth payable conf ->
+ let match_addr a =
+  match addr with
+     Value a' -> a = a'
+   | This -> a = this
+   | Var _
+   | Field _
+   | MsgSender -> true (* this is an approximation *) in
+ let match_meth meth' payable' =
+  (* no runtime error *)
+  (not payable || payable') &&
+  (eq_tag (Utils.fst3 meth) Unit <> None || eq_tag (Utils.fst3 meth) (Utils.fst3 meth') <> None) &&
+  (* name match *)
+  (Utils.trd3 meth = Utils.trd3 meth') &&
+  eq_tag_list (Utils.snd3 meth) (Utils.snd3 meth') <> None
+ in
+ let methods =
+ List.flatten
+  (List.map
+   (function AContract(a,ms,fb,_) ->
+     let ms = List.map (fun x -> a,x) ms in
+     if match_addr a then
+      match fb with
+         None -> ms
+       | Some fb ->
+          (*assert (0=1); (* XXX: devo guardare fallback solo se metodo non esiste, uffa *)*)
+          (a,any_method_decl_of_fallback fb)::ms
+     else [])
+   conf) in
+ List.filter
+  (function (_,AnyMethodDecl(m,_,payable)) -> match_meth m payable) methods
+
 (*** Serialization ***)
 let mk_indent indent = String.make (3 * indent) ' '
 

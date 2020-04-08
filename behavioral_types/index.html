@@ -11,6 +11,7 @@
   <button onclick="loadDoc1()">Load</button>
   <button onclick="ms_parse()">Parse</button>
   <button onclick="ms_normalize()">Normalize</button>
+  <button onclick="ms_get_bounds()">Compute stack bounds</button>
   <button onclick="ms_copy_output_to_input()">&lt; Copy output to input</button>
   <hr>
   <table width="100%">
@@ -65,6 +66,11 @@ contract Bank {
    function test5(int x, int y, bool b) returns (int) {
      if(b) { x = test(3); } else { y = test(3); }
      return y;
+   }
+
+   function test6() returns(int) {
+       test5(0,0,true);
+       return 2;
    }
 
    function pay(int n) payable {

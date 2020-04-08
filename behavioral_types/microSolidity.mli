@@ -67,6 +67,10 @@ val eq_tag : 'a tag -> 'b tag -> ('a, 'b) eq option
 val eq_tag_list : 'a tag_list -> 'b tag_list -> ('a, 'b) eq option
 val tag_of_lhs : 'a lhs -> 'a tag
 val expr_list_of_var_list : 'a var_list -> 'a expr_list
+val any_method_decl_of_fallback : (unit,unit) block -> any_method_decl
+val match_methods :
+ this:address -> address expr -> ('a,'b) meth -> bool -> configuration ->
+  (address * any_method_decl) list
 val pp_tag : 'a tag -> string
 val pp_ident : 'a tag * string -> string
 val pp_var : 'a tag * string -> string

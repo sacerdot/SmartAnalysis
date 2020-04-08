@@ -27,6 +27,9 @@ let parse = transform (Parser.test_string MicroSolidity.pp_configuration)
 let normalize =
  transform (Parser.test_string
   (fun c -> MicroSolidity.pp_configuration (Static.normalize c)))
+let get_bounds =
+ transform (Parser.test_string
+  (fun c -> Static.pp_bounds (Static.get_bounds (Static.normalize c))))
 
 let copy_output_to_input () =
  let doc_in = Js.Unsafe.variable "window.doc_out" in
@@ -37,6 +40,7 @@ let copy_output_to_input () =
 
 let _ = Js.export "ms_parse" (Js.wrap_callback parse)
 let _ = Js.export "ms_normalize" (Js.wrap_callback normalize)
+let _ = Js.export "ms_get_bounds" (Js.wrap_callback get_bounds)
 let _ = Js.export "ms_copy_output_to_input" (Js.wrap_callback copy_output_to_input)
 
 (*

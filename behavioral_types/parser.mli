@@ -1,3 +1,4 @@
+type any_meth = AnyMeth : ('a,'b) MicroSolidity.meth -> any_meth
 type any_var_list = AnyVarList : 'a MicroSolidity.var_list -> any_var_list
 type tagged_var_list = TaggedVarList : 'a MicroSolidity.tag_list * 'a MicroSolidity.var_list -> tagged_var_list
 
