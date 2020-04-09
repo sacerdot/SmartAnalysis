@@ -265,30 +265,34 @@ let match_methods : this:address -> address expr -> ('a,'b) meth -> bool -> conf
    | Var _
    | Field _
    | MsgSender -> true (* this is an approximation *) in
- let match_meth meth' payable' =
-  (* no runtime error *)
+ let match_meth meth' =
+  (* name and input signature match *)
+  Utils.trd3 meth = Utils.trd3 meth' &&
+   eq_tag_list (Utils.snd3 meth) (Utils.snd3 meth') <> None in
+ let check_runtime_error meth' payable' =
+  (* no runtime error: output sig mismatch or payability mismatch *)
   (not payable || payable') &&
-  (eq_tag (Utils.fst3 meth) Unit <> None || eq_tag (Utils.fst3 meth) (Utils.fst3 meth') <> None) &&
-  (* name match *)
-  (Utils.trd3 meth = Utils.trd3 meth') &&
-  eq_tag_list (Utils.snd3 meth) (Utils.snd3 meth') <> None
- in
- let methods =
+  (eq_tag (Utils.fst3 meth) Unit <> None || eq_tag (Utils.fst3 meth) (Utils.fst3 meth') <> None) in
  List.flatten
   (List.map
    (function AContract(a,ms,fb,_) ->
-     let ms = List.map (fun x -> a,x) ms in
      if match_addr a then
-      match fb with
-         None -> ms
-       | Some fb ->
-          (*assert (0=1); (* XXX: devo guardare fallback solo se metodo non esiste, uffa *)*)
-          (a,any_method_decl_of_fallback fb)::ms
-     else [])
-   conf) in
- List.filter
-  (function (_,AnyMethodDecl(m,_,payable)) -> match_meth m payable) methods
-
+      let matched =
+       match
+        List.filter
+         (function (AnyMethodDecl(m,_,_)) -> match_meth m) ms,
+        fb
+       with
+        | [],None -> []
+        | [],Some fb -> [a,any_method_decl_of_fallback fb]
+        | [m],_ -> [a,m]
+        | _,_ -> assert false (* methods overloaded on output/payability *) in
+      List.filter
+       (fun (_,(AnyMethodDecl(m,_,payable))) -> check_runtime_error m payable)
+       matched
+     else
+      [])
+   conf)
 
 (*
 type ('a,'b,'c) block = 'b var_list * 'c var_list * ('a,[`Return]) stm

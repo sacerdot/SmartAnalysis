@@ -89,7 +89,7 @@ contract Bank {
       }
    }
 
-   fallback() payable { return; }
+   fallback() payable { foo(3); foo1(3); return; }
 }
 
 contract Thief {
