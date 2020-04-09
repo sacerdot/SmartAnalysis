@@ -44,6 +44,23 @@ contract Bank {
       return -1 * x - 3 * x + x * 4 * -x;
    }
 
+(*
+   function cycle3(int x) returns (int) {
+       x = cycle2(x);
+       return 4;
+   }
+   
+   function cycle2(int x) returns (int) {
+       x = cycle1(x);
+       return 4;
+   }
+   
+   function cycle1(int x) returns (int) {
+       x = cycle3(x);
+       return 4;
+   }
+*)
+
    function foo(int x) returns (int) {
        return foo(x);
    }

@@ -24,6 +24,35 @@ contract Bank {
       return -1 * x - 3 * x + x * 4 * -x;
    }
 
+(*
+   function cycle3(int x) returns (int) {
+       x = cycle2(x);
+       return 4;
+   }
+   
+   function cycle2(int x) returns (int) {
+       x = cycle1(x);
+       return 4;
+   }
+   
+   function cycle1(int x) returns (int) {
+       x = cycle3(x);
+       return 4;
+   }
+*)
+
+   function foo(int x) returns (int) {
+       return foo(x);
+   }
+
+   function foo1(int x) returns (int) {
+       return foo2(x);
+   }
+
+   function foo2(int x) returns (int) {
+       return foo1(x);
+   }
+
    function test(int x) returns (int) {
       return identity(x);
    }
@@ -46,6 +75,11 @@ contract Bank {
    function test5(int x, int y, bool b) returns (int) {
      if(b) { x = test(3); } else { y = test(3); }
      return y;
+   }
+
+   function test6() returns(int) {
+       test5(0,0,true);
+       return 2;
    }
 
    function pay(int n) payable {
