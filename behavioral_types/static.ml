@@ -100,7 +100,7 @@ exception Cycle of cycle
 let rec find_in_stack m is_tail acc =
  function
     [] -> `FirstOccurrence
-  | (m',is_tail') as x ::_ when m = m' -> `Cycle (is_tail && is_tail',x::acc@[m,is_tail])
+  | (m',_) as x ::_ when m = m' -> `Cycle (is_tail,x::acc@[m,is_tail])
   | (_,is_tail') as x::tl -> find_in_stack m (is_tail && is_tail') (x::acc) tl
 
 let get_bound ~f m is_tail (tbl,stack) =
