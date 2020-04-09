@@ -170,17 +170,19 @@ let pp_cycle =
        (fun acc ((a,AnyMethodDecl(m,_,_)),is_tail) ->
          acc ^ "\n" ^ pp_address a ^ "." ^ pp_meth m ^ " possibly called " ^ (if is_tail then "in tail position " else "") ^ "by")
        "" (List.rev l) ^
-       "\n" ^ pp_address a ^ "." ^ pp_meth m
+       "\n" ^ pp_address a ^ "." ^ pp_meth m ^ "\n"
 
-let pp_bounds =
- function
-  | Bounds l ->
-      List.fold_left
-       (fun acc ((a,AnyMethodDecl(m,_,_)),b) ->
-         acc ^ "\n" ^
-          pp_address a ^ "." ^ pp_meth m ^ ": " ^ string_of_int b)
-       "" l
+let with_bounds f cfg =
+ match get_bounds cfg with
+    Bounds l -> f l
   | Unbounded l -> pp_cycle l
+
+let pp_bounds l =
+ List.fold_left
+  (fun acc ((a,AnyMethodDecl(m,_,_)),b) ->
+    acc ^ "\n" ^
+     pp_address a ^ "." ^ pp_meth m ^ ": " ^ string_of_int b)
+  "" l
 
 (** Argmax and stack max bounds **)
 
@@ -197,10 +199,10 @@ let maxargs =
     max m (max (maxargs_methods methods)
      (Option.fold ~none:0 ~some:maxargs_block fallback))) 0
 
-let maxargs_and_stack_bound cfg =
- match get_bounds cfg with
-  | Bounds l ->
-     let maxbound =
-      List.fold_left (fun m (_,n) -> max m n) 0 l in
-     `Bounds (maxargs cfg, maxbound)
-  | Unbounded l -> `Unbounded l
+let with_maxargs_and_stack_bound f cfg =
+ with_bounds
+  (fun l ->
+    let max_stack =
+     List.fold_left (fun m (_,n) -> max m n) 0 l in
+    f ~bounds:l ~max_args:(maxargs cfg) ~max_stack)
+  cfg

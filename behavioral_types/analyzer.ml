@@ -31,13 +31,19 @@ let get_bounds =
  transform (Parser.test_string
   (fun c ->
     let c = Static.normalize c in
-    Static.pp_bounds (Static.get_bounds c) ^
-    match Static.maxargs_and_stack_bound c with
-     | `Bounds (m,n) ->
-         "\n\n" ^
-         "Maximum number of locals: " ^ string_of_int m ^ "\n" ^
-         "Maximum stack length: " ^ string_of_int n
-     | _ -> ""))
+    Static.with_maxargs_and_stack_bound
+     (fun ~bounds ~max_args:m ~max_stack:n ->
+       Static.pp_bounds bounds ^
+       "\n\n" ^
+       "Maximum number of locals: " ^ string_of_int m ^ "\n" ^
+       "Maximum stack length: " ^ string_of_int n) c))
+let type_of =
+ transform (Parser.test_string
+  (fun c ->
+    let c = Static.normalize c in
+    Static.with_maxargs_and_stack_bound
+     (fun ~bounds:_ ~max_args ~max_stack ->
+       Types.pp_program (TypeInference.type_of ~max_args ~max_stack c)) c))
 
 let copy_output_to_input () =
  let doc_in = Js.Unsafe.variable "window.doc_out" in
@@ -49,6 +55,7 @@ let copy_output_to_input () =
 let _ = Js.export "ms_parse" (Js.wrap_callback parse)
 let _ = Js.export "ms_normalize" (Js.wrap_callback normalize)
 let _ = Js.export "ms_get_bounds" (Js.wrap_callback get_bounds)
+let _ = Js.export "ms_type_of" (Js.wrap_callback type_of)
 let _ = Js.export "ms_copy_output_to_input" (Js.wrap_callback copy_output_to_input)
 
 (*

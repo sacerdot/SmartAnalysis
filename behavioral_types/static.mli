@@ -1,10 +1,13 @@
+(** normalization **)
 val normalize: MicroSolidity.configuration -> MicroSolidity.configuration
 
-type bounds
-val get_bounds: MicroSolidity.configuration -> bounds
-val pp_bounds: bounds -> string
+(** computation of max stack bounds **)
+type stack_bounds
+val with_bounds:
+ (stack_bounds -> string) -> MicroSolidity.configuration -> string
+val pp_bounds: stack_bounds -> string
 
-type cycle
-val pp_cycle : cycle -> string
-val maxargs_and_stack_bound:
- MicroSolidity.configuration -> [> `Bounds of int * int | `Unbounded of cycle ]
+(** computation of max args and max stack depth **)
+val with_maxargs_and_stack_bound:
+ (bounds:stack_bounds -> max_args:int -> max_stack:int -> string) ->
+   MicroSolidity.configuration -> string
