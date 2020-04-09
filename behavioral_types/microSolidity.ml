@@ -107,6 +107,11 @@ let tag_of_lhs : type a. a lhs -> a tag =
   | LVar v -> fst v
   | LDiscard -> Unit
 
+let rec var_list_length : type a. a var_list -> int =
+ function
+    VNil -> 0
+  | VCons(_,tl) -> 1 + var_list_length tl
+
 (*** Serialization ***)
 let mk_indent indent = String.make (3 * indent) ' '
 

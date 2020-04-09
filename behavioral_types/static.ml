@@ -161,6 +161,17 @@ let get_bounds cfg =
  with
   Cycle l -> Unbounded l
 
+let pp_cycle =
+ function
+    [] -> assert false
+  | (((a,AnyMethodDecl(m,_,_)),_)::l) ->
+      "Unbounded usage of call stack possibly detected:\n" ^
+      List.fold_left
+       (fun acc ((a,AnyMethodDecl(m,_,_)),is_tail) ->
+         acc ^ "\n" ^ pp_address a ^ "." ^ pp_meth m ^ " possibly called " ^ (if is_tail then "in tail position " else "") ^ "by")
+       "" (List.rev l) ^
+       "\n" ^ pp_address a ^ "." ^ pp_meth m
+
 let pp_bounds =
  function
   | Bounds l ->
@@ -169,11 +180,27 @@ let pp_bounds =
          acc ^ "\n" ^
           pp_address a ^ "." ^ pp_meth m ^ ": " ^ string_of_int b)
        "" l
-  | Unbounded (((a,AnyMethodDecl(m,_,_)),_)::l) ->
-      "Unbounded usage of call stack possibly detected:\n" ^
-      List.fold_left
-       (fun acc ((a,AnyMethodDecl(m,_,_)),is_tail) ->
-         acc ^ "\n" ^ pp_address a ^ "." ^ pp_meth m ^ " possibly called " ^ (if is_tail then "in tail position " else "") ^ "by")
-       "" (List.rev l) ^
-       "\n" ^ pp_address a ^ "." ^ pp_meth m
-  | Unbounded [] -> assert false
+  | Unbounded l -> pp_cycle l
+
+(** Argmax and stack max bounds **)
+
+let maxargs_block (Block(params,locals,_)) =
+ var_list_length params + var_list_length locals
+
+let maxargs_methods =
+ List.fold_left
+  (fun m (AnyMethodDecl(_,b,_)) -> max m (maxargs_block b)) 0
+
+let maxargs =
+ List.fold_left
+  (fun m (AContract(_,methods,fallback,_)) ->
+    max m (max (maxargs_methods methods)
+     (Option.fold ~none:0 ~some:maxargs_block fallback))) 0
+
+let maxargs_and_stack_bound cfg =
+ match get_bounds cfg with
+  | Bounds l ->
+     let maxbound =
+      List.fold_left (fun m (_,n) -> max m n) 0 l in
+     `Bounds (maxargs cfg, maxbound)
+  | Unbounded l -> `Unbounded l

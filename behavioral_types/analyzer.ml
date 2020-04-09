@@ -29,7 +29,15 @@ let normalize =
   (fun c -> MicroSolidity.pp_configuration (Static.normalize c)))
 let get_bounds =
  transform (Parser.test_string
-  (fun c -> Static.pp_bounds (Static.get_bounds (Static.normalize c))))
+  (fun c ->
+    let c = Static.normalize c in
+    Static.pp_bounds (Static.get_bounds c) ^
+    match Static.maxargs_and_stack_bound c with
+     | `Bounds (m,n) ->
+         "\n\n" ^
+         "Maximum number of locals: " ^ string_of_int m ^ "\n" ^
+         "Maximum stack length: " ^ string_of_int n
+     | _ -> ""))
 
 let copy_output_to_input () =
  let doc_in = Js.Unsafe.variable "window.doc_out" in
