@@ -14,8 +14,13 @@ let stack_address = stack ^^ string_of_int 1
 
 let bottom = TInt min_int
 
+
+let string_of_meth m =
+ Utils.trd3 m ^^ String.concat "_" (pp_tag_list (Utils.snd3 m))
 let int_of_address : MicroSolidity.address -> expr =
  fun n -> TInt (Hashtbl.hash n)
+let int_of_meth : ('a,'b) meth -> expr =
+ fun m -> TInt (Hashtbl.hash (Utils.snd3 m, Utils.trd3 m))
 let int_of_bool = function false -> TInt 0 | true -> TInt 1
 let int_of_unit = TInt 0
 
@@ -35,6 +40,14 @@ type status =
  ; contracts : address list
  }
 
+type frame =
+ { addr : expr
+ ; meth : expr
+ ; value : expr
+ ; sender : expr
+ ; params : expr list
+ }
+
 let rec assign_gamma k v =
  function
     [] -> assert false
@@ -52,8 +65,19 @@ let lookup_gamma k gamma =
 
 let lookup ~status k = lookup_gamma k status.gamma
 
-let _push ~status l =
- assert (List.length l = status.frame_size);
+let from_frame ~status { addr ; meth ; value ; sender ; params } =
+ let l = addr::meth::value::sender::params in
+ l @ Utils.mk_list bottom (status.frame_size -  List.length l)
+
+let to_frame ~status l =
+ assert (status.frame_size = List.length l);
+ match l with
+    addr::meth::value::sender::params ->
+     { addr ; meth ; value ; sender ; params }
+  | _ -> assert false
+
+let _push ~status frame =
+ let l = from_frame ~status frame in
  let gamma = ref status.gamma in
  for i = status.k downto status.frame_size + 1 do
   gamma :=
@@ -70,7 +94,7 @@ let pop ~status =
  for i = status.k - status.frame_size + 1 to status.k do
   gamma := assign_gamma (stack ^^ string_of_int i) bottom !gamma
  done ;
- List.map snd (Utils.prefix status.frame_size status.gamma),
+ to_frame ~status (List.map snd (Utils.prefix status.frame_size status.gamma)),
  {status with gamma = !gamma }
 
 let address_of ~status a =
@@ -137,10 +161,13 @@ let type_of_expr :
   | Address -> `Single(int_of_address (type_of_address ~status expr))
   | Unit -> `Single(int_of_unit)
 
-let type_of_cont ~status =
- let _frame,_status = pop ~status in
+let type_of_call ~status:_ ~addr:_ ~meth:_ ~value:_ ~sender:_ ~ret:_ ~params:_ =
  (* XXX *)
  TGamma [TInt 666999]
+
+let type_of_cont ~status ret =
+ let {addr;meth;value;sender;params},_status = pop ~status in
+ type_of_call ~status ~addr ~meth ~value ~sender ~ret ~params
 
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
@@ -152,20 +179,20 @@ fun ~status tag stm ->
      let e = type_of_expr ~status tag e in
      let is_empty = TEq(lookup ~status stack_address,bottom) in
      (match e with
-         `Single _e ->
-           let cont = type_of_cont ~status in
+         `Single e ->
+           let cont = type_of_cont ~status e in
            TChoice(
             is_empty, TGamma (List.map (lookup ~status) status.fields),
             TNot is_empty, cont)
        | `Split p ->
-           let cont1 = type_of_cont ~status in
-           let cont2 = type_of_cont ~status in
+           let cont1 = type_of_cont ~status (int_of_bool true) in
+           let cont2 = type_of_cont ~status (int_of_bool false) in
            TChoice(
             is_empty, TGamma (List.map (lookup ~status) status.fields),
             TNot is_empty, TChoice(p, cont1, TNot p, cont2)))
   | Return ->
      let is_empty = TEq(lookup ~status stack_address,bottom) in
-     let cont = type_of_cont ~status in
+     let cont = type_of_cont ~status int_of_unit in
      TChoice(
       is_empty, TGamma (List.map (lookup ~status) status.fields),
       TNot is_empty, cont)
@@ -190,7 +217,15 @@ fun ~status tag stm ->
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 tag stm in
                TChoice(p,typ1,TNot p,typ2))
-  | Assign(_,_rhs1,ReturnRhs _rhs2) ->
+  | Assign(_,Call _,ReturnRhs Call(a2,m2,val2,args2)) ->
+     let _params = expr_list_map (object method f : 'a. 'a tag -> 'a MicroSolidity.expr -> 'b = type_of_expr ~status end) (Utils.snd3 m2) args2 in
+     let _f = 
+      { addr = int_of_address (type_of_address ~status a2)
+      ; meth = int_of_meth m2
+      ; value = Option.fold ~none:(TInt 0) ~some:(type_of_iexpr ~status) val2
+      ; sender = int_of_address status.this
+      ; params = [TInt 555] (* XXX TODO *)
+      } in
       (* XXX TODO *)
       TGamma [TInt 666999]
   | IfThenElse(guard,stm1,stm2,Revert) ->
@@ -246,7 +281,7 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
          let a = int_of_address a in
          TEq(lookup ~status v,a),aux ~status:(assign ~status v a) tl) in
  let typ = aux ~status to_sum_on in
- this ^^ Utils.trd3 name, saved_gamma @ other_params, typ
+ this ^^ string_of_meth name, saved_gamma @ other_params, typ
 
 let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_)) =
  List.fold_left

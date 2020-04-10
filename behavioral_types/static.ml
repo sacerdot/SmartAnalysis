@@ -186,8 +186,8 @@ let pp_bounds l =
 
 (** Argmax and stack max bounds **)
 
-let maxargs_block (Block(params,locals,_)) =
- var_list_length params + var_list_length locals
+let maxargs_block (Block(params,_,_)) =
+ var_list_length params
 
 let maxargs_methods =
  List.fold_left

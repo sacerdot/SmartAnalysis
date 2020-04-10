@@ -17,3 +17,8 @@ let rec set_prefix ~prefix l =
     [],_ -> l
   | _::_,[] -> assert false
   | v::ptl,(k,_)::tl -> (k,v)::set_prefix ~prefix:ptl tl
+
+let rec mk_list c =
+ function
+    0 -> []
+  | n -> c::mk_list c (n-1)

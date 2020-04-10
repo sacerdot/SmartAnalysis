@@ -112,6 +112,13 @@ let rec var_list_length : type a. a var_list -> int =
     VNil -> 0
   | VCons(_,tl) -> 1 + var_list_length tl
 
+let rec expr_list_map :
+ type c. < f: 'a. 'a tag -> 'a expr -> 'b > -> c tag_list -> c expr_list-> 'b list
+= fun o tl el ->
+ match tl,el with
+    TNil,ENil -> []
+  | TCons(t,tl),ECons(e,el) -> o#f t e :: expr_list_map o tl el
+
 (*** Serialization ***)
 let mk_indent indent = String.make (3 * indent) ' '
 
