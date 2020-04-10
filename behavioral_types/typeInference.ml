@@ -37,7 +37,7 @@ type status =
  ; k : int
  ; frame_size : int
  ; this : address
- ; contracts : address list
+ ; contracts : (address * Parser.any_meth list) list
  }
 
 type frame =
@@ -105,12 +105,12 @@ let pop ~status =
 let address_of ~status v =
  let a = lookup ~status v in
  try
-  List.find (fun c -> int_of_address c = a) status.contracts
+  fst (List.find (fun (c,_) -> int_of_address c = a) status.contracts)
  with
   Not_found ->
    Utils.error ("Variable or field " ^ v);
    Utils.error ("holds the unrecognized address: " ^ Types.pp_expr a);
-   Utils.error ("Known addresses: " ^ String.concat "," status.contracts);
+   Utils.error ("Known addresses: " ^ String.concat "," (List.map fst status.contracts));
    assert false
 
 let type_of_address : status:status -> address MicroSolidity.expr -> address =
@@ -238,19 +238,25 @@ let type_of_call :
   (fun params -> type_of_call0 ~status ~addr ~meth ~value ~sender ~params)
 
 let forall_contract ~status f =
- let guards_and_typs = List.map f status.contracts in
- List.fold_right
-  (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
+ let guards_and_typs = List.map (fun (c,ms) -> f c ms) status.contracts in
+ List.fold_right (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
+  guards_and_typs (revert ~status)
+
+let forall_methods ~status meths f =
+ let guards_and_typs = List.map f meths in
+ List.fold_right (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
   guards_and_typs (revert ~status)
 
 let type_of_cont ~status ret =
  let {addr;meth;value;sender;params},status = pop ~status in
  forall_contract ~status
-  (fun addr' ->
-    let meth = let _ = meth in Unit,TNil,"666999XXXXXXXXXXX" in
+  (fun addr' meths ->
     TEq(addr,int_of_address addr'),
-     type_of_call0 ~status ~addr:addr' ~meth ~value ~sender
-      ~params:(ret::params))
+    forall_methods ~status meths 
+     (fun (Parser.AnyMeth meth') ->
+       TEq(meth,int_of_meth meth'),
+       type_of_call0 ~status ~addr:addr' ~meth:meth' ~value ~sender
+        ~params:(ret::params)))
 
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
@@ -364,7 +370,7 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
       type_of_block ~status (Utils.fst3 name) block
    | v::tl ->
       forall_contract ~status
-       (fun a ->
+       (fun a _ ->
          let a = int_of_address a in
          TEq(lookup ~status v,a),aux ~status:(assign ~status v a) tl) in
  let typ = aux ~status to_sum_on in
@@ -376,7 +382,13 @@ let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_
    (match fb with None -> meths | Some fb -> meths @ [any_method_decl_of_fallback fb])
 
 let type_of ~max_args ~max_stack cfg =
- let contracts = List.map (function AContract(a,_,_,_) -> a) cfg in
+ let contracts =
+  List.map
+   (function AContract(a,methods,_,_) ->
+     a,
+     List.map (function AnyMethodDecl(m,_,_) -> Parser.AnyMeth m)
+      methods
+   ) cfg in
  (* address, method, msg.sender, msg.value *)
  let continuation_args = 4 in
  let frame_size = continuation_args + max_args in
