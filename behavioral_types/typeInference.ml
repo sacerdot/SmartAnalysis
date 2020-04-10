@@ -76,7 +76,7 @@ let to_frame ~status l =
      { addr ; meth ; value ; sender ; params }
   | _ -> assert false
 
-let _push ~status frame =
+let push ~status frame =
  let l = from_frame ~status frame in
  let gamma = ref status.gamma in
  for i = status.k downto status.frame_size + 1 do
@@ -161,20 +161,54 @@ let type_of_expr :
   | Address -> `Single(int_of_address (type_of_address ~status expr))
   | Unit -> `Single(int_of_unit)
 
-let type_of_call ~status:_ ~addr:_ ~meth:_ ~value:_ ~sender:_ ~ret:_ ~params:_ =
+let type_of_call ~status:_ ~addr:_ ~meth:_ ~value:_ ~sender:_ ~params:_ =
  (* XXX *)
  TGamma [TInt 666999]
 
 let type_of_cont ~status ret =
  let {addr;meth;value;sender;params},_status = pop ~status in
- type_of_call ~status ~addr ~meth ~value ~sender ~ret ~params
+ type_of_call ~status ~addr ~meth ~value ~sender ~params:(ret::params)
+
+let distribute_split l =
+ let rec aux acc =
+  function
+     [] -> acc
+   | `Single expr :: tl ->
+       let acc =
+        List.map (fun (accp,accl) -> accp,List.cons expr accl) acc in
+       aux acc tl
+   | `Split p :: tl ->
+       let acctrue =
+        List.map (fun (accp,accl) ->
+          TAnd(accp,p),List.cons (int_of_bool true) accl) acc in
+       let accfalse =
+        List.map (fun (accp,accl) ->
+          TAnd(accp,TNot p),List.cons (int_of_bool false) accl) acc in
+       aux (acctrue @ accfalse) tl
+ in
+  aux [TBool true,[]] l
+
+let revert ~status =
+ TGamma (List.map (fun v -> TVar v) status.saved_gamma)
+
+let forall_boolean ~status l f =
+ let ll = distribute_split l in
+ let rec aux =
+  function
+     [] -> revert ~status
+   | (p,l)::ll ->
+      let typ = f l in
+      TChoice(p,typ,TNot p,aux ll)
+ in
+  aux ll
 
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
  match stm with
-  | ReturnRhs (Call _) ->
-      (* XXX *)
-      TGamma [TInt 666999]
+  | ReturnRhs (Call(a1,m1,val1,args1)) ->
+      let sender = int_of_address status.this in
+      type_of_call ~status ~addr:a1 ~meth:m1 ~value:val1 ~sender
+       ~params:args1
   | ReturnRhs (Expr e) ->
      let e = type_of_expr ~status tag e in
      let is_empty = TEq(lookup ~status stack_address,bottom) in
@@ -196,7 +230,7 @@ fun ~status tag stm ->
      TChoice(
       is_empty, TGamma (List.map (lookup ~status) status.fields),
       TNot is_empty, cont)
-  | Revert -> TGamma (List.map (fun v -> TVar v) status.saved_gamma)
+  | Revert -> revert ~status
   | Assign(lhs,Expr e,stm) ->
      let lhs_tag = tag_of_lhs lhs in
      let lhs =
@@ -217,17 +251,25 @@ fun ~status tag stm ->
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 tag stm in
                TChoice(p,typ1,TNot p,typ2))
-  | Assign(_,Call _,ReturnRhs Call(a2,m2,val2,args2)) ->
-     let _params = expr_list_map (object method f : 'a. 'a tag -> 'a MicroSolidity.expr -> 'b = type_of_expr ~status end) (Utils.snd3 m2) args2 in
-     let _f = 
-      { addr = int_of_address (type_of_address ~status a2)
-      ; meth = int_of_meth m2
-      ; value = Option.fold ~none:(TInt 0) ~some:(type_of_iexpr ~status) val2
-      ; sender = int_of_address status.this
-      ; params = [TInt 555] (* XXX TODO *)
-      } in
-      (* XXX TODO *)
-      TGamma [TInt 666999]
+  | Assign(_,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,val2,args2)) ->
+     let o = object method f : 'a. 'a tag -> 'a MicroSolidity.expr -> 'b = type_of_expr ~status end in
+     let args2 = expr_list_map o (Utils.snd3 m2) args2 in
+     let a2 = int_of_address (type_of_address ~status a2) in
+     let m2 = int_of_meth m2 in
+     let val2=Option.fold ~none:(TInt 0) ~some:(type_of_iexpr ~status) val2 in
+     let sender = int_of_address status.this in
+     forall_boolean ~status args2
+      (fun args2 ->
+        let f = 
+         { addr = a2
+         ; meth = m2
+         ; value = val2
+         ; sender
+         ; params = args2
+         } in
+        let status = push ~status f in
+        type_of_call ~status ~addr:a1 ~meth:m1 ~value:val1 ~sender
+         ~params:args1)
   | IfThenElse(guard,stm1,stm2,Revert) ->
      let guard = type_of_pred ~status guard in
      let stm1 = type_of_stm ~status tag stm1 in
@@ -254,7 +296,7 @@ let forall_contract ~status f =
  let guards_and_typs = List.map f status.contracts in
  List.fold_right
   (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
-  guards_and_typs (TGamma (List.map (fun v -> TVar v) status.saved_gamma))
+  guards_and_typs (revert ~status)
 
 let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
  let args,locals = args_of_block block in
