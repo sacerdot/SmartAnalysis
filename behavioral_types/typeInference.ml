@@ -67,6 +67,9 @@ let pop ~status =
   gamma :=
    assign_gamma (stack ^^ string_of_int i) (lookup_gamma (stack ^^ string_of_int (i + status.frame_size)) !gamma) !gamma
  done ;
+ for i = status.k - status.frame_size + 1 to status.k do
+  gamma := assign_gamma (stack ^^ string_of_int i) bottom !gamma
+ done ;
  List.map snd (Utils.prefix status.frame_size status.gamma),
  {status with gamma = !gamma }
 
@@ -207,7 +210,7 @@ let rec args_of_var_list : type a. a var_list -> (bool * var) list =
   | VCons(n,tl) -> (eq_tag Address (fst n) <> None,snd n) :: args_of_var_list tl
 
 let args_of_block (Block(args,locals,_)) =
- args_of_var_list args @ args_of_var_list locals
+ args_of_var_list args, args_of_var_list locals
 
 let type_of_block ~status tag (Block(_,_,stm)) =
  type_of_stm ~status tag stm
@@ -223,16 +226,19 @@ let forall_contract ~status f =
   guards_and_typs (TGamma (List.map (fun v -> TVar v) status.saved_gamma))
 
 let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
- let args = args_of_block block in
+ let args,locals = args_of_block block in
  let to_sum_on =
   List.filter_map (fun (b,v) -> if b then Some v else None)
    (fields @ args) @ [msg_sender] in
  let fields = List.map snd fields in
  let args = List.map snd args in
+ let locals = List.map snd locals in
  let saved_gamma = List.map (fun n -> n ^ saved) fields in
  let stack = mk_stack k in
  let other_params = fields @ msg_sender :: msg_value :: args @ stack in
- let gamma = List.map (fun v -> v,TVar v) other_params in
+ let gamma =
+  List.map (fun v -> v,TVar v) other_params @
+  List.map (fun v -> v,bottom) locals in
  let status =
   { saved_gamma ; fields ; gamma ; k ; frame_size ; this ; contracts } in
  let rec aux ~status =
