@@ -61,7 +61,7 @@ let _push ~status l =
  done ;
  {status with gamma = Utils.set_prefix ~prefix:l !gamma}
 
-let _pop ~status =
+let pop ~status =
  let gamma = ref status.gamma in
  for i = 1 to status.k - status.frame_size do
   gamma :=
@@ -134,18 +134,41 @@ let type_of_expr :
   | Address -> `Single(int_of_address (type_of_address ~status expr))
   | Unit -> `Single(int_of_unit)
 
-let rec type_of_stm : type a b. status:status -> (a,b) stm -> typ =
-fun ~status stm ->
+let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
+fun ~status tag stm ->
  match stm with
-  | ReturnRhs _rhs ->
+  | ReturnRhs (Call _) ->
+      (* XXX *)
+      TGamma [TInt 666999]
+  | ReturnRhs (Expr e) ->
+     let e = type_of_expr ~status tag e in
      let is_empty = TEq(lookup ~status stack_address,bottom) in
-     TChoice(
-      is_empty, TGamma (List.map (lookup ~status) status.fields),
-      TNot is_empty, TGamma [TInt 666999])
+     (match e with
+         `Single _e ->
+           let cont =
+            let _frame,_status = pop ~status in
+            (* XXX *)
+            TGamma [TInt 666999] in
+           TChoice(
+            is_empty, TGamma (List.map (lookup ~status) status.fields),
+            TNot is_empty, cont)
+       | `Split p ->
+           let cont1 =
+            let _frame,_status = pop ~status in
+            (* XXX *)
+            TGamma [TInt 666999] in
+           let cont2 =
+            let _frame,_status = pop ~status in
+            (* XXX *)
+            TGamma [TInt 666999] in
+           TChoice(
+            is_empty, TGamma (List.map (lookup ~status) status.fields),
+            TNot is_empty, TChoice(p, cont1, TNot p, cont2)))
   | Return ->
      let is_empty = TEq(lookup ~status stack_address,bottom) in
      TChoice(
       is_empty, TGamma (List.map (lookup ~status) status.fields),
+      (* XXX *)
       TNot is_empty, TGamma [TInt 666999])
   | Revert -> TGamma (List.map (fun v -> TVar v) status.saved_gamma)
   | Assign(lhs,Expr e,stm) ->
@@ -156,25 +179,25 @@ fun ~status stm ->
        | LVar v -> Some (snd v)
        | LDiscard -> None in
      (match lhs with
-         None -> type_of_stm ~status stm
+         None -> type_of_stm ~status tag stm
        | Some lhs ->
           match type_of_expr ~status lhs_tag e with
              `Single e ->
                let status = assign ~status lhs e in
-               type_of_stm ~status stm
+               type_of_stm ~status tag stm
            | `Split p ->
                let status1 = assign ~status lhs (int_of_bool true) in
-               let typ1 = type_of_stm ~status:status1 stm in
+               let typ1 = type_of_stm ~status:status1 tag stm in
                let status2 = assign ~status lhs (int_of_bool false) in
-               let typ2 = type_of_stm ~status:status2 stm in
+               let typ2 = type_of_stm ~status:status2 tag stm in
                TChoice(p,typ1,TNot p,typ2))
   | Assign(_,_rhs1,ReturnRhs _rhs2) ->
       (* XXX TODO *)
       TGamma [TInt 666999]
   | IfThenElse(guard,stm1,stm2,Revert) ->
      let guard = type_of_pred ~status guard in
-     let stm1 = type_of_stm ~status stm1 in
-     let stm2 = type_of_stm ~status stm2 in
+     let stm1 = type_of_stm ~status tag stm1 in
+     let stm2 = type_of_stm ~status tag stm2 in
      TChoice(guard,stm1,TNot guard,stm2)
   | _ -> assert false
 
@@ -186,8 +209,8 @@ let rec args_of_var_list : type a. a var_list -> (bool * var) list =
 let args_of_block (Block(args,locals,_)) =
  args_of_var_list args @ args_of_var_list locals
 
-let type_of_block ~status (Block(_,_,stm)) =
- type_of_stm ~status stm
+let type_of_block ~status tag (Block(_,_,stm)) =
+ type_of_stm ~status tag stm
 
 let rec mk_stack ?(acc=[]) k =
  if k = 0 then acc
@@ -214,7 +237,7 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
   { saved_gamma ; fields ; gamma ; k ; frame_size ; this ; contracts } in
  let rec aux ~status =
   function
-     [] -> type_of_block ~status block
+     [] -> type_of_block ~status (Utils.fst3 name) block
    | v::tl ->
       forall_contract ~status
        (fun a ->
