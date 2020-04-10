@@ -19,7 +19,7 @@ type pred =
 type typ =
  | TGamma of expr list
  | TCall of func * expr list
- | TPlus of pred * typ * pred * typ
+ | TChoice of pred * typ * pred * typ
 type functions = func * var list * typ
 type types = functions list
 

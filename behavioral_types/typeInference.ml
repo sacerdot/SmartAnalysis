@@ -20,8 +20,10 @@ let int_of_bool = function false -> TInt 0 | true -> TInt 1
 let int_of_unit = TInt 0
 
 let fields_of_a_contract (AContract(a,_,_,fields)) =
- List.rev_map (fun (AnyField f) -> a ^^ snd f) fields @
-  [a ^^ balance]
+ List.rev_map
+  (fun (AnyField f) -> eq_tag (fst f) Address <> None, a ^^ snd f)
+  fields @
+ [false, a ^^ balance]
 
 type status =
  { saved_gamma : var list
@@ -143,7 +145,7 @@ fun ~status stm ->
                let typ1 = type_of_stm ~status:status1 stm in
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 stm in
-               TPlus(p,typ1,TNot p,typ2))
+               TChoice(p,typ1,TNot p,typ2))
   | Assign(_,_rhs1,ReturnRhs _rhs2) ->
       (* XXX TODO *)
       TGamma [TInt 666999]
@@ -151,13 +153,13 @@ fun ~status stm ->
      let guard = type_of_pred ~status guard in
      let stm1 = type_of_stm ~status stm1 in
      let stm2 = type_of_stm ~status stm2 in
-     TPlus(guard,stm1,TNot guard,stm2)
+     TChoice(guard,stm1,TNot guard,stm2)
   | _ -> assert false
 
-let rec args_of_var_list : type a. a var_list -> var list =
+let rec args_of_var_list : type a. a var_list -> (bool * var) list =
  function
     VNil -> []
-  | VCons(n,tl) -> snd n :: args_of_var_list tl
+  | VCons(n,tl) -> (eq_tag Address (fst n) <> None,snd n) :: args_of_var_list tl
 
 let args_of_block (Block(args,locals,_)) =
  args_of_var_list args @ args_of_var_list locals
@@ -169,20 +171,33 @@ let rec mk_stack ?(acc=[]) k =
  if k = 0 then acc
  else mk_stack ~acc:((stack ^^ string_of_int k)::acc) (k-1)
 
+let forall_contract ~status f =
+ let guards_and_typs = List.map f status.contracts in
+ List.fold_right
+  (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
+  guards_and_typs (TGamma (List.map (fun v -> TVar v) status.saved_gamma))
+
 let type_of_a_method ~k ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
- let saved_gamma = List.map (fun n -> n ^ saved) fields in
  let args = args_of_block block in
+ let to_sum_on =
+  List.filter_map (fun (b,v) -> if b then Some v else None)
+   (fields @ args) @ [msg_sender] in
+ let fields = List.map snd fields in
+ let args = List.map snd args in
+ let saved_gamma = List.map (fun n -> n ^ saved) fields in
  let stack = mk_stack k in
  let other_params = fields @ msg_sender :: msg_value :: args @ stack in
- let status =
-  { saved_gamma
-  ; fields
-  ; gamma = List.map (fun v -> v,TVar v) other_params
-  ; k
-  ; this
-  ; contracts
-  } in
- let typ = type_of_block ~status block in
+ let gamma = List.map (fun v -> v,TVar v) other_params in
+ let status = { saved_gamma ; fields ; gamma ; k ; this ; contracts } in
+ let rec aux ~status =
+  function
+     [] -> type_of_block ~status block
+   | v::tl ->
+      forall_contract ~status
+       (fun a ->
+         let a = int_of_address a in
+         TEq(lookup ~status v,a),aux ~status:(assign ~status v a) tl) in
+ let typ = aux ~status to_sum_on in
  this ^^ Utils.trd3 name, saved_gamma @ other_params, typ
 
 let type_of_a_contract ~k ~fields ~contracts (AContract(a,meths,fb,_)) =
