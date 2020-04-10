@@ -5,7 +5,7 @@ val fst3 : 'a * 'b * 'c -> 'a
 val snd3 : 'a * 'b * 'c -> 'b
 val trd3 : 'a * 'b * 'c -> 'c
 
-val prefix : int -> 'a list -> 'a list
-val set_prefix : prefix:'b list -> ('a * 'b) list -> ('a * 'b) list
+(*val prefix : int -> 'a list -> 'a list*)
+val iteri : (int -> 'a -> unit) -> 'a list -> unit
 
 val mk_list : 'a -> int -> 'a list

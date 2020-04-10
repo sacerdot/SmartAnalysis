@@ -15,8 +15,8 @@ let stack_address = stack ^^ string_of_int 1
 let bottom = TInt min_int
 
 
-let string_of_meth m =
- Utils.trd3 m ^^ String.concat "_" (pp_tag_list (Utils.snd3 m))
+let string_of_meth addr m =
+ addr ^^ Utils.trd3 m ^^ String.concat "_" (pp_tag_list (Utils.snd3 m))
 let int_of_address : MicroSolidity.address -> expr =
  fun n -> TInt (Hashtbl.hash n)
 let int_of_meth : ('a,'b) meth -> expr =
@@ -83,7 +83,9 @@ let push ~status frame =
   gamma :=
    assign_gamma (stack ^^ string_of_int i) (lookup_gamma (stack ^^ string_of_int (i - status.frame_size)) !gamma) !gamma
  done ;
- {status with gamma = Utils.set_prefix ~prefix:l !gamma}
+ Utils.iteri
+  (fun i v -> gamma := assign_gamma (stack ^^ string_of_int i) v !gamma) l;
+ {status with gamma = !gamma}
 
 let pop ~status =
  let gamma = ref status.gamma in
@@ -94,15 +96,20 @@ let pop ~status =
  for i = status.k - status.frame_size + 1 to status.k do
   gamma := assign_gamma (stack ^^ string_of_int i) bottom !gamma
  done ;
- to_frame ~status (List.map snd (Utils.prefix status.frame_size status.gamma)),
- {status with gamma = !gamma }
+ let rec read i =
+  if i > status.frame_size then []
+  else
+   lookup_gamma (stack ^^ string_of_int i) status.gamma :: read (i+1) in
+ to_frame ~status (read 1), {status with gamma = !gamma }
 
-let address_of ~status a =
+let address_of ~status v =
+ let a = lookup ~status v in
  try
   List.find (fun c -> int_of_address c = a) status.contracts
  with
   Not_found ->
-   Utils.error ("Unrecognized address: " ^ Types.pp_expr a);
+   Utils.error ("Variable or field " ^ v);
+   Utils.error ("holds the unrecognized address: " ^ Types.pp_expr a);
    Utils.error ("Known addresses: " ^ String.concat "," status.contracts);
    assert false
 
@@ -110,10 +117,10 @@ let type_of_address : status:status -> address MicroSolidity.expr -> address =
 fun ~status expr ->
  match expr with
     Value a -> a
-  | Var v -> address_of ~status (lookup ~status (snd v))
-  | Field v -> address_of ~status (lookup ~status (status.this ^^ snd v))
+  | Var v -> address_of ~status (snd v)
+  | Field v -> address_of ~status (status.this ^^ snd v)
   | This -> status.this
-  | MsgSender -> address_of ~status (lookup ~status msg_sender)
+  | MsgSender -> address_of ~status msg_sender
 
 let rec type_of_iexpr : status:status -> int MicroSolidity.expr -> expr =
 fun ~status expr ->
@@ -161,13 +168,8 @@ let type_of_expr :
   | Address -> `Single(int_of_address (type_of_address ~status expr))
   | Unit -> `Single(int_of_unit)
 
-let type_of_call ~status:_ ~addr:_ ~meth:_ ~value:_ ~sender:_ ~params:_ =
- (* XXX *)
- TGamma [TInt 666999]
-
-let type_of_cont ~status ret =
- let {addr;meth;value;sender;params},_status = pop ~status in
- type_of_call ~status ~addr ~meth ~value ~sender ~params:(ret::params)
+let revert ~status =
+ TGamma (List.map (fun v -> TVar v) status.saved_gamma)
 
 let distribute_split l =
  let rec aux acc =
@@ -188,8 +190,6 @@ let distribute_split l =
  in
   aux [TBool true,[]] l
 
-let revert ~status =
- TGamma (List.map (fun v -> TVar v) status.saved_gamma)
 
 let forall_boolean ~status l f =
  let ll = distribute_split l in
@@ -201,6 +201,56 @@ let forall_boolean ~status l f =
       TChoice(p,typ,TNot p,aux ll)
  in
   aux ll
+
+let type_of_value ~status v =
+ Option.fold ~none:(TInt 0) ~some:(type_of_iexpr ~status) v
+
+let type_of_expr_poly ~status =
+ object
+  method f : 'a. 'a tag -> 'a MicroSolidity.expr -> 'b
+           = type_of_expr ~status 
+ end
+
+let type_of_call0 :
+ status:status -> addr:address -> meth:(_ meth) ->
+  value:expr -> sender:expr -> params:(expr list) -> typ
+= fun ~status:_ ~addr ~meth ~value:_ ~sender:_ ~params:_ ->
+ let name = string_of_meth addr meth in
+(*
+ let params = prefix ??? params in
+ bisogna guardare se invocare il fallback e le pippe sul payable sì o no!
+*)
+ let args = [TInt 666999] (*XXXX*)
+  (*saved_gamma @ fields @ msg_sender :: msg_value :: params @ stack*) in
+ TCall(name,args)
+
+let type_of_call :
+ status:status ->
+  addr:(address MicroSolidity.expr) -> meth:(_ meth) ->
+   value:(int MicroSolidity.expr option) -> sender:expr ->
+    params:('b expr_list) -> typ
+= fun ~status ~addr ~meth ~value ~sender ~params ->
+ let addr = type_of_address ~status addr in
+ let value = type_of_value ~status value in
+ let params =
+  expr_list_map (type_of_expr_poly ~status) (Utils.snd3 meth) params in
+ forall_boolean ~status params
+  (fun params -> type_of_call0 ~status ~addr ~meth ~value ~sender ~params)
+
+let forall_contract ~status f =
+ let guards_and_typs = List.map f status.contracts in
+ List.fold_right
+  (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
+  guards_and_typs (revert ~status)
+
+let type_of_cont ~status ret =
+ let {addr;meth;value;sender;params},status = pop ~status in
+ forall_contract ~status
+  (fun addr' ->
+    let meth = let _ = meth in Unit,TNil,"666999XXXXXXXXXXX" in
+    TEq(addr,int_of_address addr'),
+     type_of_call0 ~status ~addr:addr' ~meth ~value ~sender
+      ~params:(ret::params))
 
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
@@ -252,11 +302,11 @@ fun ~status tag stm ->
                let typ2 = type_of_stm ~status:status2 tag stm in
                TChoice(p,typ1,TNot p,typ2))
   | Assign(_,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,val2,args2)) ->
-     let o = object method f : 'a. 'a tag -> 'a MicroSolidity.expr -> 'b = type_of_expr ~status end in
-     let args2 = expr_list_map o (Utils.snd3 m2) args2 in
+     let args2 =
+      expr_list_map (type_of_expr_poly ~status) (Utils.snd3 m2) args2 in
      let a2 = int_of_address (type_of_address ~status a2) in
      let m2 = int_of_meth m2 in
-     let val2=Option.fold ~none:(TInt 0) ~some:(type_of_iexpr ~status) val2 in
+     let val2 = type_of_value ~status val2 in
      let sender = int_of_address status.this in
      forall_boolean ~status args2
       (fun args2 ->
@@ -292,12 +342,6 @@ let rec mk_stack ?(acc=[]) k =
  if k = 0 then acc
  else mk_stack ~acc:((stack ^^ string_of_int k)::acc) (k-1)
 
-let forall_contract ~status f =
- let guards_and_typs = List.map f status.contracts in
- List.fold_right
-  (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
-  guards_and_typs (revert ~status)
-
 let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
  let args,locals = args_of_block block in
  let to_sum_on =
@@ -316,14 +360,15 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
   { saved_gamma ; fields ; gamma ; k ; frame_size ; this ; contracts } in
  let rec aux ~status =
   function
-     [] -> type_of_block ~status (Utils.fst3 name) block
+     [] ->
+      type_of_block ~status (Utils.fst3 name) block
    | v::tl ->
       forall_contract ~status
        (fun a ->
          let a = int_of_address a in
          TEq(lookup ~status v,a),aux ~status:(assign ~status v a) tl) in
  let typ = aux ~status to_sum_on in
- this ^^ string_of_meth name, saved_gamma @ other_params, typ
+ string_of_meth this name, saved_gamma @ other_params, typ
 
 let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_)) =
  List.fold_left
