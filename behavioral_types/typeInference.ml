@@ -51,7 +51,10 @@ let address_of ~status a =
  try
   List.find (fun c -> int_of_address c = a) status.contracts
  with
-  Not_found -> assert false
+  Not_found ->
+   Utils.error ("Unrecognized address: " ^ Types.pp_expr a);
+   Utils.error ("Known addresses: " ^ String.concat "," status.contracts);
+   assert false
 
 let type_of_address : status:status -> address MicroSolidity.expr -> address =
 fun ~status expr ->
@@ -169,20 +172,18 @@ let rec mk_stack ?(acc=[]) k =
 let type_of_a_method ~k ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
  let saved_gamma = List.map (fun n -> n ^ saved) fields in
  let args = args_of_block block in
- let other_params = fields @ msg_sender :: msg_value :: args in
  let stack = mk_stack k in
+ let other_params = fields @ msg_sender :: msg_value :: args @ stack in
  let status =
   { saved_gamma
   ; fields
-  ; gamma =
-     List.map (fun v -> v,TVar v) other_params @
-     List.map (fun v -> v,bottom) stack
+  ; gamma = List.map (fun v -> v,TVar v) other_params
   ; k
   ; this
   ; contracts
   } in
  let typ = type_of_block ~status block in
- this ^^ Utils.trd3 name, saved_gamma @ other_params @ stack, typ
+ this ^^ Utils.trd3 name, saved_gamma @ other_params, typ
 
 let type_of_a_contract ~k ~fields ~contracts (AContract(a,meths,fb,_)) =
  List.fold_left
@@ -193,7 +194,7 @@ let type_of ~max_args ~max_stack cfg =
  let contracts = List.map (function AContract(a,_,_,_) -> a) cfg in
  (* address, method, msg.sender, msg.value *)
  let continuation_args = 4 in
- let k = (continuation_args + max_args) * max_stack in
+ let k = (continuation_args + max_args) * (1 + max_stack) in
  let fields =
   List.rev (
    List.fold_left
