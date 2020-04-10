@@ -67,7 +67,7 @@ let lookup ~status k = lookup_gamma k status.gamma
 
 let from_frame ~status { addr ; meth ; value ; sender ; params } =
  let l = addr::meth::value::sender::params in
- l @ Utils.mk_list bottom (status.frame_size -  List.length l)
+ l @ Utils.mk_list bottom (status.frame_size - List.length l)
 
 let to_frame ~status l =
  assert (status.frame_size = List.length l);
@@ -214,14 +214,22 @@ let type_of_expr_poly ~status =
 let type_of_call0 :
  status:status -> addr:address -> meth:(_ meth) ->
   value:expr -> sender:expr -> params:(expr list) -> typ
-= fun ~status:_ ~addr ~meth ~value:_ ~sender:_ ~params:_ ->
+= fun ~status ~addr ~meth ~value ~sender ~params ->
+ assert (List.length params = tag_list_length (Utils.snd3 meth));
  let name = string_of_meth addr meth in
 (*
- let params = prefix ??? params in
+ let params = prefix ??? params in XXXX
  bisogna guardare se invocare il fallback e le pippe sul payable sì o no!
 *)
- let args = [TInt 666999] (*XXXX*)
-  (*saved_gamma @ fields @ msg_sender :: msg_value :: params @ stack*) in
+ let stack =
+  let rec aux i =
+   if i > status.k then []
+   else lookup ~status (stack ^^ string_of_int i) :: aux (i+1) in
+   aux 1 in
+ let args =
+  List.map (fun v -> TVar v) status.saved_gamma @
+  List.map (lookup ~status) status.fields @
+  sender :: value :: params @ stack in
  TCall(name,args)
 
 let type_of_call :
@@ -242,6 +250,8 @@ let forall_contract ~status f =
  List.fold_right (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
   guards_and_typs (revert ~status)
 
+(* we could iterate only on those that are continuation, but we have not
+   tracked this information *)
 let forall_methods ~status meths f =
  let guards_and_typs = List.map f meths in
  List.fold_right (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
@@ -254,9 +264,10 @@ let type_of_cont ~status ret =
     TEq(addr,int_of_address addr'),
     forall_methods ~status meths 
      (fun (Parser.AnyMeth meth') ->
+       let params =
+        Utils.prefix (tag_list_length (Utils.snd3 meth')) (ret::params) in
        TEq(meth,int_of_meth meth'),
-       type_of_call0 ~status ~addr:addr' ~meth:meth' ~value ~sender
-        ~params:(ret::params)))
+       type_of_call0 ~status ~addr:addr' ~meth:meth' ~value ~sender ~params))
 
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->

@@ -68,6 +68,7 @@ val eq_tag_list : 'a tag_list -> 'b tag_list -> ('a, 'b) eq option
 val tag_of_lhs : 'a lhs -> 'a tag
 val expr_list_map :
  < f: 'a. 'a tag -> 'a expr -> 'b > -> 'c tag_list -> 'c expr_list -> 'b list
+val tag_list_length : 'a tag_list -> int
 val var_list_length : 'a var_list -> int
 val expr_list_of_var_list : 'a var_list -> 'a expr_list
 val any_method_decl_of_fallback : (unit,unit) block -> any_method_decl

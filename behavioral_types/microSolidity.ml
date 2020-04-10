@@ -107,6 +107,11 @@ let tag_of_lhs : type a. a lhs -> a tag =
   | LVar v -> fst v
   | LDiscard -> Unit
 
+let rec tag_list_length : type a. a tag_list -> int =
+ function
+    TNil -> 0
+  | TCons(_,tl) -> 1 + tag_list_length tl
+
 let rec var_list_length : type a. a var_list -> int =
  function
     VNil -> 0
