@@ -30,6 +30,7 @@ type status =
  ; fields : var list
  ; gamma : (var * expr) list
  ; k : int
+ ; frame_size : int
  ; this : address
  ; contracts : address list
  }
@@ -43,11 +44,31 @@ let rec assign_gamma k v =
 let assign k v ~status =
  {status with gamma = assign_gamma k v status.gamma}
 
-let lookup ~status k =
+let lookup_gamma k gamma =
  try
-  List.assoc k status.gamma
+  List.assoc k gamma
  with
   Not_found -> assert false
+
+let lookup ~status k = lookup_gamma k status.gamma
+
+let _push ~status l =
+ assert (List.length l = status.frame_size);
+ let gamma = ref status.gamma in
+ for i = status.k downto status.frame_size + 1 do
+  gamma :=
+   assign_gamma (stack ^^ string_of_int i) (lookup_gamma (stack ^^ string_of_int (i - status.frame_size)) !gamma) !gamma
+ done ;
+ {status with gamma = Utils.set_prefix ~prefix:l !gamma}
+
+let _pop ~status =
+ let gamma = ref status.gamma in
+ for i = 1 to status.k - status.frame_size do
+  gamma :=
+   assign_gamma (stack ^^ string_of_int i) (lookup_gamma (stack ^^ string_of_int (i + status.frame_size)) !gamma) !gamma
+ done ;
+ List.map snd (Utils.prefix status.frame_size status.gamma),
+ {status with gamma = !gamma }
 
 let address_of ~status a =
  try
@@ -117,14 +138,15 @@ let rec type_of_stm : type a b. status:status -> (a,b) stm -> typ =
 fun ~status stm ->
  match stm with
   | ReturnRhs _rhs ->
-      (* XXX TODO *)
-      TGamma [TInt 666999]
+     let is_empty = TEq(lookup ~status stack_address,bottom) in
+     TChoice(
+      is_empty, TGamma (List.map (lookup ~status) status.fields),
+      TNot is_empty, TGamma [TInt 666999])
   | Return ->
-     if lookup ~status stack_address = bottom then
-      TGamma (List.map (lookup ~status) status.fields)
-     else
-      (* XXX TODO *)
-      TGamma [TInt 666999]
+     let is_empty = TEq(lookup ~status stack_address,bottom) in
+     TChoice(
+      is_empty, TGamma (List.map (lookup ~status) status.fields),
+      TNot is_empty, TGamma [TInt 666999])
   | Revert -> TGamma (List.map (fun v -> TVar v) status.saved_gamma)
   | Assign(lhs,Expr e,stm) ->
      let lhs_tag = tag_of_lhs lhs in
@@ -177,7 +199,7 @@ let forall_contract ~status f =
   (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
   guards_and_typs (TGamma (List.map (fun v -> TVar v) status.saved_gamma))
 
-let type_of_a_method ~k ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
+let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
  let args = args_of_block block in
  let to_sum_on =
   List.filter_map (fun (b,v) -> if b then Some v else None)
@@ -188,7 +210,8 @@ let type_of_a_method ~k ~fields ~contracts this (AnyMethodDecl(name,block,_payab
  let stack = mk_stack k in
  let other_params = fields @ msg_sender :: msg_value :: args @ stack in
  let gamma = List.map (fun v -> v,TVar v) other_params in
- let status = { saved_gamma ; fields ; gamma ; k ; this ; contracts } in
+ let status =
+  { saved_gamma ; fields ; gamma ; k ; frame_size ; this ; contracts } in
  let rec aux ~status =
   function
      [] -> type_of_block ~status block
@@ -200,21 +223,22 @@ let type_of_a_method ~k ~fields ~contracts this (AnyMethodDecl(name,block,_payab
  let typ = aux ~status to_sum_on in
  this ^^ Utils.trd3 name, saved_gamma @ other_params, typ
 
-let type_of_a_contract ~k ~fields ~contracts (AContract(a,meths,fb,_)) =
+let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_)) =
  List.fold_left
-  (fun acc meth -> type_of_a_method ~k ~fields ~contracts a meth :: acc) []
+  (fun acc meth -> type_of_a_method ~k ~frame_size ~fields ~contracts a meth :: acc) []
    (match fb with None -> meths | Some fb -> meths @ [any_method_decl_of_fallback fb])
 
 let type_of ~max_args ~max_stack cfg =
  let contracts = List.map (function AContract(a,_,_,_) -> a) cfg in
  (* address, method, msg.sender, msg.value *)
  let continuation_args = 4 in
- let k = (continuation_args + max_args) * (1 + max_stack) in
+ let frame_size = continuation_args + max_args in
+ let k = frame_size * (1 + max_stack) in
  let fields =
   List.rev (
    List.fold_left
     (fun acc contr -> fields_of_a_contract contr @ acc) [] cfg) in
  let program_rev =
   List.fold_left
-   (fun acc contr -> type_of_a_contract ~k ~fields ~contracts contr @ acc) [] cfg in
+   (fun acc contr -> type_of_a_contract ~k ~frame_size ~fields ~contracts contr @ acc) [] cfg in
  List.rev program_rev
