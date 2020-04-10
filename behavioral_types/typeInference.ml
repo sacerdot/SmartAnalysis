@@ -137,6 +137,11 @@ let type_of_expr :
   | Address -> `Single(int_of_address (type_of_address ~status expr))
   | Unit -> `Single(int_of_unit)
 
+let type_of_cont ~status =
+ let _frame,_status = pop ~status in
+ (* XXX *)
+ TGamma [TInt 666999]
+
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
  match stm with
@@ -148,31 +153,22 @@ fun ~status tag stm ->
      let is_empty = TEq(lookup ~status stack_address,bottom) in
      (match e with
          `Single _e ->
-           let cont =
-            let _frame,_status = pop ~status in
-            (* XXX *)
-            TGamma [TInt 666999] in
+           let cont = type_of_cont ~status in
            TChoice(
             is_empty, TGamma (List.map (lookup ~status) status.fields),
             TNot is_empty, cont)
        | `Split p ->
-           let cont1 =
-            let _frame,_status = pop ~status in
-            (* XXX *)
-            TGamma [TInt 666999] in
-           let cont2 =
-            let _frame,_status = pop ~status in
-            (* XXX *)
-            TGamma [TInt 666999] in
+           let cont1 = type_of_cont ~status in
+           let cont2 = type_of_cont ~status in
            TChoice(
             is_empty, TGamma (List.map (lookup ~status) status.fields),
             TNot is_empty, TChoice(p, cont1, TNot p, cont2)))
   | Return ->
      let is_empty = TEq(lookup ~status stack_address,bottom) in
+     let cont = type_of_cont ~status in
      TChoice(
       is_empty, TGamma (List.map (lookup ~status) status.fields),
-      (* XXX *)
-      TNot is_empty, TGamma [TInt 666999])
+      TNot is_empty, cont)
   | Revert -> TGamma (List.map (fun v -> TVar v) status.saved_gamma)
   | Assign(lhs,Expr e,stm) ->
      let lhs_tag = tag_of_lhs lhs in
