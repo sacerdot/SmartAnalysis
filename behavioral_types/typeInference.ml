@@ -17,6 +17,7 @@ let bottom = TInt min_int
 let int_of_address : MicroSolidity.address -> expr =
  fun n -> TInt (Hashtbl.hash n)
 let int_of_bool = function false -> TInt 0 | true -> TInt 1
+let int_of_unit = TInt 0
 
 let fields_of_a_contract (AContract(a,_,_,fields)) =
  List.rev_map (fun (AnyField f) -> a ^^ snd f) fields @
@@ -92,15 +93,20 @@ fun ~status expr ->
      let a1 = int_of_address (type_of_address ~status a1) in
      let a2 = int_of_address (type_of_address ~status a2) in
      TEq(a1,a2)
-  | Eq(_,_,_) -> assert false
+  | Eq(Unit,_,_) -> TBool true
   | And(e1,e2) -> TAnd(type_of_pred ~status e1, type_of_pred ~status e2)
   | Or(e1,e2) -> TOr(type_of_pred ~status e1, type_of_pred ~status e2)
   | Not p -> TNot(type_of_pred ~status p)
 
-let type_of_expr : type a. status:status -> a MicroSolidity.expr -> expr =
-fun ~status:_ _expr ->
- (* XXX *)
- TInt 999666
+let type_of_expr :
+ type a. status:status -> a tag -> a MicroSolidity.expr ->
+  [`Single of expr | `Split of pred]
+= fun ~status tag expr ->
+ match tag with
+    Int -> `Single(type_of_iexpr ~status expr)
+  | Bool -> `Split(type_of_pred ~status expr)
+  | Address -> `Single(int_of_address (type_of_address ~status expr))
+  | Unit -> `Single(int_of_unit)
 
 let rec type_of_stm : type a b. status:status -> (a,b) stm -> typ =
 fun ~status stm ->
@@ -116,6 +122,7 @@ fun ~status stm ->
       TGamma [TInt 666999]
   | Revert -> TGamma (List.map (fun v -> TVar v) status.saved_gamma)
   | Assign(lhs,Expr e,stm) ->
+     let lhs_tag = tag_of_lhs lhs in
      let lhs =
       match lhs with
        | LField f -> Some (status.this ^^ snd f)
@@ -124,9 +131,16 @@ fun ~status stm ->
      (match lhs with
          None -> type_of_stm ~status stm
        | Some lhs ->
-          let e = type_of_expr ~status e in
-          let status = assign ~status lhs e in
-          type_of_stm ~status stm)
+          match type_of_expr ~status lhs_tag e with
+             `Single e ->
+               let status = assign ~status lhs e in
+               type_of_stm ~status stm
+           | `Split p ->
+               let status1 = assign ~status lhs (int_of_bool true) in
+               let typ1 = type_of_stm ~status:status1 stm in
+               let status2 = assign ~status lhs (int_of_bool false) in
+               let typ2 = type_of_stm ~status:status2 stm in
+               TPlus(p,typ1,TNot p,typ2))
   | Assign(_,_rhs1,ReturnRhs _rhs2) ->
       (* XXX TODO *)
       TGamma [TInt 666999]
