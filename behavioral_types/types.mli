@@ -8,7 +8,6 @@ type expr =
  | TMult of expr * expr
  | TDiv of expr * expr
  | TUMinus of expr
- | TCall of func * expr list
 type pred =
  | TBool of bool
  | TGeq of expr * expr
@@ -17,10 +16,11 @@ type pred =
  | TAnd of pred * pred
  | TOr of pred * pred
  | TNot of pred
-type stm =
- | TExpr of expr
- | TPlus of pred * stm * pred * stm
-type functions = func * var list * stm
-type program = functions list
+type typ =
+ | TGamma of expr list
+ | TCall of func * expr list
+ | TPlus of pred * typ * pred * typ
+type functions = func * var list * typ
+type types = functions list
 
-val pp_program: (var * var list * stm) list -> var
+val pp_types: (var * var list * typ) list -> var
