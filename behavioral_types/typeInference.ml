@@ -9,6 +9,11 @@ let balance = "_balance_"
 let saved = "_saved"
 let stack = "_stack_"
 
+(* for the dispatcher *)
+let ret = "ret"
+let runtime = "runtime"
+let dispatch = "dispatch"
+
 let stack_address = stack ^^ string_of_int 1
 (*let stack_method = stack ^^ string_of_int 2*)
 
@@ -393,11 +398,7 @@ let rec mk_stack ?(acc=[]) k =
  if k = 0 then acc
  else mk_stack ~acc:((stack ^^ string_of_int k)::acc) (k-1)
 
-let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
- let args,locals = args_of_block block in
- let to_sum_on =
-  List.filter_map (fun (b,v) -> if b then Some v else None)
-   (fields @ args) @ [msg_sender] in
+let type_of_a_method0 ~k ~frame_size ~fields ~contracts this ~name ~args ~locals ~typ_of =
  let fields = List.map snd fields in
  let args = List.map snd args in
  let locals = List.map snd locals in
@@ -409,6 +410,14 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
   List.map (fun v -> v,bottom) locals in
  let status =
   { saved_gamma ; fields ; gamma ; k ; frame_size ; this ; contracts } in
+ let typ = typ_of ~status in
+ string_of_meth this name, saved_gamma @ other_params, typ
+
+let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,block,_payable)) =
+ let args,locals = args_of_block block in
+ let to_sum_on =
+  List.filter_map (fun (b,v) -> if b then Some v else None)
+   (fields @ args) @ [msg_sender] in
  let rec aux ~status =
   function
      [] ->
@@ -418,8 +427,8 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
        (fun a _ ->
          let a = int_of_address a in
          TEq(lookup ~status v,a),aux ~status:(assign ~status v a) tl) in
- let typ = aux ~status to_sum_on in
- string_of_meth this name, saved_gamma @ other_params, typ
+ type_of_a_method0 ~k ~frame_size ~fields ~contracts this ~name ~args ~locals
+  ~typ_of:(aux to_sum_on)
 
 let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_)) =
  List.fold_left
@@ -446,3 +455,5 @@ let type_of ~max_args ~max_stack cfg =
   List.fold_left
    (fun acc contr -> type_of_a_contract ~k ~frame_size ~fields ~contracts contr @ acc) [] cfg in
  List.rev program_rev
+ @ [type_of_a_method0 ~k ~frame_size ~fields ~contracts runtime
+    ~name:(Int,TNil,dispatch) ~args:[Int,ret] ~locals:[] ~typ_of:(type_of_cont (TVar ret))]
