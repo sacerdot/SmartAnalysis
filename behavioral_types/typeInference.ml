@@ -8,11 +8,12 @@ let msg_value = "_msg_value_"
 let balance = "_balance_"
 let saved = "_saved"
 let stack = "_stack_"
+let dummy = TInt 0 (* XXX eliminarne il bisogno *)
 
 (* for the dispatcher *)
 let ret = "ret"
 let runtime = "runtime"
-let dispatch = "dispatch"
+let dispatch = Int,TCons(Int,TNil),"dispatch"
 
 let stack_address = stack ^^ string_of_int 1
 (*let stack_method = stack ^^ string_of_int 2*)
@@ -306,7 +307,7 @@ let forall_contract ~status ~otherwise f =
 let forall_methods ~status meths f =
  tchoice ~status (List.map f meths)
 
-let type_of_cont ~status ret =
+let mk_type_of_cont ~status ret =
  let is_empty = TEq(lookup ~status stack_address,bottom) in
  let otherwise=[is_empty, TGamma (List.map (lookup ~status) status.fields)] in
  let {addr;meth;value;sender;params},status = pop ~status in
@@ -319,6 +320,10 @@ let type_of_cont ~status ret =
         Utils.prefix (tag_list_length (Utils.snd3 meth')) (ret::params) in
        TEq(meth,int_of_meth meth'),
        type_of_call0 ~status ~addr:addr' ~meth:meth' ~value ~sender ~params))
+
+let type_of_cont ~status ret =
+ type_of_call0 ~status ~addr:runtime ~meth:dispatch
+  ~value:dummy ~sender:dummy ~params:[ret]
 
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
@@ -456,4 +461,4 @@ let type_of ~max_args ~max_stack cfg =
    (fun acc contr -> type_of_a_contract ~k ~frame_size ~fields ~contracts contr @ acc) [] cfg in
  List.rev program_rev
  @ [type_of_a_method0 ~k ~frame_size ~fields ~contracts runtime
-    ~name:(Int,TNil,dispatch) ~args:[Int,ret] ~locals:[] ~typ_of:(type_of_cont (TVar ret))]
+    ~name:dispatch ~args:[Int,ret] ~locals:[] ~typ_of:(mk_type_of_cont (TVar ret))]
