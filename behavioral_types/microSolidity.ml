@@ -267,8 +267,9 @@ let rec expr_list_of_var_list : type a. a var_list -> a expr_list =
     VNil -> ENil
   | VCons(hd,tl) -> ECons(Var hd,expr_list_of_var_list tl)
 
+let fallback = Unit,TNil,"(fallback)"
+
 let any_method_decl_of_fallback fb =
- let fallback = Unit,TNil,"(fallback)" in
  AnyMethodDecl(fallback,fb,true)
 
 (* warning: methods whose name and input types match, but whose output or

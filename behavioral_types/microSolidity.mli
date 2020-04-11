@@ -71,6 +71,7 @@ val expr_list_map :
 val tag_list_length : 'a tag_list -> int
 val var_list_length : 'a var_list -> int
 val expr_list_of_var_list : 'a var_list -> 'a expr_list
+val fallback : (unit,unit) meth
 val any_method_decl_of_fallback : (unit,unit) block -> any_method_decl
 val match_methods :
  this:address -> address expr -> ('a,'b) meth -> bool -> configuration ->

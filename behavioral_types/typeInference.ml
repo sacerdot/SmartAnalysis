@@ -37,7 +37,7 @@ type status =
  ; k : int
  ; frame_size : int
  ; this : address
- ; contracts : (address * Parser.any_meth list) list
+ ; contracts : (address * (Parser.any_meth * (*payable:*)bool) list) list
  }
 
 type frame =
@@ -217,11 +217,6 @@ let type_of_call0 :
 = fun ~status ~addr ~meth ~value ~sender ~params ->
  assert (List.length params = tag_list_length (Utils.snd3 meth));
  let name = string_of_meth addr meth in
-(*
- let params = prefix ??? params in XXXX
- bisogna guardare se invocare il fallback e le pippe sul payable sì o no!
- (con tanto di incremento del balance!)
-*)
  let stack =
   let rec aux i =
    if i > status.k then []
@@ -233,18 +228,57 @@ let type_of_call0 :
   sender :: value :: params @ stack in
  TCall(name,args)
 
+type any_return_meth =
+ AnyReturnMeth : ('a,'b) meth * bool * 'b expr_list -> any_return_meth
+
+let match_method : type a b. status:status -> address -> (a,b) meth -> b expr_list -> any_return_meth option
+= fun ~status addr meth params ->
+ let meths =
+  try List.assoc addr status.contracts
+  with Not_found -> assert false in
+ let rec aux :
+  type a b. (a,b) meth -> b expr_list -> (Parser.any_meth * bool) list -> any_return_meth
+  = fun meth params meths ->
+  match meths with
+     [] -> raise Not_found
+   | (Parser.AnyMeth meth',payable)::tl ->
+      match
+       eq_tag_list (Utils.snd3 meth) (Utils.snd3 meth')
+      with
+         Some Refl when Utils.trd3 meth = Utils.trd3 meth' ->
+          AnyReturnMeth (meth',payable,params)
+       | _ -> aux meth params tl in
+ try
+  Some (aux meth params meths)
+ with
+  Not_found ->
+   try
+    Some (aux fallback ENil meths)
+   with
+    Not_found -> None
+
 let type_of_call :
  status:status ->
-  addr:(address MicroSolidity.expr) -> meth:(_ meth) ->
+  tag:('a tag) -> addr:(address MicroSolidity.expr) -> meth:(('a,_) meth) ->
    value:(int MicroSolidity.expr option) -> sender:expr ->
     params:('b expr_list) -> typ
-= fun ~status ~addr ~meth ~value ~sender ~params ->
+= fun ~status ~tag ~addr ~meth ~value ~sender ~params ->
+(* XXX manca incremento del balance!  *)
  let addr = type_of_address ~status addr in
- let value = type_of_value ~status value in
- let params =
-  expr_list_map (type_of_expr_poly ~status) (Utils.snd3 meth) params in
- forall_boolean ~status params
-  (fun params -> type_of_call0 ~status ~addr ~meth ~value ~sender ~params)
+ match match_method ~status addr meth params with
+    None -> revert ~status
+  | Some AnyReturnMeth(meth,payable,params) ->
+     let output_type_ok =
+      eq_tag tag Unit <> None || eq_tag tag (Utils.fst3 meth) <> None in
+     let payable_ok = payable || value = None in
+     if output_type_ok && payable_ok then
+      let value = type_of_value ~status value in
+      let params =
+       expr_list_map (type_of_expr_poly ~status) (Utils.snd3 meth) params in
+      forall_boolean ~status params
+       (fun params -> type_of_call0 ~status ~addr ~meth ~value ~sender ~params)
+     else
+      revert ~status
 
 let forall_contract ~status f =
  let guards_and_typs = List.map (fun (c,ms) -> f c ms) status.contracts in
@@ -264,7 +298,7 @@ let type_of_cont ~status ret =
   (fun addr' meths ->
     TEq(addr,int_of_address addr'),
     forall_methods ~status meths 
-     (fun (Parser.AnyMeth meth') ->
+     (fun (Parser.AnyMeth meth',_) ->
        let params =
         Utils.prefix (tag_list_length (Utils.snd3 meth')) (ret::params) in
        TEq(meth,int_of_meth meth'),
@@ -275,7 +309,7 @@ fun ~status tag stm ->
  match stm with
   | ReturnRhs (Call(a1,m1,val1,args1)) ->
       let sender = int_of_address status.this in
-      type_of_call ~status ~addr:a1 ~meth:m1 ~value:val1 ~sender
+      type_of_call ~status ~tag ~addr:a1 ~meth:m1 ~value:val1 ~sender
        ~params:args1
   | ReturnRhs (Expr e) ->
      let e = type_of_expr ~status tag e in
@@ -319,7 +353,7 @@ fun ~status tag stm ->
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 tag stm in
                TChoice(p,typ1,TNot p,typ2))
-  | Assign(_,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,None,args2)) ->
+  | Assign(lhs,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,None,args2)) ->
      let args2 =
       expr_list_map (type_of_expr_poly ~status) (Utils.snd3 m2) args2 in
      let a2 = int_of_address (type_of_address ~status a2) in
@@ -336,8 +370,8 @@ fun ~status tag stm ->
          ; params = args2
          } in
         let status = push ~status f in
-        type_of_call ~status ~addr:a1 ~meth:m1 ~value:val1 ~sender
-         ~params:args1)
+        type_of_call ~status ~tag:(tag_of_lhs lhs) ~addr:a1 ~meth:m1
+         ~value:val1 ~sender ~params:args1)
   | IfThenElse(guard,stm1,stm2,Revert) ->
      let guard = type_of_pred ~status guard in
      let stm1 = type_of_stm ~status tag stm1 in
@@ -398,7 +432,7 @@ let type_of ~max_args ~max_stack cfg =
   List.map
    (function AContract(a,methods,_,_) ->
      a,
-     List.map (function AnyMethodDecl(m,_,_) -> Parser.AnyMeth m)
+     List.map (function AnyMethodDecl(m,_,payable) -> Parser.AnyMeth m,payable)
       methods
    ) cfg in
  (* address, method, msg.sender, msg.value *)
