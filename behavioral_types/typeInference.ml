@@ -198,7 +198,7 @@ let forall_boolean ~status l f =
      [] -> revert ~status
    | (p,l)::ll ->
       let typ = f l in
-      TChoice(p,typ,TNot p,aux ll)
+      TChoice [ p,typ ; TNot p,aux ll ]
  in
   aux ll
 
@@ -263,7 +263,6 @@ let type_of_call :
    value:(int MicroSolidity.expr option) -> sender:expr ->
     params:('b expr_list) -> typ
 = fun ~status ~tag ~addr ~meth ~value ~sender ~params ->
-(* XXX manca incremento del balance!  *)
  let addr = type_of_address ~status addr in
  match match_method ~status addr meth params with
     None -> revert ~status
@@ -276,21 +275,27 @@ let type_of_call :
       let params =
        expr_list_map (type_of_expr_poly ~status) (Utils.snd3 meth) params in
       forall_boolean ~status params
-       (fun params -> type_of_call0 ~status ~addr ~meth ~value ~sender ~params)
+       (fun params ->
+         (* XXX manca incremento del balance!  *)
+         type_of_call0 ~status ~addr ~meth ~value ~sender ~params)
      else
       revert ~status
 
+let tchoice ~status guards_and_typs =
+ let rec aux guard =
+  function
+     [] -> [TNot guard, revert ~status]
+   | (g,typ)::tl -> (g,typ)::aux (TOr(guard,g)) tl
+ in
+  TChoice (aux (TBool false) guards_and_typs)
+
 let forall_contract ~status f =
- let guards_and_typs = List.map (fun (c,ms) -> f c ms) status.contracts in
- List.fold_right (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
-  guards_and_typs (revert ~status)
+ tchoice ~status (List.map (fun (c,ms) -> f c ms) status.contracts)
 
 (* we could iterate only on those that are continuation, but we have not
    tracked this information *)
 let forall_methods ~status meths f =
- let guards_and_typs = List.map f meths in
- List.fold_right (fun (g,typ) acc -> TChoice(g,typ,TNot g,acc))
-  guards_and_typs (revert ~status)
+ tchoice ~status (List.map f meths)
 
 let type_of_cont ~status ret =
  let {addr;meth;value;sender;params},status = pop ~status in
@@ -317,21 +322,22 @@ fun ~status tag stm ->
      (match e with
          `Single e ->
            let cont = type_of_cont ~status e in
-           TChoice(
-            is_empty, TGamma (List.map (lookup ~status) status.fields),
-            TNot is_empty, cont)
+           TChoice
+            [ is_empty, TGamma (List.map (lookup ~status) status.fields)
+            ; TNot is_empty, cont ]
        | `Split p ->
            let cont1 = type_of_cont ~status (int_of_bool true) in
            let cont2 = type_of_cont ~status (int_of_bool false) in
-           TChoice(
-            is_empty, TGamma (List.map (lookup ~status) status.fields),
-            TNot is_empty, TChoice(p, cont1, TNot p, cont2)))
+           TChoice
+            [ is_empty, TGamma (List.map (lookup ~status) status.fields)
+            ; TAnd (TNot is_empty,p),cont1
+            ; TAnd (TNot is_empty,TNot p),cont2 ])
   | Return ->
      let is_empty = TEq(lookup ~status stack_address,bottom) in
      let cont = type_of_cont ~status int_of_unit in
-     TChoice(
-      is_empty, TGamma (List.map (lookup ~status) status.fields),
-      TNot is_empty, cont)
+     TChoice
+      [ is_empty, TGamma (List.map (lookup ~status) status.fields)
+      ; TNot is_empty, cont ]
   | Revert -> revert ~status
   | Assign(lhs,Expr e,stm) ->
      let lhs_tag = tag_of_lhs lhs in
@@ -352,7 +358,7 @@ fun ~status tag stm ->
                let typ1 = type_of_stm ~status:status1 tag stm in
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 tag stm in
-               TChoice(p,typ1,TNot p,typ2))
+               TChoice [p,typ1 ; TNot p,typ2])
   | Assign(lhs,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,None,args2)) ->
      let args2 =
       expr_list_map (type_of_expr_poly ~status) (Utils.snd3 m2) args2 in
@@ -376,7 +382,7 @@ fun ~status tag stm ->
      let guard = type_of_pred ~status guard in
      let stm1 = type_of_stm ~status tag stm1 in
      let stm2 = type_of_stm ~status tag stm2 in
-     TChoice(guard,stm1,TNot guard,stm2)
+     TChoice [guard,stm1 ; TNot guard,stm2]
   | _ -> assert false
 
 let rec args_of_var_list : type a. a var_list -> (bool * var) list =

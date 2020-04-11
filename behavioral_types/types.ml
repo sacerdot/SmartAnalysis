@@ -19,7 +19,7 @@ type pred =
 type typ =
  | TGamma of expr list
  | TCall of func * expr list
- | TChoice of pred * typ * pred * typ
+ | TChoice of (pred * typ) list (* not empty *)
 type functions = func * var list * typ
 type types = functions list
 
@@ -50,10 +50,14 @@ let rec pp_stm ~indent s =
  match s with
     TGamma l -> String.concat "," (List.map pp_expr l)
   | TCall(f,l) -> f ^ "(" ^ String.concat "," (List.map pp_expr l) ^ ")"
-  | TChoice(p1,s1,p2,s2) ->
-      "  [" ^ pp_pred p1 ^ "]\n" ^ pp_stm ~indent:(indent+2) s1 ^ "\n" ^
-      mk_indent indent ^
-      "+ [" ^ pp_pred p2 ^ "]\n" ^ pp_stm ~indent:(indent+2) s2
+  | TChoice [] -> assert false
+  | TChoice ((p,s)::tl) ->
+      "  [" ^ pp_pred p ^ "]\n" ^ pp_stm ~indent:(indent+2) s ^
+     String.concat ""
+      (List.map
+        (fun (p,s) ->
+         "\n" ^ mk_indent indent ^
+         "+ [" ^ pp_pred p ^ "]\n" ^ pp_stm ~indent:(indent+2) s) tl)
 
 let pp_function (f,params,stm) =
  f ^ "(" ^ String.concat "," params ^ ") =\n" ^ (pp_stm ~indent:1) stm
