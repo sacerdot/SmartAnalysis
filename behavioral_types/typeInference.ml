@@ -180,6 +180,7 @@ let distribute_split l =
         List.map (fun (accp,accl) -> accp,List.cons expr accl) acc in
        aux acc tl
    | `Split p :: tl ->
+(* XXX optimize here to avoid the split when not necessary *)
        let acctrue =
         List.map (fun (accp,accl) ->
           TAnd(accp,p),List.cons (int_of_bool true) accl) acc in
@@ -190,6 +191,8 @@ let distribute_split l =
  in
   aux [TBool true,[]] l
 
+let if_then_else p t1 t2 =
+ if t1 = t2 then t1 else TChoice [p,t1 ; TNot p,t2]
 
 let forall_boolean ~status l f =
  let ll = distribute_split l in
@@ -198,7 +201,7 @@ let forall_boolean ~status l f =
      [] -> revert ~status
    | (p,l)::ll ->
       let typ = f l in
-      TChoice [ p,typ ; TNot p,aux ll ]
+      if_then_else p typ (aux ll)
  in
   aux ll
 
@@ -326,7 +329,7 @@ fun ~status tag stm ->
        | `Split p ->
            let cont1 = type_of_cont ~status (int_of_bool true) in
            let cont2 = type_of_cont ~status (int_of_bool false) in
-           TChoice [ p,cont1 ; TNot p,cont2 ])
+           if_then_else p cont1 cont2)
   | Return -> type_of_cont ~status int_of_unit
   | Revert -> revert ~status
   | Assign(lhs,Expr e,stm) ->
@@ -348,7 +351,7 @@ fun ~status tag stm ->
                let typ1 = type_of_stm ~status:status1 tag stm in
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 tag stm in
-               TChoice [p,typ1 ; TNot p,typ2])
+               if_then_else p typ1 typ2)
   | Assign(lhs,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,None,args2)) ->
      let args2 =
       expr_list_map (type_of_expr_poly ~status) (Utils.snd3 m2) args2 in
@@ -372,7 +375,7 @@ fun ~status tag stm ->
      let guard = type_of_pred ~status guard in
      let stm1 = type_of_stm ~status tag stm1 in
      let stm2 = type_of_stm ~status tag stm2 in
-     TChoice [guard,stm1 ; TNot guard,stm2]
+     if_then_else guard stm1 stm2
   | _ -> assert false
 
 let rec args_of_var_list : type a. a var_list -> (bool * var) list =

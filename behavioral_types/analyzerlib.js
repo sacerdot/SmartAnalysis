@@ -2698,10 +2698,10 @@
      _hC_=caml_new_string("("),
      _hI_=[0,caml_new_string("typeInference.ml"),53,10],
      _hR_=[0,1],
-     _hZ_=[0,caml_new_string("typeInference.ml"),376,9],
+     _hZ_=[0,caml_new_string("typeInference.ml"),379,9],
      _hY_=[0,0],
-     _hX_=[0,caml_new_string("typeInference.ml"),238,20],
-     _hW_=[0,caml_new_string("typeInference.ml"),218,1],
+     _hX_=[0,caml_new_string("typeInference.ml"),241,20],
+     _hW_=[0,caml_new_string("typeInference.ml"),221,1],
      _hU_=caml_new_string(""),
      _hV_=caml_new_string("f"),
      _hS_=[0,0],
@@ -8840,6 +8840,8 @@
          return [0,-306849112,int_of_address(type_of_address(status,expr))]}}
     function revert(status)
      {var _jR_=status[1];return [0,map(function(v){return [1,v]},_jR_)]}
+    function if_then_else(p,t1,t2)
+     {return caml_equal(t1,t2)?t1:[2,[0,[0,p,t1],[0,[0,[6,p],t2],0]]]}
     function forall_boolean(status,l,f)
      {var acc$0=acc,param=l;
       for(;;)
@@ -8893,7 +8895,7 @@
                l=match[2],
                p=match[1],
                typ=caml_call1(f,l);
-              return [2,[0,[0,p,typ],[0,[0,[6,p],aux(ll)],0]]]}
+              return if_then_else(p,typ,aux(ll))}
             return revert(status)};
         return aux(acc$0)}}
     var _hT_=[0,0,0,0];
@@ -9169,7 +9171,7 @@
                  p=e$0[2],
                  cont1=type_of_cont(status$0,int_of_bool(1)),
                  cont2=type_of_cont(status$0,int_of_bool(0));
-                return [2,[0,[0,p,cont1],[0,[0,[6,p],cont2],0]]]}
+                return if_then_else(p,cont1,cont2)}
               var e$1=e$0[2];
               return type_of_cont(status$0,e$1)}
             var
@@ -9199,7 +9201,7 @@
                    typ1=type_of_stm(status1,tag,stm$1),
                    status2=assign(lhs$0,int_of_bool(0),status$0),
                    typ2=type_of_stm(status2,tag,stm$1);
-                  return [2,[0,[0,p$0,typ1],[0,[0,[6,p$0],typ2],0]]]}
+                  return if_then_else(p$0,typ1,typ2)}
                 var
                  e$3=match[2],
                  status$1=assign(lhs$0,e$3,status$0),
@@ -9299,7 +9301,7 @@
                 guard$0=type_of_pred(status$0,guard),
                 stm1$0=type_of_stm(status$0,tag,stm1),
                 stm2$0=type_of_stm(status$0,tag,stm2);
-               return [2,[0,[0,guard$0,stm1$0],[0,[0,[6,guard$0],stm2$0],0]]]}}
+               return if_then_else(guard$0,stm1$0,stm2$0)}}
         throw [0,Assert_failure,_hZ_]}}
     function args_of_var_list(param)
      {if(param)
