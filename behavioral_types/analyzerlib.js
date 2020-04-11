@@ -2696,7 +2696,7 @@
      _hA_=caml_new_string("("),
      _hG_=[0,caml_new_string("typeInference.ml"),53,10],
      _hP_=[0,1],
-     _hV_=[0,caml_new_string("typeInference.ml"),345,9],
+     _hV_=[0,caml_new_string("typeInference.ml"),346,9],
      _hU_=[0,caml_new_string("typeInference.ml"),218,1],
      _hS_=caml_new_string(""),
      _hT_=caml_new_string("f"),
@@ -8884,13 +8884,11 @@
               return [2,p,typ,[6,p],aux(ll)]}
             return revert(status)};
         return aux(acc$0)}}
-    function type_of_value(status,v)
-     {return fold(_hQ_,function(_jN_){return type_of_iexpr(status,_jN_)},v)}
     var _hR_=[0,0,0,0];
     function type_of_expr_poly(status)
      {if(! _hR_[1])
        {if(public_methods === 0)
-         var _jF_=new_table([0]);
+         var _jG_=new_table([0]);
         else
          {var l=public_methods.length - 1;
           if(0 === l)
@@ -8898,90 +8896,90 @@
           else
            {var
              r=caml_make_vect(l,f(public_methods[1])),
-             _jA_=l - 1 | 0,
-             _jz_=1;
-            if(! (_jA_ < 1))
-             {var i=_jz_;
+             _jB_=l - 1 | 0,
+             _jA_=1;
+            if(! (_jB_ < 1))
+             {var i=_jA_;
               for(;;)
                {r[1 + i] = f(public_methods[1 + i]);
-                var _jB_=i + 1 | 0;
-                if(_jA_ !== i){var i=_jB_;continue}
+                var _jC_=i + 1 | 0;
+                if(_jB_ !== i){var i=_jC_;continue}
                 break}}
             var tags=r}
           var
            table=new_table(tags),
-           _jD_=public_methods.length - 1 - 1 | 0,
-           _jC_=0;
-          if(! (_jD_ < 0))
-           {var i$0=_jC_;
+           _jE_=public_methods.length - 1 - 1 | 0,
+           _jD_=0;
+          if(! (_jE_ < 0))
+           {var i$0=_jD_;
             for(;;)
              {var met=public_methods[1 + i$0],lab=(i$0 * 2 | 0) + 2 | 0;
               table[3] = caml_call3(Meths[4],met,lab,table[3]);
               table[4] = caml_call3(Labs[4],lab,1,table[4]);
-              var _jE_=i$0 + 1 | 0;
-              if(_jD_ !== i$0){var i$0=_jE_;continue}
+              var _jF_=i$0 + 1 | 0;
+              if(_jE_ !== i$0){var i$0=_jF_;continue}
               break}}
-          var _jF_=table}
+          var _jG_=table}
         var
-         _jG_=new_variable(_jF_,_hS_),
-         label=get_method_label(_jF_,_hT_),
+         _jH_=new_variable(_jG_,_hS_),
+         label=get_method_label(_jG_,_hT_),
          element=
           function(self_1)
-           {var env=self_1[1 + _jG_],_jK_=env[1];
-            return function(_jL_,_jM_){return type_of_expr(_jK_,_jL_,_jM_)}};
+           {var env=self_1[1 + _jH_],_jL_=env[1];
+            return function(_jM_,_jN_){return type_of_expr(_jL_,_jM_,_jN_)}};
         method_count[1]++;
-        if(caml_call2(Labs[27],label,_jF_[4]))
-         {resize$0(_jF_,label + 1 | 0);
-          caml_check_bound(_jF_[2],label)[1 + label] = element}
+        if(caml_call2(Labs[27],label,_jG_[4]))
+         {resize$0(_jG_,label + 1 | 0);
+          caml_check_bound(_jG_[2],label)[1 + label] = element}
         else
-         _jF_[6] = [0,[0,label,element],_jF_[6]];
+         _jG_[6] = [0,[0,label,element],_jG_[6]];
         var
-         _jH_=
-          function(_jJ_)
-           {var obj=caml_obj_block(248,_jF_[1]);
-            obj[1] = _jF_[2];
-            var _jI_=caml_set_oo_id(obj);
-            _jI_[1 + _jG_] = _jJ_;
-            return _jI_};
-        inst_var_count[1] = (inst_var_count[1] + _jF_[1] | 0) - 1 | 0;
-        _jF_[8] = rev(_jF_[8]);
+         _jI_=
+          function(_jK_)
+           {var obj=caml_obj_block(248,_jG_[1]);
+            obj[1] = _jG_[2];
+            var _jJ_=caml_set_oo_id(obj);
+            _jJ_[1 + _jH_] = _jK_;
+            return _jJ_};
+        inst_var_count[1] = (inst_var_count[1] + _jG_[1] | 0) - 1 | 0;
+        _jG_[8] = rev(_jG_[8]);
         resize$0
-         (_jF_,3 + ((caml_check_bound(_jF_[2],1)[2] * 16 | 0) / 32 | 0) | 0);
-        _hR_[1] = _jH_}
+         (_jG_,3 + ((caml_check_bound(_jG_[2],1)[2] * 16 | 0) / 32 | 0) | 0);
+        _hR_[1] = _jI_}
       return caml_call1(_hR_[1],[0,status])}
     function type_of_call0(status,addr,meth,value,sender,params)
-     {var _js_=tag_list_length(meth[2]);
-      if(length(params) === _js_)
+     {var _jt_=tag_list_length(meth[2]);
+      if(length(params) === _jt_)
        {var
          name=string_of_meth(addr,meth),
          aux=
           function(i)
            {if(status[4] < i)return 0;
-            var _jy_=aux(i + 1 | 0);
+            var _jz_=aux(i + 1 | 0);
             return [0,
                     lookup(status,symbol$0(stack,caml_new_string("" + i))),
-                    _jy_]},
+                    _jz_]},
          stack$0=aux(1),
-         _jt_=append([0,sender,[0,value,params]],stack$0),
-         _ju_=status[2],
-         _jv_=
-          append(map(function(_jx_){return lookup(status,_jx_)},_ju_),_jt_),
-         _jw_=status[1],
-         args=append(map(function(v){return [1,v]},_jw_),_jv_);
+         _ju_=append([0,sender,[0,value,params]],stack$0),
+         _jv_=status[2],
+         _jw_=
+          append(map(function(_jy_){return lookup(status,_jy_)},_jv_),_ju_),
+         _jx_=status[1],
+         args=append(map(function(v){return [1,v]},_jx_),_jw_);
         return [1,name,args]}
       throw [0,Assert_failure,_hU_]}
-    function type_of_call(status,addr,meth,value,sender,params)
+    function type_of_call(status,addr,meth,value$0,sender,params)
      {var
        addr$0=type_of_address(status,addr),
-       value$0=type_of_value(status,value),
+       value=
+        fold(_hQ_,function(_js_){return type_of_iexpr(status,_js_)},value$0),
        _jr_=meth[2],
        params$0=expr_list_map(type_of_expr_poly(status),_jr_,params);
       return forall_boolean
               (status,
                params$0,
                function(params)
-                {return type_of_call0
-                         (status,addr$0,meth,value$0,sender,params)})}
+                {return type_of_call0(status,addr$0,meth,value,sender,params)})}
     function forall_contract(status,f)
      {var
        _jp_=status[7],
@@ -9176,69 +9174,71 @@
                 _iS_=_iN_[3],
                 _iT_=_iN_[2],
                 _iU_=_iN_[1];
-               if(0 !== _iQ_[0])
-                {var
-                  args2=_iQ_[4],
-                  val2=_iQ_[3],
-                  m2=_iQ_[2],
-                  a2=_iQ_[1],
-                  _iV_=m2[2],
-                  args2$0=
-                   expr_list_map(type_of_expr_poly(status$0),_iV_,args2),
-                  addr=int_of_address(type_of_address(status$0,a2)),
-                  meth=int_of_meth(m2),
-                  value=type_of_value(status$0,val2),
-                  sender$0=int_of_address(status$0[6]);
-                 return forall_boolean
-                         (status$0,
-                          args2$0,
-                          function(args2)
-                           {var
-                             l=[0,addr,[0,meth,[0,value,[0,sender$0,args2]]]],
-                             _iY_=length(l),
-                             l$0=append(l,mk_list(bottom,status$0[5] - _iY_ | 0)),
-                             gamma=[0,status$0[3]],
-                             _iZ_=status$0[4],
-                             _i0_=status$0[5] + 1 | 0;
-                            if(! (_iZ_ < _i0_))
-                             {var i=_iZ_;
+               if(0 === _iQ_[0])
+                var switch$0=1;
+               else
+                {if(! _iQ_[3])
+                  {var
+                    args2=_iQ_[4],
+                    m2=_iQ_[2],
+                    a2=_iQ_[1],
+                    _iV_=m2[2],
+                    args2$0=
+                     expr_list_map(type_of_expr_poly(status$0),_iV_,args2),
+                    addr=int_of_address(type_of_address(status$0,a2)),
+                    meth=int_of_meth(m2),
+                    sender$0=int_of_address(status$0[6]),
+                    value=type_of_iexpr(status$0,2);
+                   return forall_boolean
+                           (status$0,
+                            args2$0,
+                            function(args2)
+                             {var
+                               l=[0,addr,[0,meth,[0,value,[0,sender$0,args2]]]],
+                               _iY_=length(l),
+                               l$0=append(l,mk_list(bottom,status$0[5] - _iY_ | 0)),
+                               gamma=[0,status$0[3]],
+                               _iZ_=status$0[4],
+                               _i0_=status$0[5] + 1 | 0;
+                              if(! (_iZ_ < _i0_))
+                               {var i=_iZ_;
+                                for(;;)
+                                 {var
+                                   _i2_=gamma[1],
+                                   _i3_=gamma[1],
+                                   _i4_=
+                                    lookup_gamma
+                                     (symbol$0(stack,caml_new_string("" + (i - status$0[5] | 0))),
+                                      _i3_);
+                                  gamma[1]
+                                  =
+                                  assign_gamma
+                                   (symbol$0(stack,caml_new_string("" + i)),_i4_,_i2_);
+                                  var _i5_=i - 1 | 0;
+                                  if(_i0_ !== i){var i=_i5_;continue}
+                                  break}}
+                              var n=1,param=l$0;
                               for(;;)
-                               {var
-                                 _i2_=gamma[1],
-                                 _i3_=gamma[1],
-                                 _i4_=
-                                  lookup_gamma
-                                   (symbol$0(stack,caml_new_string("" + (i - status$0[5] | 0))),
-                                    _i3_);
-                                gamma[1]
-                                =
-                                assign_gamma
-                                 (symbol$0(stack,caml_new_string("" + i)),_i4_,_i2_);
-                                var _i5_=i - 1 | 0;
-                                if(_i0_ !== i){var i=_i5_;continue}
-                                break}}
-                            var n=1,param=l$0;
-                            for(;;)
-                             {if(param)
-                               {var tl=param[2],hd=param[1],_i1_=gamma[1];
-                                gamma[1]
-                                =
-                                assign_gamma
-                                 (symbol$0(stack,caml_new_string("" + n)),hd,_i1_);
-                                var n$0=n + 1 | 0,n=n$0,param=tl;
-                                continue}
-                              var
-                               status=
-                                [0,
-                                 status$0[1],
-                                 status$0[2],
-                                 gamma[1],
-                                 status$0[4],
-                                 status$0[5],
-                                 status$0[6],
-                                 status$0[7]];
-                              return type_of_call(status,_iU_,_iT_,_iS_,sender$0,_iR_)}})}
-               var switch$0=1}
+                               {if(param)
+                                 {var tl=param[2],hd=param[1],_i1_=gamma[1];
+                                  gamma[1]
+                                  =
+                                  assign_gamma
+                                   (symbol$0(stack,caml_new_string("" + n)),hd,_i1_);
+                                  var n$0=n + 1 | 0,n=n$0,param=tl;
+                                  continue}
+                                var
+                                 status=
+                                  [0,
+                                   status$0[1],
+                                   status$0[2],
+                                   gamma[1],
+                                   status$0[4],
+                                   status$0[5],
+                                   status$0[6],
+                                   status$0[7]];
+                                return type_of_call(status,_iU_,_iT_,_iS_,sender$0,_iR_)}})}
+                 var switch$0=1}}
              else
               var switch$0=0;
             break;

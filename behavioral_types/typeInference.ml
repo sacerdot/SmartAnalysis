@@ -220,6 +220,7 @@ let type_of_call0 :
 (*
  let params = prefix ??? params in XXXX
  bisogna guardare se invocare il fallback e le pippe sul payable sì o no!
+ (con tanto di incremento del balance!)
 *)
  let stack =
   let rec aux i =
@@ -318,19 +319,19 @@ fun ~status tag stm ->
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 tag stm in
                TChoice(p,typ1,TNot p,typ2))
-  | Assign(_,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,val2,args2)) ->
+  | Assign(_,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,None,args2)) ->
      let args2 =
       expr_list_map (type_of_expr_poly ~status) (Utils.snd3 m2) args2 in
      let a2 = int_of_address (type_of_address ~status a2) in
      let m2 = int_of_meth m2 in
-     let val2 = type_of_value ~status val2 in
      let sender = int_of_address status.this in
+     let value = type_of_iexpr ~status MsgValue in
      forall_boolean ~status args2
       (fun args2 ->
         let f = 
          { addr = a2
          ; meth = m2
-         ; value = val2
+         ; value
          ; sender
          ; params = args2
          } in
