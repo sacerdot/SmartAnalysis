@@ -289,8 +289,9 @@ let tchoice ~status guards_and_typs =
  in
   TChoice (aux (TBool false) guards_and_typs)
 
-let forall_contract ~status f =
- tchoice ~status (List.map (fun (c,ms) -> f c ms) status.contracts)
+let forall_contract ~status ~otherwise f =
+ let l = List.map (fun (c,ms) -> f c ms) status.contracts in
+ tchoice ~status (l@otherwise)
 
 (* we could iterate only on those that are continuation, but we have not
    tracked this information *)
@@ -298,8 +299,10 @@ let forall_methods ~status meths f =
  tchoice ~status (List.map f meths)
 
 let type_of_cont ~status ret =
+ let is_empty = TEq(lookup ~status stack_address,bottom) in
+ let otherwise=[is_empty, TGamma (List.map (lookup ~status) status.fields)] in
  let {addr;meth;value;sender;params},status = pop ~status in
- forall_contract ~status
+ forall_contract ~status ~otherwise
   (fun addr' meths ->
     TEq(addr,int_of_address addr'),
     forall_methods ~status meths 
@@ -318,26 +321,13 @@ fun ~status tag stm ->
        ~params:args1
   | ReturnRhs (Expr e) ->
      let e = type_of_expr ~status tag e in
-     let is_empty = TEq(lookup ~status stack_address,bottom) in
      (match e with
-         `Single e ->
-           let cont = type_of_cont ~status e in
-           TChoice
-            [ is_empty, TGamma (List.map (lookup ~status) status.fields)
-            ; TNot is_empty, cont ]
+         `Single e -> type_of_cont ~status e
        | `Split p ->
            let cont1 = type_of_cont ~status (int_of_bool true) in
            let cont2 = type_of_cont ~status (int_of_bool false) in
-           TChoice
-            [ is_empty, TGamma (List.map (lookup ~status) status.fields)
-            ; TAnd (TNot is_empty,p),cont1
-            ; TAnd (TNot is_empty,TNot p),cont2 ])
-  | Return ->
-     let is_empty = TEq(lookup ~status stack_address,bottom) in
-     let cont = type_of_cont ~status int_of_unit in
-     TChoice
-      [ is_empty, TGamma (List.map (lookup ~status) status.fields)
-      ; TNot is_empty, cont ]
+           TChoice [ p,cont1 ; TNot p,cont2 ])
+  | Return -> type_of_cont ~status int_of_unit
   | Revert -> revert ~status
   | Assign(lhs,Expr e,stm) ->
      let lhs_tag = tag_of_lhs lhs in
@@ -421,7 +411,7 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
      [] ->
       type_of_block ~status (Utils.fst3 name) block
    | v::tl ->
-      forall_contract ~status
+      forall_contract ~status ~otherwise:[]
        (fun a _ ->
          let a = int_of_address a in
          TEq(lookup ~status v,a),aux ~status:(assign ~status v a) tl) in
