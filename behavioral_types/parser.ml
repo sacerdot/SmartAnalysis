@@ -651,7 +651,7 @@ let test_stream f stream =
      "<< " ^ msg ^ " >>\n" ^
      print_token_list l
   | exn ->
-     "######## UNHANLDED EXCEPTION #######\n" ^
+     "######## UNHANDLED EXCEPTION #######\n" ^
      Printexc.to_string exn
 
 let test_file f filename =
