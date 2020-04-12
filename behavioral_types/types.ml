@@ -63,5 +63,5 @@ let pp_function (f,params,stm) =
  f ^ "(" ^ String.concat "," params ^ ") =\n" ^ (pp_stm ~indent:1) stm
 
 let pp_types l =
- String.concat "\n"
+ String.concat "\n\n"
   (List.map pp_function l)
