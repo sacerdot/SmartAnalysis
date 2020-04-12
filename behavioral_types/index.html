@@ -13,6 +13,7 @@
   <button onclick="ms_normalize()">Normalize</button>
   <button onclick="ms_get_bounds()">Compute stack bounds</button>
   <button onclick="ms_type_of()">Infer types</button>
+  <button onclick="ms_cofloco()">Call Cofloco</button>
   <button onclick="ms_copy_output_to_input()">&lt; Copy output to input</button>
   <hr>
   <table width="100%">
@@ -143,6 +144,7 @@ function main() {
   </table>
  <div id="errors"></div>
     
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="ace/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor_in = ace.edit("in");
@@ -170,6 +172,37 @@ function loadDoc(filename) {
 
 function loadDoc1() {
   loadDoc("demo/demo1.sol");
+}
+
+function ms_cofloco() {
+    $.ajax({
+        type: "POST",
+        dataType: "JSON",
+        url: "http://sra.cs.unibo.it/cofloco.php",
+        data: {
+            input_code: editor_in.getValue(),
+            options: "-v 0"//$(this).attr('data')
+        },
+        cache: false,
+        success: function (json) {
+            if (json.status == 'success') {
+                //cost result
+                $.ajax({
+                    url: "http://sra.cs.unibo.it/file_get.php",
+                    //data: "file_path=" + json.result+"options=",
+                    data: {'file_path' : json.result},
+                    async: false,
+                    success: function (res) {
+                        editor_out.setValue(res, 1);
+                        editor_out.scrollToLine(editor_out.getSelectionRange().end.row, true, true);
+                        editor_out.gotoLine(editor_out.getSelectionRange().end.row, 1, true);
+                    }
+                });
+            } else if (json.status == 'error') {
+                alert(json.info);
+            }
+        }
+    });
 }
 </script>
  </body>
