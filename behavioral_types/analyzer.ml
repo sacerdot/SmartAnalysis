@@ -23,10 +23,13 @@ let transform f () =
  let _ = Js.Unsafe.meth_call doc_out "setValue" [| Js.Unsafe.inject y |] in
  ()
 
-let parse = transform (Parser.test_string MicroSolidity.pp_configuration)
+let parse =
+ transform (Parser.test_string MicroSolidity.pp_configuration)
+
 let normalize =
  transform (Parser.test_string
   (fun c -> MicroSolidity.pp_configuration (Static.normalize c)))
+
 let get_bounds =
  transform (Parser.test_string
   (fun c ->
@@ -37,6 +40,7 @@ let get_bounds =
        "\n\n" ^
        "Maximum number of locals: " ^ string_of_int m ^ "\n" ^
        "Maximum stack length: " ^ string_of_int n) c))
+
 let type_of =
  transform (Parser.test_string
   (fun c ->
@@ -44,6 +48,14 @@ let type_of =
     Static.with_maxargs_and_stack_bound
      (fun ~bounds:_ ~max_args ~max_stack ->
        Types.pp_types (TypeInference.type_of ~max_args ~max_stack c)) c))
+
+let cost =
+ transform (fun _ ->
+  Cofloco.pp_prog
+   [ ("f",["x";"y"]), false, Rat 0, ["G",["x"];"g",["y";"Z"]],["a",Geq,Var "z"]
+   ; ("h",[]), true, Plus(Rat 2, Var "a"), [], ["a",Lt,Rat 0;"b",Eq,Rat 3]
+   ]
+ )
 
 let copy_output_to_input () =
  let doc_in = Js.Unsafe.variable "window.doc_out" in
@@ -56,6 +68,7 @@ let _ = Js.export "ms_parse" (Js.wrap_callback parse)
 let _ = Js.export "ms_normalize" (Js.wrap_callback normalize)
 let _ = Js.export "ms_get_bounds" (Js.wrap_callback get_bounds)
 let _ = Js.export "ms_type_of" (Js.wrap_callback type_of)
+let _ = Js.export "ms_cost" (Js.wrap_callback cost)
 let _ = Js.export "ms_copy_output_to_input" (Js.wrap_callback copy_output_to_input)
 
 (*
