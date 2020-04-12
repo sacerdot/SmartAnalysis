@@ -443,10 +443,11 @@ let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_
 let type_of ~max_args ~max_stack cfg =
  let contracts =
   List.map
-   (function AContract(a,methods,_,_) ->
+   (function AContract(a,methods,fb,_) ->
      a,
-     List.map (function AnyMethodDecl(m,_,payable) -> Parser.AnyMeth m,payable)
-      methods
+     List.map (function AnyMethodDecl(m,_,payable) ->
+       Parser.AnyMeth m,payable) methods
+      @ (match fb with None -> [] | Some _ -> [Parser.AnyMeth fallback,true])
    ) cfg in
  (* address, method, msg.sender, msg.value *)
  let continuation_args = 4 in
