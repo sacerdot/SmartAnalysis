@@ -67,7 +67,9 @@ let lookup_gamma k gamma =
  try
   List.assoc k gamma
  with
-  Not_found -> assert false
+  Not_found ->
+   Utils.error k;
+   assert false
 
 let lookup ~status k = lookup_gamma k status.gamma
 
