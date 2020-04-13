@@ -4,7 +4,7 @@ type rat = int (* should be rational *)
 
 (* Head::= Name | Name(Arguments)              *)
 (* Arguments ::= Variable | Variable,Arguments *)
-type call = func * var list
+type fcall = func * var list
 
 (* Oper ::=  >= | <= | = | < | > *)
 type oper = Geq | Leq | Eq | Lt | Gt
@@ -23,14 +23,21 @@ type expr =
  | Mult of rat * expr
  | Div of expr * rat
 
-(* SizeRelation ::= Variable Oper LinearExpression *)
-type pred = var * oper * expr
+(* OFFICIAL DOC: SizeRelation ::= Variable Oper LinearExpression *)
+(* REAL: SizeRelation ::= LinearExpression Oper LinearExpression *)
+type pred = expr * oper * expr
+
+(* OFFICIAL DOC: Head::= Name | Name(Arguments)              *)
+(* OFFICIAL DOC: Arguments ::= Variable | Variable,Arguments *)
+(* REAL: Head::= Name | Name(Arguments)              *)
+(* REAL: Arguments ::= LinearExpression | LinearExpression,Arguments *)
+type acall = func * expr list
 
 (* Equation::= eq(Head, CostExpression, ListOfCalls, ListOfSizeRelations). *)
 (* CostExpression :: = LinearExpression | nat(LinearExpression) *)
 (* ListOfCalls ::= [] |[Head|ListOfCalls] *)
 (* ListOfSizeRelations ::= [] | [SizeRelation|ListOfSizeRelations] *)
-type eqn = call * (*to_nat:*)bool * expr * call list * pred list
+type eqn = fcall * (*to_nat:*)bool * expr * acall list * pred list
 
 type prog = eqn list
 
@@ -40,8 +47,11 @@ let pp_func f = String.uncapitalize_ascii f
 
 let pp_rat = string_of_int
 
-let pp_call (f,vl) =
- pp_func f ^ "(" ^ String.concat "," (List.map pp_var vl) ^ ")"
+let pp_fcall (f,vl) =
+ if vl = [] then
+  pp_func f
+ else
+  pp_func f ^ "(" ^ String.concat "," (List.map pp_var vl) ^ ")"
 
 let pp_oper =
  function
@@ -62,16 +72,22 @@ let rec pp_expr =
   | Mult(e1,e2) -> parens (pp_rat e1 ^ " * " ^ pp_expr e2)
   | Div(e1,e2) -> parens (pp_expr e1 ^ " / " ^ pp_rat e2)
 
-let pp_pred (v,o,e) = pp_var v ^ " " ^ pp_oper o ^ " " ^ pp_expr e
+let pp_acall (f,el) =
+ if el = [] then
+  pp_func f
+ else
+  pp_func f ^ "(" ^ String.concat "," (List.map pp_expr el) ^ ")"
+
+let pp_pred (e1,o,e2) = pp_expr e1 ^ " " ^ pp_oper o ^ " " ^ pp_expr e2
 
 (* Equation::= eq(Head, CostExpression, ListOfCalls, ListOfSizeRelations). *)
 (* CostExpression :: = LinearExpression | nat(LinearExpression) *)
 (* ListOfCalls ::= [] |[Head|ListOfCalls] *)
 (* ListOfSizeRelations ::= [] | [SizeRelation|ListOfSizeRelations] *)
 let pp_eqn (call,to_nat,e,cl,pl) =
- "eq(" ^ pp_call call ^ "," ^
+ "eq(" ^ pp_fcall call ^ "," ^
    ((if to_nat then (fun x -> "nat" ^ parens x) else fun x -> x) (pp_expr e)) ^
-   "," ^ "[" ^ String.concat "," (List.map pp_call cl) ^ "]," ^
+   "," ^ "[" ^ String.concat "," (List.map pp_acall cl) ^ "]," ^
    "[" ^ String.concat "," (List.map pp_pred pl) ^ "])."
 
 let pp_prog l = String.concat "\n" (List.map pp_eqn l)

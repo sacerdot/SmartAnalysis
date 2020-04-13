@@ -2,8 +2,7 @@ type var = string (* Prolog style *)
 type func = string (* Prolog style *)
 type rat = int (* should be rational *)
 
-type call = func * var list
-
+type fcall = func * var list
 type oper = Geq | Leq | Eq | Lt | Gt
 
 type expr = 
@@ -14,9 +13,11 @@ type expr =
  | Mult of rat * expr
  | Div of expr * rat
 
-type pred = var * oper * expr
+type acall = func * expr list
 
-type eqn = call * (*to_nat:*)bool * expr * call list * pred list
+type pred = expr * oper * expr
+
+type eqn = fcall * (*to_nat:*)bool * expr * acall list * pred list
 
 type prog = eqn list
 

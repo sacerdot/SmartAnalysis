@@ -52,8 +52,8 @@ let type_of =
 let cost =
  transform (fun _ ->
   Cofloco.pp_prog
-   [ ("f",["x";"y"]), false, Rat 0, ["G",["x"];"g",["y";"Z"]],["a",Geq,Var "z"]
-   ; ("h",[]), true, Plus(Rat 2, Var "a"), [], ["a",Lt,Rat 0;"b",Eq,Rat 3]
+   [ ("f",["x";"y"]), false, Rat 0, ["G",[Var "x"];"g",[Var "y";Var "Z"]],[Var "a",Geq,Var "z"]
+   ; ("h",[]), true, Plus(Rat 2, Var "a"), [], [Var "a",Lt,Rat 0;Var "b",Eq,Rat 3]
    ]
  )
 
