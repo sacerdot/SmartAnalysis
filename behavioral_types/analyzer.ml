@@ -50,12 +50,14 @@ let type_of =
        Types.pp_types (TypeInference.type_of ~max_args ~max_stack c)) c))
 
 let cost =
- transform (fun _ ->
-  Cofloco.pp_prog
-   [ ("f",["x";"y"]), false, Rat 0, ["G",[Var "x"];"g",[Var "y";Var "Z"]],[Var "a",Geq,Var "z"]
-   ; ("h",[]), true, Plus(Rat 2, Var "a"), [], [Var "a",Lt,Rat 0;Var "b",Eq,Rat 3]
-   ]
- )
+ transform (Parser.test_string
+  (fun c ->
+    let c = Static.normalize c in
+    Static.with_maxargs_and_stack_bound
+     (fun ~bounds:_ ~max_args ~max_stack ->
+       Cofloco.pp_prog
+        (CostEquationsGeneration.compute
+         (TypeInference.type_of ~max_args ~max_stack c))) c))
 
 let copy_output_to_input () =
  let doc_in = Js.Unsafe.variable "window.doc_out" in

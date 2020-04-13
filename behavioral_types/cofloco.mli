@@ -12,6 +12,7 @@ type expr =
  | Minus of expr * expr
  | Mult of rat * expr
  | Div of expr * rat
+ | UMinus of expr
 
 type acall = func * expr list
 

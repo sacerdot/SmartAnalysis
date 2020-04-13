@@ -6,7 +6,7 @@ type rat = int (* should be rational *)
 (* Arguments ::= Variable | Variable,Arguments *)
 type fcall = func * var list
 
-(* Oper ::=  >= | <= | = | < | > *)
+(* Oper ::=  >= | =< | = | < | > *)
 type oper = Geq | Leq | Eq | Lt | Gt
 
 (* LinearExpression ::= Variable | RationalNumber | 
@@ -22,6 +22,7 @@ type expr =
  | Minus of expr * expr
  | Mult of rat * expr
  | Div of expr * rat
+ | UMinus of expr
 
 (* OFFICIAL DOC: SizeRelation ::= Variable Oper LinearExpression *)
 (* REAL: SizeRelation ::= LinearExpression Oper LinearExpression *)
@@ -56,7 +57,7 @@ let pp_fcall (f,vl) =
 let pp_oper =
  function
     Geq -> ">="
-  | Leq -> "<="
+  | Leq -> "=<"
   | Eq -> "="
   | Lt -> "<"
   | Gt -> ">"
@@ -71,6 +72,7 @@ let rec pp_expr =
   | Minus(e1,e2) -> parens (pp_expr e1 ^ " - " ^ pp_expr e2)
   | Mult(e1,e2) -> parens (pp_rat e1 ^ " * " ^ pp_expr e2)
   | Div(e1,e2) -> parens (pp_expr e1 ^ " / " ^ pp_rat e2)
+  | UMinus e -> "-" ^ pp_expr e
 
 let pp_acall (f,el) =
  if el = [] then
