@@ -45,22 +45,22 @@ let rec pp_pred =
 
 let mk_indent n = String.make (3 * n) ' '
 
-let rec pp_stm ~indent s =
+let rec pp_typ ~indent s =
  mk_indent indent ^
  match s with
     TGamma l -> String.concat "," (List.map pp_expr l)
   | TCall(f,l) -> f ^ "(" ^ String.concat "," (List.map pp_expr l) ^ ")"
   | TChoice [] -> assert false
   | TChoice ((p,s)::tl) ->
-      "  [" ^ pp_pred p ^ "]\n" ^ pp_stm ~indent:(indent+2) s ^
+      "  [" ^ pp_pred p ^ "]\n" ^ pp_typ ~indent:(indent+2) s ^
      String.concat ""
       (List.map
         (fun (p,s) ->
          "\n" ^ mk_indent indent ^
-         "+ [" ^ pp_pred p ^ "]\n" ^ pp_stm ~indent:(indent+2) s) tl)
+         "+ [" ^ pp_pred p ^ "]\n" ^ pp_typ ~indent:(indent+2) s) tl)
 
 let pp_function (f,params,stm) =
- f ^ "(" ^ String.concat "," params ^ ") =\n" ^ (pp_stm ~indent:1) stm
+ f ^ "(" ^ String.concat "," params ^ ") =\n" ^ (pp_typ ~indent:1) stm
 
 let pp_types l =
  String.concat "\n\n"

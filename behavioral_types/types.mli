@@ -24,4 +24,5 @@ type functions = func * var list * typ
 type types = functions list
 
 val pp_expr: expr -> string
+val pp_typ : indent:int -> typ -> var
 val pp_types: (func * var list * typ) list -> string

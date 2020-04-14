@@ -272,6 +272,31 @@ let match_method : type a b. status:status -> address -> (a,b) meth -> b expr_li
    with
     Not_found -> None
 
+let transfer0 ~status ~from ~to_ ~amount =
+ let status =
+  assign ~status (from ^^ balance)
+   (TMinus(lookup ~status (from ^^ balance),amount)) in
+ let status =
+  assign ~status (to_ ^^ balance)
+   (TPlus(lookup ~status (to_ ^^ balance),amount)) in
+ status
+
+let transfer ~status to_ amount k =
+ let from = status.this in
+ let from_balance = lookup ~status (from ^^ balance) in
+ if_then_else (TGeq(from_balance,amount))
+  (k ~status:(transfer0 ~status ~from ~to_ ~amount))
+  (revert ~status)
+
+let msg_transfer ~status a1 val1 args1 k =
+ if val1 <> None then
+  revert ~status
+ else
+  let amount = match args1 with ECons(e,ENil) -> e in
+  let amount = type_of_iexpr ~status amount in
+  let to_ = type_of_address ~status a1 in
+  transfer ~status to_ amount k
+
 let type_of_call :
  status:status ->
   tag:('a tag) -> addr:(address MicroSolidity.expr) -> meth:(('a,_) meth) ->
@@ -286,13 +311,16 @@ let type_of_call :
       eq_tag tag Unit <> None || eq_tag tag (Utils.fst3 meth) <> None in
      let payable_ok = payable || value = None in
      if output_type_ok && payable_ok then
-      let value = type_of_value ~status value in
+      let amount = type_of_value ~status value in
       let params =
        expr_list_map (type_of_expr_poly ~status) (Utils.snd3 meth) params in
       forall_boolean ~status params
        (fun params ->
-         (* XXX manca incremento del balance!  *)
-         type_of_call0 ~status ~addr ~meth ~value ~sender ~params)
+         if value = None then
+          type_of_call0 ~status ~addr ~meth ~value:amount ~sender ~params
+         else
+          transfer ~status addr amount
+           (type_of_call0 ~addr ~meth ~value:amount ~sender ~params))
      else
       revert ~status
 
@@ -334,25 +362,18 @@ let type_of_cont ~status ret =
  type_of_call0 ~status ~addr:runtime ~meth:dispatch
   ~value:dummy ~sender:dummy ~params:[ret]
 
-let transfer0 ~status ~from:_ ~to_:_ ~amount:_ = status (* XXX *)
-
-let transfer ~status a1 val1 args1 k =
- let a1 = type_of_address ~status a1 in
- if val1 <> None then
-  revert ~status
- else
-  let amount = match args1 with ECons(e,ENil) -> e in
-  k ~status:(transfer0 ~status ~from:status.this ~to_:a1 ~amount)
-
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
  match stm with
   | ReturnRhs (Call(a1,(Unit,TCons(Int,TNil),"transfer"),val1,args1)) ->
-     transfer ~status a1 val1 args1 (type_of_cont int_of_unit)
+     msg_transfer ~status a1 val1 args1 (type_of_cont int_of_unit)
   | ReturnRhs (Call(a1,m1,val1,args1)) ->
+Utils.error("# " ^ pp_stm ~indent:0 tag stm);
+let res =
       let sender = int_of_address status.this in
       type_of_call ~status ~tag ~addr:a1 ~meth:m1 ~value:val1 ~sender
        ~params:args1
+in Utils.error("# " ^ pp_stm ~indent:0 tag stm ^ " : " ^ pp_typ ~indent:0 res); res
   | ReturnRhs (Expr e) ->
      let e = type_of_expr ~status tag e in
      (match e with
@@ -384,7 +405,7 @@ fun ~status tag stm ->
                let typ2 = type_of_stm ~status:status2 tag stm in
                if_then_else p typ1 typ2)
   | Assign(LDiscard,Call(a1,(Unit,TCons(Int,TNil),"transfer"),val1,args1),stm)->
-    transfer ~status a1 val1 args1 (type_of_stm tag stm)
+    msg_transfer ~status a1 val1 args1 (type_of_stm tag stm)
   | Assign(lhs,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,None,args2)) ->
      let args2 =
       expr_list_map (type_of_expr_poly ~status) (Utils.snd3 m2) args2 in
