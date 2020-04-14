@@ -30,6 +30,9 @@ let rec norm_stm : type a b. (a,b) meth -> b var_list -> 'c var_list -> bool -> 
   | ReturnRhs _
   | Return
   | Revert -> [],stm
+  | Assign(LDiscard,(Call(_,(Unit,TCons(Int,TNil),"transfer"),_,_) as rhs),stm) ->
+     let meths,stm = norm_stm addr params locals payable stm in
+     meths,Assign(LDiscard,rhs,stm)
   | Assign(lhs,rhs,cont) ->
      let meths,cont = norm_stm addr params locals payable cont in
      let make_cont () =
@@ -131,6 +134,8 @@ let rec get_bounds_stm : type a b. f:'c -> cfg:'d -> address -> (a,b) stm -> 'e 
   | Return
   | Revert -> tbl,0
   | Assign(_,Expr _,stm) -> get_bounds_stm ~f ~cfg addr stm tbls
+  | Assign(LDiscard,(Call(_,(Unit,TCons(Int,TNil),"transfer"),_,_)),stm) ->
+     get_bounds_stm ~f ~cfg addr stm tbls
   | Assign(_,rhs1,ReturnRhs rhs2) ->
      let tbl,b1 = get_bounds_rhs ~f ~cfg false addr rhs1 tbls in
      let tbl,b2 = get_bounds_rhs ~f ~cfg true addr rhs2 (tbl,stack) in

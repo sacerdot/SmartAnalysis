@@ -327,9 +327,21 @@ let type_of_cont ~status ret =
  type_of_call0 ~status ~addr:runtime ~meth:dispatch
   ~value:dummy ~sender:dummy ~params:[ret]
 
+let transfer0 ~status ~from:_ ~to_:_ ~amount:_ = status (* XXX *)
+
+let transfer ~status a1 val1 args1 k =
+ let a1 = type_of_address ~status a1 in
+ if val1 <> None then
+  revert ~status
+ else
+  let amount = match args1 with ECons(e,ENil) -> e in
+  k ~status:(transfer0 ~status ~from:status.this ~to_:a1 ~amount)
+
 let rec type_of_stm : type a b. status:status -> a tag -> (a,b) stm -> typ =
 fun ~status tag stm ->
  match stm with
+  | ReturnRhs (Call(a1,(Unit,TCons(Int,TNil),"transfer"),val1,args1)) ->
+     transfer ~status a1 val1 args1 (type_of_cont int_of_unit)
   | ReturnRhs (Call(a1,m1,val1,args1)) ->
       let sender = int_of_address status.this in
       type_of_call ~status ~tag ~addr:a1 ~meth:m1 ~value:val1 ~sender
@@ -364,6 +376,8 @@ fun ~status tag stm ->
                let status2 = assign ~status lhs (int_of_bool false) in
                let typ2 = type_of_stm ~status:status2 tag stm in
                if_then_else p typ1 typ2)
+  | Assign(LDiscard,Call(a1,(Unit,TCons(Int,TNil),"transfer"),val1,args1),stm)->
+    transfer ~status a1 val1 args1 (type_of_stm tag stm)
   | Assign(lhs,Call(a1,m1,val1,args1),ReturnRhs Call(a2,m2,None,args2)) ->
      let args2 =
       expr_list_map (type_of_expr_poly ~status) (Utils.snd3 m2) args2 in
