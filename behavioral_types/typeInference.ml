@@ -204,14 +204,18 @@ let if_then_else p t1 t2 =
 
 let forall_boolean ~status l f =
  let ll = distribute_split l in
- let rec aux =
-  function
-     [] -> revert ~status
-   | (p,l)::ll ->
-      let typ = f l in
-      if_then_else p typ (aux ll)
- in
-  aux ll
+ (* minimal optimization, waiting for an improved distribute_split *) 
+ match ll with
+    [TBool true, l] -> f l
+  | _ ->
+    let rec aux =
+     function
+        [] -> revert ~status
+      | (p,l)::ll ->
+         let typ = f l in
+         if_then_else p typ (aux ll)
+    in
+     aux ll
 
 let type_of_value ~status v =
  Option.fold ~none:(TInt 0) ~some:(type_of_iexpr ~status) v
@@ -293,10 +297,13 @@ let type_of_call :
       revert ~status
 
 let tchoice ~status guards_and_typs =
+ (* tiny improvement to legibility *)
+ let tor guard g = if guard = TBool false then g else TOr(guard,g) in
  let rec aux guard =
   function
      [] -> [TNot guard, revert ~status]
-   | (g,typ)::tl -> (g,typ)::aux (TOr(guard,g)) tl
+   | (g,typ)::tl ->
+      (g,typ)::aux (tor guard g) tl
  in
   TChoice (aux (TBool false) guards_and_typs)
 
