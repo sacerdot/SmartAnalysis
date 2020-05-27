@@ -328,12 +328,12 @@ let type_of_call :
      else
       revert ~status
 
-let tchoice ~status guards_and_typs =
+let tchoice ~status:_ guards_and_typs =
  (* tiny improvement to legibility *)
  let tor guard g = if guard = TBool false then g else TOr(guard,g) in
  let rec aux guard =
   function
-     [] -> [TNot guard, revert ~status]
+     [] -> [(*TNot guard, revert ~status*)]
    | (g,typ)::tl ->
       (g,typ)::aux (tor guard g) tl
  in
