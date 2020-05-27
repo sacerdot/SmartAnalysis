@@ -42,7 +42,7 @@ let rec norm_stm : type a b. (a,b) meth -> b var_list -> 'c var_list -> bool -> 
        let Aux(klhs,(lhs_tag,ret_param)) =
         match lhs with
            LVar v -> Aux(Some lhs,(fst v,Var v))
-         | LField v -> Aux(Some lhs,(fst v,Var v))
+         | LField v -> Aux(Some lhs,(fst v,Field v))
          | LDiscard -> Aux(None,(Int,Value 0)) in
        let varstags = TCons(lhs_tag,varstags) in
        let retparam = lhs_tag,"_ret_" in
