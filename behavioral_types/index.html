@@ -13,7 +13,8 @@
   <button onclick="ms_normalize()">Normalize</button>
   <button onclick="ms_get_bounds()">Compute stack bounds</button>
   <button onclick="ms_type_of()">Infer types</button>
-  <button onclick="ms_cost()">Compute cost equations</button>
+  <button onclick="ms_cost(true);editor_out.selectAll()">Compute max gain</button>
+  <button onclick="ms_cost(false);editor_out.selectAll()">Compute max loss</button>
   <button onclick="ms_cofloco()">Call Cofloco</button>
   <button onclick="ms_copy_output_to_input()">&lt; Copy output to input</button>
   <hr>
@@ -23,16 +24,16 @@
 <div id="in" class="editor">
 contract Bank {
 
-   function pay(int n) {
-      Thief.ping.value(n)(n);
+   function borrow(int n) {
+      msg.sender.lend.value(n)(n);
    }
 
 }
 
 contract Thief {
 
-   function ping(int n) payable {
-      msg.sender.transfer(n) ;
+   function lend(int n) payable {
+      msg.sender.transfer(n-3) ;
    }
 
 }

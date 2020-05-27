@@ -49,15 +49,15 @@ let type_of =
      (fun ~bounds:_ ~max_args ~max_stack ->
        Types.pp_types (snd (TypeInference.type_of ~max_args ~max_stack c))) c))
 
-let cost =
+let cost b =
  transform (Parser.test_string
   (fun c ->
     let c = Static.normalize c in
     Static.with_maxargs_and_stack_bound
      (fun ~bounds:_ ~max_args ~max_stack ->
        Cofloco.pp_prog
-        (CostEquationsGeneration.compute
-         (TypeInference.type_of ~max_args ~max_stack c))) c))
+        (CostEquationsGeneration.compute ~gain:(Js.to_bool b)
+         (TypeInference.type_of ~max_args ~max_stack c))) c)) ()
 
 let copy_output_to_input () =
  let doc_in = Js.Unsafe.variable "window.doc_out" in
