@@ -358,6 +358,12 @@ let mk_type_of_cont ~status ret =
        TEq(meth,int_of_meth meth'),
        type_of_call0 ~status ~addr:addr' ~meth:meth' ~value ~sender ~params))
 
+(* fallback to simple case of no continuations *)
+let mk_type_of_cont ~status ret =
+ if status.k > 0 then mk_type_of_cont ~status ret
+ else
+  TGamma (List.map (lookup ~status) status.fields)
+
 let type_of_cont ~status ret =
  type_of_call0 ~status ~addr:runtime ~meth:dispatch
   ~value:dummy ~sender:dummy ~params:[ret]
@@ -497,6 +503,8 @@ let type_of ~max_args ~max_stack cfg =
  let continuation_args = 4 in
  let frame_size = continuation_args + max_args in
  let k = frame_size * (1 + max_stack) in
+ (* fallback to simple case of no continuations *)
+ let frame_size,k = if max_stack = 0 then 0,0 else frame_size,k in
  let fields =
   List.rev (
    List.fold_left
