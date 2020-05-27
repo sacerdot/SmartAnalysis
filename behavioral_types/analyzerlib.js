@@ -3001,7 +3001,7 @@
      _in_=caml_string_of_jsbytes("_"),
      _io_=caml_string_of_jsbytes("transfer"),
      _is_=caml_string_of_jsbytes("transfer"),
-     _ir_=[0,caml_string_of_jsbytes("static.ml"),147,9],
+     _ir_=[0,caml_string_of_jsbytes("static.ml"),150,9],
      _iG_=caml_string_of_jsbytes(": "),
      _iH_=caml_string_of_jsbytes("."),
      _iI_=caml_string_of_jsbytes("\n"),
@@ -3019,7 +3019,7 @@
      _iD_=
       caml_string_of_jsbytes
        ("Unbounded usage of call stack possibly detected:\n"),
-     _iE_=[0,caml_string_of_jsbytes("static.ml"),171,10],
+     _iE_=[0,caml_string_of_jsbytes("static.ml"),174,10],
      _ip_=[0,0,0,caml_string_of_jsbytes("fallback")],
      _iq_=caml_string_of_jsbytes("Static.Cycle"),
      _iS_=caml_string_of_jsbytes("Maximum stack length: "),
@@ -9769,9 +9769,9 @@
                   caml_string_notequal(_jU_[3],_io_))
                  {var
                    stm$0=stm[3],
-                   match$1=norm_stm(addr,params,locals,payable,stm$0),
-                   stm$1=match$1[2],
-                   meths$0=match$1[1];
+                   match$2=norm_stm(addr,params,locals,payable,stm$0),
+                   stm$1=match$2[2],
+                   meths$0=match$2[1];
                   return [0,meths$0,[1,0,_jQ_,stm$1]]}}}}
           var
            cont=stm[3],
@@ -9826,28 +9826,34 @@
              if(0 === _jR_[0])
               {var _jT_=_jR_[1];
                if(typeof _jT_ !== "number" && 0 === _jT_[0])
-                {var v=_jT_[1],match$0=eq_tag(_jS_[1],v[1]);
-                 if(match$0 && caml_string_equal(_jS_[2],v[2]))
+                {var v=_jT_[1],match$1=eq_tag(_jS_[1],v[1]);
+                 if(match$1 && caml_string_equal(_jS_[2],v[2]))
                   return [0,meths,[0,rhs]];
                  return make_cont(0)}}}
+          if(0 === rhs[0])
+           {var
+             match$0=norm_stm(addr,params,locals,payable,cont$0),
+             stm1=match$0[2],
+             meths1=match$0[1];
+            return [0,meths1,[1,_jP_,rhs,stm1]]}
           return make_cont(0);
          case 2:
           var
            cont$1=stm[4],
            stm2=stm[3],
-           stm1=stm[2],
+           stm1$0=stm[2],
            g=stm[1],
-           match$2=
-            norm_stm(addr,params,locals,payable,stm_concat(stm1,cont$1)),
-           stm1$0=match$2[2],
-           meths1=match$2[1],
            match$3=
+            norm_stm(addr,params,locals,payable,stm_concat(stm1$0,cont$1)),
+           stm1$1=match$3[2],
+           meths1$0=match$3[1],
+           match$4=
             norm_stm(addr,params,locals,payable,stm_concat(stm2,cont$1)),
-           stm2$0=match$3[2],
-           meths2=match$3[1],
+           stm2$0=match$4[2],
+           meths2=match$4[1],
            _jW_=retype_stm(stm2$0),
-           _jX_=[2,g,retype_stm(stm1$0),_jW_,2];
-          return [0,op(meths1,meths2),_jX_]
+           _jX_=[2,g,retype_stm(stm1$1),_jW_,2];
+          return [0,op(meths1$0,meths2),_jX_]
          }
       return [0,0,stm]}
     function norm_block(addr,payable,param)

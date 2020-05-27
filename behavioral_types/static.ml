@@ -55,12 +55,15 @@ let rec norm_stm : type a b. (a,b) meth -> b var_list -> 'c var_list -> bool -> 
          ~some:(fun klhs -> Assign(klhs,Expr(Var(retparam)),cont)) klhs in
        AnyMethodDecl(name,Block(fparams,VNil,cont),payable)::meths,
         Assign(lhs,rhs,ReturnRhs(Call (This,name,None,aparams))) in
-     (match lhs,cont with
-         LDiscard,Return -> meths,ReturnRhs rhs
-       | LVar v,ReturnRhs (Expr (Var v')) ->
+     (match lhs,rhs,cont with
+         LDiscard,_,Return -> meths,ReturnRhs rhs
+       | LVar v,_,ReturnRhs (Expr (Var v')) ->
           (match eq_tag (fst v) (fst v') with
               Some Refl when snd v = snd v' -> meths,ReturnRhs rhs
             | _ -> make_cont ())
+       | _,Expr _,cont ->
+         let meths1,stm1 = norm_stm addr params locals payable cont in
+          meths1,Assign(lhs,rhs,stm1)
        | _ -> make_cont ())
   | IfThenElse(g,stm1,stm2,cont) ->
      let meths1,stm1 = norm_stm addr params locals payable (stm_concat stm1 cont) in
