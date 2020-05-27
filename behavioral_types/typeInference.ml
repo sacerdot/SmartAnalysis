@@ -177,7 +177,11 @@ let type_of_expr :
   | Unit -> `Single(int_of_unit)
 
 let revert ~status =
- TGamma (List.map (fun v -> TVar v) status.saved_gamma)
+ TGamma (List.map (fun v -> TVar v) (status.saved_gamma @ status.saved_gamma))
+
+let commit ~status =
+ TGamma (List.map (fun v -> TVar v) status.saved_gamma @
+  List.map (lookup ~status) status.fields)
 
 let distribute_split l =
  let rec aux acc =
@@ -346,7 +350,7 @@ let forall_methods ~status meths f =
 
 let mk_type_of_cont ~status ret =
  let is_empty = TEq(lookup ~status stack_address,bottom) in
- let otherwise=[is_empty, TGamma (List.map (lookup ~status) status.fields)] in
+ let otherwise=[is_empty, commit ~status] in
  let {addr;meth;value;sender;params},status = pop ~status in
  forall_contract ~status ~otherwise
   (fun addr' meths ->
@@ -361,8 +365,7 @@ let mk_type_of_cont ~status ret =
 (* fallback to simple case of no continuations *)
 let mk_type_of_cont ~status ret =
  if status.k > 0 then mk_type_of_cont ~status ret
- else
-  TGamma (List.map (lookup ~status) status.fields)
+ else commit ~status
 
 let type_of_cont ~status ret =
  type_of_call0 ~status ~addr:runtime ~meth:dispatch
@@ -512,6 +515,7 @@ let type_of ~max_args ~max_stack cfg =
  let program_rev =
   List.fold_left
    (fun acc contr -> type_of_a_contract ~k ~frame_size ~fields ~contracts contr @ acc) [] cfg in
- List.rev program_rev
- @ [type_of_a_method0 ~k ~frame_size ~fields ~contracts runtime
-    ~name:dispatch ~args:[Int,ret] ~locals:[] ~typ_of:(mk_type_of_cont (TVar ret))]
+ List.length fields,
+  List.rev program_rev
+  @ [type_of_a_method0 ~k ~frame_size ~fields ~contracts runtime
+     ~name:dispatch ~args:[Int,ret] ~locals:[] ~typ_of:(mk_type_of_cont (TVar ret))]

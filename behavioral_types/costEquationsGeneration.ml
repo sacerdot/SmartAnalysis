@@ -89,8 +89,11 @@ let rec compute_typ fcall =
   | TGamma el ->
      let el = List.map compute_expr el in
      (* XXX here I am adding all fields together for now *)
-     let cost = List.fold_left (fun acc x -> Plus(acc,x)) (Rat 0) el in
-     [fcall,false,cost,[],[]]
+     (*let cost = List.fold_left (fun acc x -> Plus(acc,x)) (Rat 0) el in*)
+     let initial_balance = List.hd el in
+     let final_balance = List.nth el (List.length el / 2) in
+     let cost = Minus(final_balance,initial_balance) in
+     [fcall,true,cost,[],[]]
   | TCall(f,el) ->
      let el = List.map compute_expr el in
      [fcall,false,Rat 0,[f,el],[]]
@@ -104,4 +107,27 @@ let rec compute_typ fcall =
 let compute_functions (name,vars,typ) =
  compute_typ (name,vars) typ
 
-let compute l = List.concat (List.map compute_functions l)
+let rec skip_nth n =
+ function
+    l when n = 0 -> l
+  | _::tl -> skip_nth (n - 1) tl
+  | [] -> assert false
+
+let duplicate_saved_fields fieldsno =
+ let rec aux acc n =
+  function
+     vars when n = 0 -> 
+      let acc = List.rev acc in
+      let locals = skip_nth fieldsno vars in
+      acc @ locals, acc @ acc @ locals
+   | v::vars -> aux (v::acc) (n - 1) vars
+   | [] -> assert false in
+ aux [] fieldsno
+
+let main fieldsno (name,vars,_) =
+ let params,args = duplicate_saved_fields fieldsno vars in 
+ ("main__",params),false,Rat 0,[name,List.map (fun x -> Var x) args],[]
+
+let compute (fieldsno,l) =
+ main fieldsno (List.hd l) ::
+  List.concat (List.map compute_functions l)
