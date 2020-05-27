@@ -288,7 +288,7 @@ let transfer0 ~status ~from ~to_ ~amount =
 let transfer ~status to_ amount k =
  let from = status.this in
  let from_balance = lookup ~status (from ^^ balance) in
- if_then_else (TGeq(from_balance,amount))
+ if_then_else (TAnd(TGeq(amount,TInt 0),TGeq(from_balance,amount)))
   (k ~status:(transfer0 ~status ~from ~to_ ~amount))
   (revert ~status)
 
@@ -377,12 +377,15 @@ fun ~status tag stm ->
   | ReturnRhs (Call(a1,(Unit,TCons(Int,TNil),"transfer"),val1,args1)) ->
      msg_transfer ~status a1 val1 args1 (type_of_cont int_of_unit)
   | ReturnRhs (Call(a1,m1,val1,args1)) ->
+(*
 Utils.error("# " ^ pp_stm ~indent:0 tag stm);
 let res =
+*)
       let sender = int_of_address status.this in
       type_of_call ~status ~tag ~addr:a1 ~meth:m1 ~value:val1 ~sender
        ~params:args1
-in Utils.error("# " ^ pp_stm ~indent:0 tag stm ^ " : " ^ pp_typ ~indent:0 res); res
+(*
+in Utils.error("# " ^ pp_stm ~indent:0 tag stm ^ " : " ^ pp_typ ~indent:0 res); res *)
   | ReturnRhs (Expr e) ->
      let e = type_of_expr ~status tag e in
      (match e with
@@ -489,6 +492,7 @@ let type_of_a_method ~k ~frame_size ~fields ~contracts this (AnyMethodDecl(name,
   ~typ_of:(aux to_sum_on)
 
 let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_)) =
+ Utils.error (a ^ " encoded as " ^ pp_expr (int_of_address a));
  List.fold_left
   (fun acc meth -> type_of_a_method ~k ~frame_size ~fields ~contracts a meth :: acc) []
    (match fb with None -> meths | Some fb -> meths @ [any_method_decl_of_fallback fb])
