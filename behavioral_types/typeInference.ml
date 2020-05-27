@@ -493,6 +493,12 @@ let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_
   (fun acc meth -> type_of_a_method ~k ~frame_size ~fields ~contracts a meth :: acc) []
    (match fb with None -> meths | Some fb -> meths @ [any_method_decl_of_fallback fb])
 
+type inferred =
+ { types: Types.types ;
+   fieldsno : int ;
+   balances : string list
+ }
+
 let type_of ~max_args ~max_stack cfg =
  let contracts =
   List.map
@@ -515,7 +521,10 @@ let type_of ~max_args ~max_stack cfg =
  let program_rev =
   List.fold_left
    (fun acc contr -> type_of_a_contract ~k ~frame_size ~fields ~contracts contr @ acc) [] cfg in
- List.length fields,
+ let balances = List.map (fun (a,_) -> a ^^ balance) contracts in
+ let fieldsno = List.length fields in
+ let types =
   List.rev program_rev
   @ [type_of_a_method0 ~k ~frame_size ~fields ~contracts runtime
-     ~name:dispatch ~args:[Int,ret] ~locals:[] ~typ_of:(mk_type_of_cont (TVar ret))]
+     ~name:dispatch ~args:[Int,ret] ~locals:[] ~typ_of:(mk_type_of_cont (TVar ret))] in
+ { types ; fieldsno ; balances }

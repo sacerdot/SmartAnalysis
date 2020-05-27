@@ -47,7 +47,7 @@ let type_of =
     let c = Static.normalize c in
     Static.with_maxargs_and_stack_bound
      (fun ~bounds:_ ~max_args ~max_stack ->
-       Types.pp_types (snd (TypeInference.type_of ~max_args ~max_stack c))) c))
+       Types.pp_types (TypeInference.type_of ~max_args ~max_stack c).types) c))
 
 let cost b =
  transform (Parser.test_string

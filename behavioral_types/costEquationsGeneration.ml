@@ -109,27 +109,24 @@ let rec compute_typ ~gain fcall =
 let compute_functions ~gain (name,vars,typ) =
  compute_typ ~gain (name,vars) typ
 
-let rec skip_nth n =
- function
-    l when n = 0 -> l
-  | _::tl -> skip_nth (n - 1) tl
-  | [] -> assert false
-
-let duplicate_saved_fields fieldsno =
+let split_nth n =
  let rec aux acc n =
   function
-     vars when n = 0 -> 
-      let acc = List.rev acc in
-      let locals = skip_nth fieldsno vars in
-      acc @ locals, acc @ acc @ locals
-   | v::vars -> aux (v::acc) (n - 1) vars
+     l when n = 0 -> List.rev acc, l
+   | hd::tl -> aux (hd::acc) (n - 1) tl
    | [] -> assert false in
- aux [] fieldsno
+ aux [] n
 
-let main fieldsno (name,vars,_) =
+let duplicate_saved_fields fieldsno l =
+ let _saved_gamma,next = split_nth fieldsno l in
+ let gamma,_ = split_nth fieldsno next in
+ next, gamma @ next
+
+let main ~fieldsno ~balances (name,vars,_) =
  let params,args = duplicate_saved_fields fieldsno vars in 
- ("main__",params),false,Rat 0,[name,List.map (fun x -> Var x) args],[]
+ ("main__",params),false,Rat 0,[name,List.map (fun x -> Var x) args],
+  List.map (fun v -> Var v,Geq,Rat 0) balances
 
-let compute ~gain (fieldsno,l) =
- main fieldsno (List.hd l) ::
+let compute ~gain {TypeInference.types = l ; fieldsno ; balances} =
+ main ~fieldsno ~balances (List.hd l) ::
   List.concat (List.map (compute_functions ~gain) l)
