@@ -95,7 +95,7 @@ let rec compute_typ ~gain fcall =
      let cost =
       if gain then Minus(final_balance,initial_balance)
       else Minus(initial_balance,final_balance) in
-     [fcall,false,cost,[],[]]
+     [fcall,true,cost,[],[]]
   | TCall(f,el) ->
      let el = List.map compute_expr el in
      [fcall,false,Rat 0,[f,el],[]]

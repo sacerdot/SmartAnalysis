@@ -9673,7 +9673,7 @@
            gain
             ?[3,final_balance,initial_balance]
             :[3,initial_balance,final_balance];
-         return [0,[0,fcall,0,cost,0,0],0];
+         return [0,[0,fcall,1,cost,0,0],0];
         case 1:
          var el$0=param[2],f=param[1],el$1=map(compute_expr,el$0);
          return [0,[0,fcall,0,_ih_,[0,[0,f,el$1],0],0],0];
