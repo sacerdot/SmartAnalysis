@@ -22,20 +22,48 @@
   <tr>
   <td>
 <div id="in" class="editor">
-contract Bank {
-
-   function borrow(int n) {
-      msg.sender.lend.value(n)(n);
-   }
-
+contract Player {
+    int amount;
+    
+    function main(int n) {
+        amount = n;
+        HandoverPonzi.init(n);
+    }
+    
+    function cont() {
+        HandoverPonzi.join.value(amount)();
+    }
 }
 
-contract Thief {
+contract Player2 {
+    function cont(int n) {
+        HandoverPonzi.join.value(n)();
+    }
+}
 
-   function lend(int n) payable {
-      msg.sender.transfer(n-3) ;
-   }
+contract HandoverPonzi {
+  address owner ;
+  address user ;
+  int price ;
 
+  function init(int n) {
+    owner = HandoverPonzi ;
+    user = HandoverPonzi ;
+    price = n ;
+    Player.cont();
+  }
+
+  function sweepCommission (int amount) {
+    if (msg.sender == owner) owner.send(amount) ;
+  }
+  
+  function join() payable {
+    if (msg.value < price) revert() ;
+    user.transfer(9 * msg.value / 10) ;
+    user = msg.sender ;
+    price = 3 * price / 2;
+    if (msg.sender == Player) Player2.cont(price);
+  }
 }
 </div>
   </td>
