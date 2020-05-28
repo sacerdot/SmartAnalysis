@@ -27,7 +27,7 @@ contract Ponzi {
     address owner2;
     address owner3;
     address owner4;
-    address owner5;
+    (*address owner5;*)
     int first;
     int last;
     
@@ -36,7 +36,7 @@ contract Ponzi {
         owner2 = Ponzi;
         owner3 = Ponzi;
         owner4 = Ponzi;
-        owner5 = Ponzi;
+        (*owner5 = Ponzi;*)
         first = 1;
         last = 1;
     }
@@ -46,11 +46,11 @@ contract Ponzi {
         else if (last == 2) owner2 = addr;
         else if (last == 3) owner3 = addr;
         else if (last == 4) owner4 = addr;
-        else if (last == 5) owner5 = addr;
+        (*else if (last == 5) owner5 = addr;*)
         else revert();
         last = last + 1;
         
-        if (this.balance >= 200) pop();
+        if (this.balance >= 150) pop();
     }
     
     function pop() {
@@ -60,11 +60,11 @@ contract Ponzi {
         else{if (first == 2) res = owner2;
         else if (first == 3) res = owner3;
         else if (first == 4) res = owner4;
-        else if (first == 5) res = owner5;
+        (*else if (first == 5) res = owner5;*)
         else revert(); }
         first = first + 1;
         
-        res.transfer(200);
+        res.transfer(150);
     }
     
     function join() payable {
