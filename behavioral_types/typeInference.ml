@@ -339,9 +339,22 @@ let tchoice ~status:_ guards_and_typs =
  in
   TChoice (aux (TBool false) guards_and_typs)
 
+(* if all branches are the same, compress to one by just puting in Or
+   all the guards *)
+let compress ~status l0 =
+ let rec aux acc l =
+  match acc,l with
+     None,[] -> TChoice []
+   | Some p,[] -> snd p
+   | None,hd::tl -> aux (Some hd) tl
+   | Some hd1,hd2::tl when snd hd1 = snd hd2 ->
+      aux (Some (TOr(fst hd1,fst hd2),snd hd1)) tl
+   | _ -> tchoice ~status l0 in
+ aux None l0
+
 let forall_contract ~status ~otherwise f =
  let l = List.map (fun (c,ms) -> f c ms) status.contracts in
- tchoice ~status (l@otherwise)
+ if otherwise = [] then compress ~status l else tchoice ~status (l@otherwise)
 
 (* we could iterate only on those that are continuation, but we have not
    tracked this information *)
