@@ -9571,7 +9571,7 @@
              return commit(status$0)}),
          _j$_],
        types=op(rev(program_rev),_ka_);
-      return [0,types,fieldsno,balances]}
+      return [0,types,fieldsno,op(balances,[0,msg_value,0])]}
     var NotLinear=[248,_ib_,caml_fresh_oo_id(0)];
     function compute_expr(param)
      {switch(param[0])
@@ -10244,7 +10244,7 @@
                   {var
                     param$1=type_of(max_args,max_stack,c$0),
                     gain=b | 0,
-                    balances=param$1[3],
+                    non_negatives=param$1[3],
                     fieldsno=param$1[2],
                     l=param$1[1],
                     _jd_=
@@ -10262,7 +10262,7 @@
                     match$0=caml_call1(split_nth(fieldsno),params),
                     gamma=match$0[1],
                     args=op(gamma,params),
-                    _jb_=map(function(v){return [0,[0,v],0,_ij_]},balances),
+                    _jb_=map(function(v){return [0,[0,v],0,_ij_]},non_negatives),
                     _jc_=0,
                     l$0=
                      [0,

@@ -1,7 +1,7 @@
 type inferred =
  { types: Types.types ;
    fieldsno : int ;
-   balances : string list
+   non_negatives : string list
  }
 
 val type_of :

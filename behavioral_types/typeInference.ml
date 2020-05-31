@@ -513,7 +513,7 @@ let type_of_a_contract ~k ~frame_size ~fields ~contracts (AContract(a,meths,fb,_
 type inferred =
  { types: Types.types ;
    fieldsno : int ;
-   balances : string list
+   non_negatives : string list
  }
 
 let type_of ~max_args ~max_stack cfg =
@@ -544,4 +544,4 @@ let type_of ~max_args ~max_stack cfg =
   List.rev program_rev
   @ [type_of_a_method0 ~k ~frame_size ~fields ~contracts runtime
      ~name:dispatch ~args:[Int,ret] ~locals:[] ~typ_of:(mk_type_of_cont (TVar ret))] in
- { types ; fieldsno ; balances }
+ { types ; fieldsno ; non_negatives = balances@[msg_value] }

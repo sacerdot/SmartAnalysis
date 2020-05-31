@@ -122,11 +122,11 @@ let duplicate_saved_fields fieldsno l =
  let gamma,_ = split_nth fieldsno next in
  next, gamma @ next
 
-let main ~fieldsno ~balances (name,vars,_) =
+let main ~fieldsno ~non_negatives (name,vars,_) =
  let params,args = duplicate_saved_fields fieldsno vars in 
  ("main__",params),false,Rat 0,[name,List.map (fun x -> Var x) args],
-  List.map (fun v -> Var v,Geq,Rat 0) balances
+  List.map (fun v -> Var v,Geq,Rat 0) non_negatives
 
-let compute ~gain {TypeInference.types = l ; fieldsno ; balances} =
- main ~fieldsno ~balances (List.hd l) ::
+let compute ~gain {TypeInference.types = l ; fieldsno ; non_negatives} =
+ main ~fieldsno ~non_negatives (List.hd l) ::
   List.concat (List.map (compute_functions ~gain) l)
