@@ -20,6 +20,13 @@ let stack_address = stack ^^ string_of_int 1
 
 let bottom = TInt min_int
 
+(* local variables are initialized to:
+   - bottom if address
+   - otherwise, i.e.
+     - 0 if integral
+     - false if boolean *)
+let zero is_address =
+ if is_address then bottom else TInt 0
 
 let string_of_meth addr m =
  addr ^^ Utils.trd3 m ^^ String.concat "_" (pp_tag_list (Utils.snd3 m))
@@ -475,13 +482,12 @@ let rec mk_stack ?(acc=[]) k =
 let type_of_a_method0 ~k ~frame_size ~fields ~contracts this ~name ~args ~locals ~typ_of =
  let fields = List.map snd fields in
  let args = List.map snd args in
- let locals = List.map snd locals in
  let saved_gamma = List.map (fun n -> n ^ saved) fields in
  let stack = mk_stack k in
  let other_params = fields @ msg_sender :: msg_value :: args @ stack in
  let gamma =
   List.map (fun v -> v,TVar v) other_params @
-  List.map (fun v -> v,bottom) locals in
+  List.map (fun (t,v) -> v,zero t) locals in
  let status =
   { saved_gamma ; fields ; gamma ; k ; frame_size ; this ; contracts } in
  let typ = typ_of ~status in
