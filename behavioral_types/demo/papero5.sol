@@ -20,12 +20,16 @@ contract Player {
     function cont() {
         HandoverPonzi.join.value(amount)();
     }
+
+    fallback() payable { }
 }
 
 contract Player2 {
     function cont(int n) {
         HandoverPonzi.join.value(n)();
     }
+
+    fallback() payable { }
 }
 
 contract HandoverPonzi {

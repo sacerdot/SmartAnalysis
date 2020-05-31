@@ -15,4 +15,6 @@ contract Thief {
    function ack() {
       msg.sender.pay.value(1)(2) ;
    }
+
+   fallback() payable { }
 }

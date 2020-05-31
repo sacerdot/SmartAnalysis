@@ -2963,7 +2963,7 @@
      _hZ_=[0,1],
      _h$_=caml_string_of_jsbytes("transfer"),
      _ia_=caml_string_of_jsbytes("transfer"),
-     _h__=[0,caml_string_of_jsbytes("typeInference.ml"),465,9],
+     _h__=[0,caml_string_of_jsbytes("typeInference.ml"),468,9],
      _ib_=caml_string_of_jsbytes(" encoded as "),
      _h9_=[2,0],
      _h7_=[0,0],
@@ -9038,7 +9038,8 @@
            throw _ln_}
         throw _lm_}}
     function transfer(status$1,to,amount,k)
-     {var
+     {if(0 === match_method(status$1,to,fallback,0))return revert(status$1);
+      var
        from=status$1[6],
        from_balance=lookup(status$1,symbol$0(from,balance)),
        _lj_=revert(status$1),

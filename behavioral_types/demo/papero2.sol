@@ -4,6 +4,7 @@ contract Bank {
       msg.sender.lend.value(n)(n);
    }
 
+   fallback() payable { }
 }
 
 contract Thief {
@@ -12,4 +13,5 @@ contract Thief {
       msg.sender.transfer(n-3) ;
    }
 
+   fallback() payable { }
 }

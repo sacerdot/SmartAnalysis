@@ -13,7 +13,6 @@ contract Participant1 {
    }
    
    fallback() payable { }
-
 }
 
 contract Bank {
@@ -39,6 +38,4 @@ contract Bank {
    }
 
    fallback() payable { }
-
-
 }
