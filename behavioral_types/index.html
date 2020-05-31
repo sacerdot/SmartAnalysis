@@ -5,6 +5,33 @@
     .editor { 
         height: 400px;
     }
+    #overlay {
+      position: fixed; /* Sit on top of the page content */
+      display: none; /* Hidden by default */
+      width: 100%; /* Full width (cover the whole page) */
+      height: 100%; /* Full height (cover the whole page) */
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+      z-index: 100; /* Specify a stack order in case you're using a different order for other elements */
+      cursor: pointer; /* Add a pointer on hover */
+    }
+
+    #instructions{
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      font-size: 30px;
+      color: white;
+      transform: translate(-50%,-50%);
+      -ms-transform: translate(-50%,-50%);
+    }
+
+    a {
+      color: hotpink;
+    }
 </style>
  </head>
  <body>
@@ -18,11 +45,11 @@
   <button onclick="ms_parse()">Parse</button>
   <button onclick="ms_normalize()">Normalize</button>
   <button onclick="ms_get_bounds()">Compute stack bounds</button>
-  <button onclick="ms_type_of()">Infer types</button>
+  <button onclick="ms_type_of()">Intermediate code</button>
   <button onclick="ms_cost(true);editor_out.selectAll()">Compute max gain</button>
   <button onclick="ms_cost(false);editor_out.selectAll()">Compute max loss</button>
-  <button onclick="ms_cofloco()">Call Cofloco</button>
-  <button onclick="ms_copy_output_to_input()">&lt; Copy output to input</button>
+  <button onclick="ms_cofloco()">Call CoFloCo</button>
+  <!--<button onclick="ms_copy_output_to_input()">&lt; Copy output to input</button>-->
   <hr>
   <table width="100%">
   <tr>
@@ -58,7 +85,10 @@ contract Thief {
   <td>
   </td>
   </tr>
-  </table>
+  </table> 
+ <div id="overlay" onClick="hide_overlay()">
+   <div id="instructions"></div>
+ </div>
  <div id="errors"></div>
     
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -75,6 +105,26 @@ contract Thief {
     doc_in = editor_in.getSession().getDocument();
     doc_out = editor_out.getSession().getDocument();
     loadDoc1();
+    instructions();
+
+function hide_overlay() {
+  document.getElementById("overlay").style.display = "none";
+}
+
+function show_overlay() {
+  document.getElementById("overlay").style.display = "block";
+}
+
+function instructions() {
+  document.getElementById("instructions").innerHTML =
+   "Workflow: <ol>" +
+     "<li>Freely write your μSolidity program or load one of the examples using the \"Load\" button</li>" +
+     "<li>Generate CoFloCo cost equations to compute an upper bound to the maximum amount of Ether gained/lossed by the first contract when its first method is executed. This is done clicking \"Compute max gain/loss\".</li>" +
+     "<li>Click \"Call CoFloCo\" for instructions on how to run CoFloCo and obtain the upper bound.</li>"+
+    "</ol>" +
+    "The remaining buttons show the output of intermediate analyses and transformations on the input: parsing, code normalization, static analysis and translation to intermediate code.";
+  show_overlay();
+}
 
 function loadDoc(filename) {
   var xhttp = new XMLHttpRequest();
@@ -94,6 +144,15 @@ function loadDoc1() {
 }
 
 function ms_cofloco() {
+  document.getElementById("instructions").innerHTML =
+       ("This function is not implemented yet.\n" +
+        "After using the \"Compute max gain/loss\" button " +
+        "copy the generated equations and paste them manually to " +
+        "CoFloco. You can use " +
+        "<a href=\"http://cofloco.se.informatik.tu-darmstadt.de/web-interface/clients/web/\">this on-line interface to CoFloCo</a>"+
+        " but remember to select \"CoFloCo\" in place of \"CoFloCo+llvm2Kittel\" before running it.");
+  show_overlay();
+/*
     $.ajax({
         type: "POST",
         dataType: "JSON",
@@ -122,6 +181,7 @@ function ms_cofloco() {
             }
         }
     });
+*/
 }
 </script>
  </body>
