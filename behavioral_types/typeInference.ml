@@ -293,22 +293,21 @@ let transfer0 ~status ~from ~to_ ~amount =
  status
 
 let transfer ~status to_ amount k =
- if match_method ~status to_ fallback ENil = None
- then revert ~status
- else
-  let from = status.this in
-  let from_balance = lookup ~status (from ^^ balance) in
-  if_then_else (TAnd(TGeq(amount,TInt 0),TGeq(from_balance,amount)))
-   (k ~status:(transfer0 ~status ~from ~to_ ~amount))
-   (revert ~status)
+ let from = status.this in
+ let from_balance = lookup ~status (from ^^ balance) in
+ if_then_else (TAnd(TGeq(amount,TInt 0),TGeq(from_balance,amount)))
+  (k ~status:(transfer0 ~status ~from ~to_ ~amount))
+  (revert ~status)
 
 let msg_transfer ~status a1 val1 args1 k =
- if val1 <> None then
+ let to_ = type_of_address ~status a1 in
+ if val1 <> None || match_method ~status to_ fallback ENil = None
+ then (
+  if val1 = None then Utils.error ("TRANSFER ABORTED TO " ^ to_);
   revert ~status
- else
+ ) else
   let amount = match args1 with ECons(e,ENil) -> e in
   let amount = type_of_iexpr ~status amount in
-  let to_ = type_of_address ~status a1 in
   transfer ~status to_ amount k
 
 let type_of_call :

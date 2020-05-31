@@ -56,4 +56,6 @@ contract HandoverPonzi {
     (* comment next line for scenario 2 *)
     if (msg.sender == Player) Player2.cont(price);
   }
+
+  fallback() payable { }
 }
