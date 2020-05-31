@@ -35,6 +35,7 @@
 </style>
  </head>
  <body>
+  <button onclick="instructions()">?</button>
   <select id="select_example">
     <option value="dao.sol">DAO attack</option>
     <option value="english_auction1.sol">English Auction, scenario 1</option>
@@ -46,8 +47,8 @@
   <button onclick="ms_normalize()">Normalize</button>
   <button onclick="ms_get_bounds()">Compute stack bounds</button>
   <button onclick="ms_type_of()">Intermediate code</button>
-  <button onclick="ms_cost(true);editor_out.selectAll()">Compute max gain</button>
-  <button onclick="ms_cost(false);editor_out.selectAll()">Compute max loss</button>
+  <button onclick="ms_cost(true);editor_out.selectAll()">Compute max gain equation</button>
+  <button onclick="ms_cost(false);editor_out.selectAll()">Compute max loss equation</button>
   <button onclick="ms_cofloco()">Call CoFloCo</button>
   <!--<button onclick="ms_copy_output_to_input()">&lt; Copy output to input</button>-->
   <hr>
@@ -119,7 +120,7 @@ function instructions() {
   document.getElementById("instructions").innerHTML =
    "Workflow: <ol>" +
      "<li>Freely write your μSolidity program or load one of the examples using the \"Load\" button</li>" +
-     "<li>Generate CoFloCo cost equations to compute an upper bound to the maximum amount of Ether gained/lossed by the first contract when its first method is executed. This is done clicking \"Compute max gain/loss\".</li>" +
+     "<li>Generate CoFloCo cost equations to compute an upper bound to the maximum amount of Ether gained/lossed by the first contract when its first method is executed. This is done clicking \"Compute max gain/loss equations\".</li>" +
      "<li>Click \"Call CoFloCo\" for instructions on how to run CoFloCo and obtain the upper bound.</li>"+
     "</ol>" +
     "The remaining buttons show the output of intermediate analyses and transformations on the input: parsing, code normalization, static analysis and translation to intermediate code.";
