@@ -1,33 +1,33 @@
 (* max gain: 0
-   max loss: Punta1
+   max loss: Bet1
 *)
 
-contract Participant1 {
+contract Better1 {
 
-   function main(int punta1) {
-       Bank.init(punta1);
+   function main(int bet1) {
+       Auctioneer.init(bet1);
    }
 
-   function punta(int n) {
-      Bank.puntata.value(n)();
+   function make_a_bet(int n) {
+      Auctioneer.bet.value(n)();
    }
    
    fallback() payable { }
 }
 
-contract Bank {
+contract Auctioneer {
 
    int max;
    address winner;
 
-   function init(int punta1) {
+   function init(int bet1) {
        max = 0;
-       winner = Bank;
-       Participant1.punta(punta1);
+       winner = Auctioneer;
+       Better1.make_a_bet(bet1);
    }
 
 
-   function puntata() payable {
+   function bet() payable {
        if(max < msg.value) {
            winner.transfer(max);
            max = msg.value;

@@ -1,27 +1,27 @@
 (* max gain: 0
-   max loss: max([nat(Punta1),nat(-Bank_max+Punta1)]) 
+   max loss: max([nat(Bet1),nat(-Auctioneer_max+Bet1)]) 
 *)
 
-contract Participant1 {
+contract Better1 {
 
-   function main(int punta1) {
-       Participant1.punta(punta1);
+   function main(int bet1) {
+       Better1.make_a_bet(bet1);
    }
 
-   function punta(int n) {
-      Bank.puntata.value(n)();
+   function make_a_bet(int n) {
+      Auctioneer.bet.value(n)();
    }
    
    fallback() payable { }
 
 }
 
-contract Bank {
+contract Auctioneer {
 
    int max;
    address winner;
 
-   function puntata() payable {
+   function bet() payable {
        if(max < msg.value) {
            winner.transfer(max);
            max = msg.value;
