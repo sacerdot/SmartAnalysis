@@ -54,26 +54,47 @@ contract Ponzi {
     }
     
     function push(address addr) {
-        if      (last == 1) owner1 = addr;
-        else if (last == 2) owner2 = addr;
-        else if (last == 3) owner3 = addr;
+        if(last == 1){
+            owner1 = addr;
+        }else{
+            if(last == 2){
+               owner2 = addr;
+            }else{
+              if (last == 3){
+                owner3 = addr;
+              }
         (*else if (last == 4) owner4 = addr;*)
         (*else if (last == 5) owner5 = addr;*)
-        else revert();
+              else{
+                revert();
+              }
+            }
+        }
+
         last = last + 1;
-        
         if (this.balance >= 150) pop();
     }
     
     function pop() {
         address res;
-        if (first >= last) return;
-        if      (first == 1) res = owner1;
-        else{if (first == 2) res = owner2;
-        else if (first == 3) res = owner3;
+        if (first >= last){ return;}
+        
+        if (first == 1){ 
+            res = owner1;
+        }else{
+            if (first == 2){
+                res = owner2;
+            }else{
+                if (first == 3){ 
+                   res = owner3;
+                }
         (*else if (first == 4) res = owner4;*)
         (*else if (first == 5) res = owner5;*)
-        else revert(); }
+                else{ 
+                   revert(); 
+                }
+            }
+        }
         first = first + 1;
         
         res.transfer(150);

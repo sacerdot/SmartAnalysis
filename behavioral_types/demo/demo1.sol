@@ -14,7 +14,7 @@ contract Bank {
       c = this;
       a = msg.value;
       a = this.balance;
-      if (x &lt; 0 == false || false == x &lt; x &amp;&amp; true == (false &amp;&amp; true))
+      if (x < 0 == false || false == x < x && true == (false && true))
         revert();
       else { return x; }
       b = f();
@@ -83,7 +83,7 @@ contract Bank {
    }
 
    function pay(int n) payable {
-      if (msg.value &gt;= 1 &amp;&amp; this.balance &gt; n) {
+      if (msg.value >= 1 && this.balance > n) {
          msg.sender.transfer(n) ;
          msg.sender.ack() ;
       }

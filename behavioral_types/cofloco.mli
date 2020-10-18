@@ -23,3 +23,4 @@ type eqn = fcall * (*to_nat:*)bool * expr * acall list * pred list
 type prog = eqn list
 
 val pp_prog : prog -> string
+val pp_expr : expr -> string

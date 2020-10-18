@@ -1,0 +1,151 @@
+analyzer.cmo : \
+    utils.cmi \
+    types.cmi \
+    typeInference.cmi \
+    static.cmi \
+    parser.cmi \
+    microSolidity.cmi \
+    costEquationsGeneration.cmo \
+    cofloco.cmi
+analyzer.cmx : \
+    utils.cmx \
+    types.cmx \
+    typeInference.cmx \
+    static.cmx \
+    parser.cmx \
+    microSolidity.cmx \
+    costEquationsGeneration.cmx \
+    cofloco.cmx
+cofloco.cmo : \
+    cofloco.cmi
+cofloco.cmx : \
+    cofloco.cmi
+cofloco.cmi :
+compiler.cmo : \
+    utils.cmi \
+    solidity.cmo \
+    microSolidity.cmi
+compiler.cmx : \
+    utils.cmx \
+    solidity.cmx \
+    microSolidity.cmx
+costEquationsGeneration.cmo : \
+    types.cmi \
+    typeInference.cmi \
+    cofloco.cmi
+costEquationsGeneration.cmx : \
+    types.cmx \
+    typeInference.cmx \
+    cofloco.cmx
+microSolidity.cmo : \
+    utils.cmi \
+    microSolidity.cmi
+microSolidity.cmx : \
+    utils.cmx \
+    microSolidity.cmi
+microSolidity.cmi :
+parser.cmo : \
+    parserCombinators.cmi \
+    microSolidity.cmi \
+    parser.cmi
+parser.cmx : \
+    parserCombinators.cmx \
+    microSolidity.cmx \
+    parser.cmi
+parser.cmi : \
+    parserCombinators.cmi \
+    microSolidity.cmi
+parserCombinators.cmo : \
+    parserCombinators.cmi
+parserCombinators.cmx : \
+    parserCombinators.cmi
+parserCombinators.cmi :
+pyTest.cmo : \
+    solidity.cmo
+pyTest.cmx : \
+    solidity.cmx
+pythonDeploy.cmo : \
+    solidity.cmo
+pythonDeploy.cmx : \
+    solidity.cmx
+solidity.cmo : \
+    utils.cmi
+solidity.cmx : \
+    utils.cmx
+solidity_test.cmo : \
+    solidity.cmo \
+    pythonDeploy.cmo \
+    pyTest.cmo \
+    parserCombinators.cmi \
+    parser.cmi \
+    microSolidity.cmi \
+    compiler.cmo
+solidity_test.cmx : \
+    solidity.cmx \
+    pythonDeploy.cmx \
+    pyTest.cmx \
+    parserCombinators.cmx \
+    parser.cmx \
+    microSolidity.cmx \
+    compiler.cmx
+static.cmo : \
+    utils.cmi \
+    parser.cmi \
+    microSolidity.cmi \
+    static.cmi
+static.cmx : \
+    utils.cmx \
+    parser.cmx \
+    microSolidity.cmx \
+    static.cmi
+static.cmi : \
+    microSolidity.cmi
+staticAnalyzer.cmo : \
+    utils.cmi \
+    types.cmi \
+    static.cmi \
+    microSolidity.cmi \
+    costEquationsGeneration.cmo \
+    cofloco.cmi
+staticAnalyzer.cmx : \
+    utils.cmx \
+    types.cmx \
+    static.cmx \
+    microSolidity.cmx \
+    costEquationsGeneration.cmx \
+    cofloco.cmx
+staticAnalyzer_test.cmo : \
+    staticAnalyzer.cmo \
+    parserCombinators.cmi \
+    parser.cmi \
+    cofloco.cmi
+staticAnalyzer_test.cmx : \
+    staticAnalyzer.cmx \
+    parserCombinators.cmx \
+    parser.cmx \
+    cofloco.cmx
+typeInference.cmo : \
+    utils.cmi \
+    types.cmi \
+    parser.cmi \
+    microSolidity.cmi \
+    typeInference.cmi
+typeInference.cmx : \
+    utils.cmx \
+    types.cmx \
+    parser.cmx \
+    microSolidity.cmx \
+    typeInference.cmi
+typeInference.cmi : \
+    types.cmi \
+    microSolidity.cmi
+types.cmo : \
+    types.cmi
+types.cmx : \
+    types.cmi
+types.cmi :
+utils.cmo : \
+    utils.cmi
+utils.cmx : \
+    utils.cmi
+utils.cmi :

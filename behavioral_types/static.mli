@@ -1,4 +1,5 @@
 (** normalization **)
+val retype_stm : ('a,'b) MicroSolidity.stm -> ('a,[`Epsilon]) MicroSolidity.stm
 val normalize: MicroSolidity.configuration -> MicroSolidity.configuration
 
 (** computation of max stack bounds **)
