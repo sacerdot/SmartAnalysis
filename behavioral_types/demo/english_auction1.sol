@@ -30,8 +30,8 @@ contract Auctioneer {
    function bet() payable {
        if(max < msg.value) {
            winner.transfer(max);
-           max = msg.value;
-           winner = msg.sender;
+       (*    max = msg.value;
+           winner = msg.sender; *)
        } else {
            msg.sender.transfer(msg.value);
        }

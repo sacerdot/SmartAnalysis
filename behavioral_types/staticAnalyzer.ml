@@ -26,8 +26,7 @@ let zero is_address = if is_address then bottom else Rat 0
 (* MAPPING TYPE + relative functs *)
 (********************************************)
 type mapping  =
- { initial_fields : Cofloco.var list
- ; fields          : Cofloco.var list
+ { fields       : (bool(*address*)*Cofloco.var) list
  ; last_assignment : (Cofloco.var * Cofloco.expr) list
  ; this            : address
  ; meth_decl_list  : (address * (any_meth * (*payable:*)bool) list) list
@@ -44,14 +43,14 @@ let rec add_acall a ~eq_frame = {eq_frame with acalls = eq_frame.acalls@[a]}
 
 let rec set_assignment k v =
  function
-  | [] -> assert false
+  | [] -> Utils.error ("Variable or field " ^ k ^" not found");assert false
   | (k',_)::tl when k=k' -> (k,v)::tl
   | p::tl -> p::set_assignment k v tl
 let assign k v ~mapping = {mapping with last_assignment = set_assignment k v mapping.last_assignment}
 
 let lookup_assignment k assign =
  try List.assoc k assign
- with Not_found -> assert false
+ with Not_found -> Utils.error ("Variable or field " ^ k ^" not found");assert false
 let lookup ~mapping k = lookup_assignment k mapping.last_assignment
 (********************************************)
 
@@ -105,85 +104,85 @@ let address_of ~mapping v =
    Utils.error ("Known addresses: " ^ String.concat "," (List.map fst mapping.meth_decl_list));
    assert false
 
-let trans_address : mapping:mapping -> address MicroSolidity.expr -> address =
-fun ~mapping expr ->
+let trans_address : mapping:mapping -> int -> address MicroSolidity.expr -> address =
+fun ~mapping out_f_numb expr ->
  match expr with
     Value a -> a
   | Var v -> address_of ~mapping (snd v)
-  | Field v -> address_of ~mapping (mapping.this ^^ snd v)
+  | Field v -> address_of ~mapping (mapping.this ^^ snd v^^"out"^string_of_int out_f_numb)
   | This -> mapping.this
   | MsgSender -> address_of ~mapping msg_sender
-let rec trans_iexpr : mapping:mapping -> int MicroSolidity.expr -> Cofloco.expr =
-fun ~mapping expr ->
+let rec trans_iexpr : mapping:mapping -> int -> int MicroSolidity.expr -> Cofloco.expr =
+fun ~mapping out_f_numb expr ->
  match expr with
     Value b -> Rat b
   | Var v -> lookup ~mapping (snd v)
-  | Field v -> lookup ~mapping (mapping.this ^^ snd v)
-  | Plus(e1,e2) -> Plus(trans_iexpr ~mapping e1, trans_iexpr ~mapping e2)
-  | Minus(e1,e2) -> Minus(trans_iexpr ~mapping e1, trans_iexpr ~mapping e2)
+  | Field v -> lookup ~mapping (mapping.this ^^ snd v^^"out"^string_of_int out_f_numb)
+  | Plus(e1,e2) -> Plus(trans_iexpr ~mapping out_f_numb e1, trans_iexpr ~mapping out_f_numb e2)
+  | Minus(e1,e2) -> Minus(trans_iexpr ~mapping out_f_numb e1, trans_iexpr ~mapping out_f_numb e2)
   | Mult(e1,e2) ->
-    let e1 = trans_iexpr ~mapping e1 in
-    let e2 = trans_iexpr ~mapping e2 in
+    let e1 = trans_iexpr ~mapping out_f_numb e1 in
+    let e2 = trans_iexpr ~mapping out_f_numb e2 in
     (match e1 with
     | Rat x -> Mult(x,e2)
     | _ -> (match e2 with
           | Rat x -> Mult(x,e1)
           | _ -> assert false))
   | Div(e1,e2) ->
-    let e1 = trans_iexpr ~mapping e1 in
-    let e2 = trans_iexpr ~mapping e2 in
+    let e1 = trans_iexpr ~mapping out_f_numb e1 in
+    let e2 = trans_iexpr ~mapping out_f_numb e2 in
     (match e2 with
     | Rat x -> Div(e1,x)
     | _ -> assert false)
-  | UMinus e -> UMinus(trans_iexpr ~mapping e)
+  | UMinus e -> UMinus(trans_iexpr ~mapping out_f_numb e)
   | MsgValue -> lookup ~mapping msg_value
-  | Balance a -> lookup ~mapping (trans_address ~mapping a ^^ balance)
+  | Balance a -> lookup ~mapping (trans_address ~mapping out_f_numb a ^^ balance)
 
-let rec bexpr_pred : mapping:mapping -> bool MicroSolidity.expr -> Types.pred =
- fun ~mapping -> function
+let rec bexpr_pred : mapping:mapping -> int -> bool MicroSolidity.expr -> Types.pred =
+ fun ~mapping out_f_numb -> function
  | Value b -> TBool b
  | Var v -> 
    let res = lookup ~mapping (snd v) in
    TEq(lookup_to_typ_e res, (TInt 1))
  | Field v -> 
-   let res = lookup ~mapping (mapping.this ^^ snd v) in
+   let res = lookup ~mapping (mapping.this ^^ snd v^^"out"^string_of_int out_f_numb) in
    TEq(lookup_to_typ_e res, (TInt 1))
- | Geq(e1,e2) -> TGeq(iexpr_to_expr ~mapping e1, iexpr_to_expr ~mapping e2)
- | Gt(e1,e2) -> TGt(iexpr_to_expr ~mapping e1, iexpr_to_expr ~mapping e2)
- | Eq(Int,e1,e2) -> TEq(iexpr_to_expr ~mapping e1, iexpr_to_expr ~mapping e2)
+ | Geq(e1,e2) -> TGeq(iexpr_to_expr ~mapping out_f_numb e1, iexpr_to_expr ~mapping out_f_numb e2)
+ | Gt(e1,e2) -> TGt(iexpr_to_expr ~mapping out_f_numb e1, iexpr_to_expr ~mapping out_f_numb e2)
+ | Eq(Int,e1,e2) -> TEq(iexpr_to_expr ~mapping out_f_numb e1, iexpr_to_expr ~mapping out_f_numb e2)
  | Eq(Bool,e1,e2) ->
-   let e1 = bexpr_pred ~mapping e1 in
-   let e2 = bexpr_pred ~mapping e2 in
+   let e1 = bexpr_pred ~mapping out_f_numb e1 in
+   let e2 = bexpr_pred ~mapping out_f_numb e2 in
    TOr(TAnd(e1,e2),TAnd(TNot e1,TNot e2))
  | Eq(Address,a1,a2) ->
-   (match int_of_address (trans_address ~mapping a1),int_of_address (trans_address ~mapping a2) with
+   (match int_of_address (trans_address ~mapping out_f_numb a1),int_of_address (trans_address ~mapping out_f_numb a2) with
    | Rat a1,Rat a2 -> TEq(TInt a1,TInt a2)
    | _ -> assert false
    )
  | Eq(Unit,_,_) -> TBool true
- | And(e1,e2) -> TAnd(bexpr_pred ~mapping e1, bexpr_pred ~mapping e2)
- | Or(e1,e2) -> TOr(bexpr_pred ~mapping e1, bexpr_pred ~mapping e2)
- | Not p -> TNot(bexpr_pred ~mapping p)
-and iexpr_to_expr : mapping:mapping -> int MicroSolidity.expr -> Types.expr =
-fun ~mapping expr ->
+ | And(e1,e2) -> TAnd(bexpr_pred ~mapping out_f_numb e1, bexpr_pred ~mapping out_f_numb e2)
+ | Or(e1,e2) -> TOr(bexpr_pred ~mapping out_f_numb e1, bexpr_pred ~mapping out_f_numb e2)
+ | Not p -> TNot(bexpr_pred ~mapping out_f_numb p)
+and iexpr_to_expr : mapping:mapping -> int -> int MicroSolidity.expr -> Types.expr =
+fun ~mapping out_f_numb expr ->
  match expr with
  | Value i -> TInt i
  | Var v -> 
    let res = lookup ~mapping (snd v) in
    lookup_to_typ_e res
  | Field v -> 
-   let res = lookup ~mapping (mapping.this ^^ snd v) in
+   let res = lookup ~mapping (mapping.this ^^ snd v^^"out"^string_of_int out_f_numb) in
    lookup_to_typ_e res
- | Plus(e1,e2) -> TPlus(iexpr_to_expr ~mapping e1, iexpr_to_expr ~mapping e2)
- | Minus(e1,e2) -> TMinus(iexpr_to_expr ~mapping e1, iexpr_to_expr ~mapping e2)
- | Mult(e1,e2) -> TMult(iexpr_to_expr ~mapping e1, iexpr_to_expr ~mapping e2)
- | Div(e1,e2) -> TDiv(iexpr_to_expr ~mapping e1, iexpr_to_expr ~mapping e2)
- | UMinus e -> TUMinus(iexpr_to_expr ~mapping e)
+ | Plus(e1,e2) -> TPlus(iexpr_to_expr ~mapping out_f_numb e1, iexpr_to_expr ~mapping out_f_numb e2)
+ | Minus(e1,e2) -> TMinus(iexpr_to_expr ~mapping out_f_numb e1, iexpr_to_expr ~mapping out_f_numb e2)
+ | Mult(e1,e2) -> TMult(iexpr_to_expr ~mapping out_f_numb e1, iexpr_to_expr ~mapping out_f_numb e2)
+ | Div(e1,e2) -> TDiv(iexpr_to_expr ~mapping out_f_numb e1, iexpr_to_expr ~mapping out_f_numb e2)
+ | UMinus e -> TUMinus(iexpr_to_expr ~mapping out_f_numb e)
  | MsgValue -> 
    let res = lookup ~mapping msg_value in
    lookup_to_typ_e res
  | Balance a -> 
-   let res = lookup ~mapping (trans_address ~mapping a ^^ balance) in
+   let res = lookup ~mapping (trans_address ~mapping out_f_numb a ^^ balance) in
    lookup_to_typ_e res
 and lookup_to_typ_e : Cofloco.expr -> Types.expr =
  function
@@ -196,28 +195,28 @@ and lookup_to_typ_e : Cofloco.expr -> Types.expr =
  | UMinus e -> TUMinus (lookup_to_typ_e e)
 
 let trans_expr :
- type a. mapping:mapping -> a tag -> a MicroSolidity.expr -> 
+ type a. mapping:mapping -> int -> a tag -> a MicroSolidity.expr -> 
   [`Single of Cofloco.expr | `Split of Types.pred]
-= fun ~mapping tag expr ->
+= fun ~mapping out_f_numb tag expr ->
  match tag with
-    Int -> `Single (trans_iexpr ~mapping expr)
-  | Bool -> `Split(bexpr_pred ~mapping expr)
-  | Address -> `Single (int_of_address (trans_address ~mapping expr))
+    Int -> `Single (trans_iexpr ~mapping out_f_numb expr)
+  | Bool -> `Split(bexpr_pred ~mapping out_f_numb expr)
+  | Address -> `Single (int_of_address (trans_address ~mapping out_f_numb expr))
   | Unit -> `Single (int_of_unit)
 
 (*trans functs*)
 (********************************************)
 let trans_fst_method ~fields ~meth_decl_list this ~name ~args ~locals ~typ_of =
- let fields = List.map snd fields in
- let args   = List.map snd args in
- let initial_fields = List.map (fun n -> n ^ initial) fields in
- let other_params = fields @ msg_sender :: msg_value :: args @ [ret 0] in
+ (*let fields = List.map snd fields in*)
+ let out_fields = List.map (fun (b,f) -> b,f^^"out0") fields in
+ (*let args   = List.map snd args in*)
+ let other_params = fields @ (true,msg_sender) :: (false,msg_value) :: args in
  let last_assignment =
-  List.map (fun v -> v,Cofloco.Var v) (initial_fields@other_params) @
-  List.map (fun (t,v) -> v,zero t) locals in
- let mapping = { initial_fields; fields ; last_assignment ; this ; meth_decl_list } in
+   List.map2 (fun (b1,i) (b2,o) -> o,Cofloco.Var i) fields out_fields @ 
+   List.map (fun (b,v) -> v,Cofloco.Var v) (other_params@[false,ret 0]) @ List.map (fun (t,v) -> v,zero t) locals in
+ let mapping = { fields ; last_assignment ; this ; meth_decl_list } in
  let typ = typ_of ~mapping in
- string_of_meth this name, initial_fields@other_params, typ
+ string_of_meth this name, other_params@out_fields@[false,ret 0], typ
 
 let rec args_of_var_list : type a. a MicroSolidity.var_list -> (bool * Cofloco.var) list =
  function
@@ -227,77 +226,72 @@ let rec args_of_var_list : type a. a MicroSolidity.var_list -> (bool * Cofloco.v
 let args_of_block (Block(args,locals,_)) =
  args_of_var_list args, args_of_var_list locals
 
-let trans_value ~mapping v =
- Option.fold ~none:(Rat 0) ~some:(trans_iexpr ~mapping) v
+let trans_value ~mapping out_f_numb v =
+ Option.fold ~none:(Rat 0) ~some:(trans_iexpr out_f_numb ~mapping) v
 
-let type_of_expr_poly ~mapping =
+let type_of_expr_poly ~mapping out_f_numb =
  object
   method f : 'a. 'a tag -> 'a MicroSolidity.expr -> 'b
-           = trans_expr ~mapping 
+           = trans_expr ~mapping out_f_numb 
  end
 
-let transfer :
- mapping:mapping -> eq_frame:eq_frame -> addr:address -> meth:(_ meth) ->
+let trans_call_w: mapping:mapping -> eq_frame:eq_frame -> addr:address -> meth:(_ meth) ->
   value:expr -> sender:expr -> params:(expr list) -> acall
 = fun ~mapping ~eq_frame ~addr ~meth ~value ~sender ~params ->
- assert (List.length params = tag_list_length (Utils.snd3 meth));
- let name = string_of_meth addr meth in
- 
- let from = mapping.this in
- let from_balance = lookup ~mapping (from^^balance) in
-
- let to_balance = lookup ~mapping (addr^^balance) in
- let mapping = assign (from^^balance) (Minus(from_balance,value)) ~mapping in
- let mapping = assign (addr^^balance) (Plus(to_balance,value)) ~mapping:mapping in
- 
- let args =
-  List.map (fun f -> Var f) mapping.initial_fields @
-
-  List.map (lookup ~mapping:mapping) mapping.fields @
-  sender :: value :: params @ [Cofloco.Var (ret ((List.length eq_frame.acalls)+1))] in
+  assert (List.length params = tag_list_length (Utils.snd3 meth));
+  let name = string_of_meth addr meth in
+  let f_out_numb = (List.length eq_frame.acalls) in
+  
+  let from = mapping.this in
+  let in_from_balance = lookup ~mapping (from^^balance^^"out"^string_of_int f_out_numb) in
+  let in_to_balance = lookup ~mapping (addr^^balance^^"out"^string_of_int f_out_numb) in
+  let mapping = 
+    if value<>Rat 0 then
+    {mapping with last_assignment=
+          ((from^^balance^^"out"^string_of_int f_out_numb),(Minus(in_from_balance,value)))::
+          ((addr^^balance^^"out"^string_of_int f_out_numb),(Plus(in_to_balance,value)))::
+          mapping.last_assignment
+    }
+    else mapping in
+  let input_fields = List.map (fun (b,f) -> lookup ~mapping (f^^"out"^string_of_int f_out_numb)) mapping.fields in
+  let output_fields = List.map (fun (b,f) -> Cofloco.Var(f^^"out"^string_of_int ((List.length (eq_frame.acalls)+1)))) mapping.fields in
+  let args =
+   input_fields @
+   sender :: value :: params @ output_fields @ [Cofloco.Var (ret ((List.length eq_frame.acalls)+1))] in
   name,args
 
-let trans_call0 :
- mapping:mapping -> eq_frame:eq_frame -> addr:address -> meth:(_ meth) ->
-  value:expr -> sender:expr -> params:(expr list) -> acall
-= fun ~mapping ~eq_frame ~addr ~meth ~value ~sender ~params ->
- assert (List.length params = tag_list_length (Utils.snd3 meth));
- let name = string_of_meth addr meth in
- let args =
-  List.map (fun f -> Var f) mapping.initial_fields @
-  List.map (lookup ~mapping) mapping.fields @
-  sender :: value :: params @ [Cofloco.Var (ret ((List.length eq_frame.acalls)+1))] in
-  name,args
+let get_split_preds_and_negs: Types.pred -> Cofloco.pred list list * Cofloco.pred list list =
+ fun p -> 
+  let preds = CostEquationsGeneration.compute_pred p in
+  preds,CostEquationsGeneration.neg preds
 
-let rec trans_call_param :
+let is_trans_call: type a b. (a,b) MicroSolidity.meth -> bool = function
+ | Unit,TCons(Int,TNil),name when (String.equal name "transfer") || (String.equal name "send") -> true
+ | _ -> false
+
+let rec trans_call_params :
  mapping:mapping -> eq_frame:eq_frame -> addr:address -> meth:(_ meth) ->
   value:expr -> sender:expr -> params:('a list) -> Cofloco.expr list -> eq_frame list
 = fun ~mapping ~eq_frame ~addr ~meth ~value ~sender ~params expr_params ->
  match params with
- | (`Single e)::tl -> trans_call_param ~mapping ~eq_frame ~addr ~meth ~value ~sender ~params:tl (expr_params@[e])
+ | (`Single e)::tl -> trans_call_params ~mapping ~eq_frame ~addr ~meth ~value ~sender ~params:tl (expr_params@[e])
  | (`Split p)::tl -> 
-   let p1 = CostEquationsGeneration.compute_pred p in
-   let p2 = (CostEquationsGeneration.neg p1) in
-
-   let eq_f1 = 
-    if List.length p1 >= 1 then
-     let eql_p1 = List.map (fun pl -> add_preds pl ~eq_frame) p1 in
-     List.map (fun eq -> trans_call_param ~mapping ~eq_frame:eq ~addr ~meth ~value ~sender ~params:tl (expr_params@[(Rat 1)])) eql_p1
-    else [] in
-   let eq_f2 = 
-    if List.length p2 >= 1 then
-     let eql_p2 = List.map (fun pl -> add_preds pl ~eq_frame) p2 in
-     List.map (fun eq -> trans_call_param ~mapping ~eq_frame:eq ~addr ~meth ~value ~sender ~params:tl (expr_params@[(Rat 0)])) eql_p2
-    else [] in
-
-    List.flatten eq_f1@ List.flatten eq_f2
+   let p1,p2 = get_split_preds_and_negs p in
+   let aux ~eq_frame p =
+     if List.length p=0 then [] else
+     let eql = List.map (fun pl -> add_preds pl ~eq_frame) p in
+     List.flatten (List.map (fun eq -> trans_call_params ~mapping ~eq_frame:eq ~addr ~meth ~value ~sender ~params:tl (expr_params@[(Rat 1)])) eql)
+   in
+   aux ~eq_frame p1 @ aux ~eq_frame p2
  | [] -> 
+   let f_out_numb = (List.length eq_frame.acalls) in
    if value<>Rat 0 then
-    let from = mapping.this in
-    let from_balance = lookup ~mapping (from^^balance) in
-    let eq = add_acall (transfer ~mapping ~eq_frame ~addr ~meth ~value:value ~sender ~params:expr_params) ~eq_frame in
-    [add_preds [from_balance,Geq,value; value,Geq,Rat 0] eq]
-   else [add_acall (trans_call0 ~mapping ~eq_frame ~addr ~meth ~value:value ~sender ~params:expr_params) ~eq_frame]
+     let from = mapping.this in
+     let from_balance = lookup ~mapping (from^^balance^^"out"^string_of_int f_out_numb) in
+     let eq = add_acall (trans_call_w ~mapping ~eq_frame ~addr ~meth ~value:value ~sender ~params:expr_params) ~eq_frame in
+     [add_preds [from_balance,Geq,value; value,Geq,Rat 0] eq]
+   else 
+     [add_acall (trans_call_w ~mapping ~eq_frame ~addr ~meth ~value:value ~sender ~params:expr_params) ~eq_frame]
 
 let trans_call :
  mapping:mapping -> eq_frame:eq_frame ->
@@ -305,163 +299,132 @@ let trans_call :
    value:(int MicroSolidity.expr option) -> sender:expr ->
     params:('b expr_list) -> eq_frame list
 = fun ~mapping ~eq_frame ~tag ~addr ~meth ~value ~sender ~params ->
- let addr = trans_address ~mapping addr in
+ let f_out_numb = (List.length eq_frame.acalls) in
+ let addr = trans_address ~mapping f_out_numb addr in
+ let is_trans_call = is_trans_call meth in
  match match_method ~mapping addr meth params with
     None -> []
-  | Some AnyReturnMeth(meth,payable,params) ->
+  | Some AnyReturnMeth(meth0,payable,params0) ->
      let output_type_ok =
-      eq_tag tag Unit <> None || eq_tag tag (Utils.fst3 meth) <> None in
+      eq_tag tag Unit <> None || eq_tag tag (Utils.fst3 meth0) <> None in
      let payable_ok = payable || value = None in
-     if output_type_ok && payable_ok then
-      let amount = trans_value ~mapping value in
-      let params =
-       expr_list_map (type_of_expr_poly ~mapping) (Utils.snd3 meth) params in      
-      trans_call_param ~mapping ~eq_frame ~addr ~meth ~value:amount ~sender ~params:params []
+     if output_type_ok=false || payable_ok=false then [] 
      else
-      []
-and trans_call_transfer :
- mapping:mapping -> eq_frame:eq_frame ->
-  tag:('a tag) -> addr:(address MicroSolidity.expr) -> meth:(('a,_) meth) ->
-   value:(int MicroSolidity.expr option) -> sender:expr ->
-    params:('b expr_list) -> eq_frame list
-= fun ~mapping ~eq_frame ~tag ~addr ~meth ~value ~sender ~params ->
- let addr = trans_address ~mapping addr in
- 
- let params2 =
-  expr_list_map (type_of_expr_poly ~mapping) (Utils.snd3 meth) params in 
- let v = (match params2 with (`Single e)::[] -> e | _ -> Rat 0) in 
- 
- match match_method ~mapping addr meth params with
-    None -> []
-  | Some AnyReturnMeth(((Unit,TNil,name) as meth),payable,_) ->
-     let output_type_ok =
-      eq_tag tag Unit <> None || eq_tag tag (Utils.fst3 meth) <> None in
-     let payable_ok = payable || value = None in
-     if output_type_ok && payable_ok then
-      let amount = trans_value ~mapping value in
-      let from = mapping.this in
-      let from_balance = lookup ~mapping (from^^balance) in
-      let to_balance = lookup ~mapping (addr^^balance) in
-      let mapping = assign (from^^balance) (Minus(from_balance,v)) ~mapping in
-      let mapping = assign (addr^^balance) (Plus(to_balance,v)) ~mapping:mapping in
-      let args =
-        List.map (fun f -> Var f) mapping.initial_fields @
-        List.map (lookup ~mapping:mapping) mapping.fields @
-        sender :: v :: [Cofloco.Var (ret ((List.length eq_frame.acalls)+1))] in
-      let acall = (addr^^name^"_"),args in
-      let eq = add_acall acall ~eq_frame in
-      [add_preds [from_balance,Geq,v; v,Geq,Rat 0] eq]
-     else
-      []
-  | _ -> assert false
-  
+      let params = 
+       if is_trans_call then
+         expr_list_map (type_of_expr_poly ~mapping f_out_numb) (Utils.snd3 meth) params
+       else
+         expr_list_map (type_of_expr_poly ~mapping f_out_numb) (Utils.snd3 meth0) params0
+      in
+      let amount = 
+       if is_trans_call then
+        (match params with | [`Single e] -> e | _ -> assert false)
+       else
+        trans_value ~mapping f_out_numb value
+      in
+      trans_call_params ~mapping ~eq_frame ~addr ~meth:meth0 ~value:amount ~sender ~params:(if is_trans_call then [] else params) []
+     
+let return_single: type a b. eq_frame:eq_frame -> mapping:mapping -> Cofloco.expr -> eq_frame list =
+fun ~eq_frame ~mapping e ->
+   let eq = add_pred (Var(ret 0),Eq,e) ~eq_frame in
+   let out_numb = List.length eq_frame.acalls in
+   let out_fields = List.map (fun (b,f)->f^^"out0") mapping.fields in
+   let last_out_fields = List.map (fun (b,f)->f^^"out"^string_of_int out_numb) mapping.fields in
+   let out_pred = List.map2 
+     (fun f_out f -> Var(f_out),Eq,Var(f)) out_fields 
+     (if out_numb=0 then List.map snd mapping.fields else last_out_fields) in
+   [add_preds out_pred eq]
+
+let return_split: type a b. eq_frame:eq_frame -> mapping:mapping -> Cofloco.pred list list -> Cofloco.expr -> eq_frame list =
+fun ~eq_frame ~mapping preds_l e ->
+  if List.length preds_l=0 then [] else
+    let eql = List.map (fun pl -> add_preds pl ~eq_frame) preds_l in
+    List.flatten (List.map (fun eq -> return_single ~eq_frame:eq ~mapping e) eql)
+
 let rec trans_stm : type a b. eq_frame:eq_frame -> mapping:mapping -> a tag -> (a,b) stm -> eq_frame list =
 fun ~eq_frame ~mapping tag stm ->
  match stm with
  | Revert -> []
- | Return -> [add_pred (Var(ret 0),Eq,Rat 0) ~eq_frame]
+ | Return -> return_single ~eq_frame ~mapping (Rat 0)
  | ReturnRhs(Expr e) -> 
-    let expr = trans_expr ~mapping tag e in
+    let out_numb = List.length eq_frame.acalls in
+    let expr = trans_expr ~mapping out_numb tag e in
     (match expr with
-    | `Single e -> [add_pred (Var(ret 0),Eq,e) eq_frame]
+    | `Single e -> return_single ~eq_frame ~mapping e
     | `Split p -> 
-        let p1 = CostEquationsGeneration.compute_pred p in
-        let p2 = (CostEquationsGeneration.neg p1) in
-
-        let eq_f1 = 
-         if List.length p1 >= 1 then
-          let eql_p1 = List.map (fun pl -> add_preds pl ~eq_frame) p1 in
-          List.map (fun eq -> add_pred (Var(ret 0),Eq,(int_of_bool true)) eq) eql_p1
-         else [] in
-        let eq_f2 = 
-         if List.length p2 >= 1 then
-          let eql_p2 = List.map (fun pl -> add_preds pl ~eq_frame) p2 in
-          List.map (fun eq -> add_pred (Var(ret 0),Eq,(int_of_bool false)) eq) eql_p2
-         else [] in
-
-        eq_f1@eq_f2
-    )
- | ReturnRhs(Call(addr,((Unit,TCons(Int,TNil),name) as m),opt,el)) when (String.equal name "transfer") || (String.equal name "send") ->
-   let calls = (trans_call_transfer ~mapping ~eq_frame ~tag:Unit ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
-   List.map (fun eq -> add_pred (Var(ret 0),Eq,Var(ret(List.length eq.acalls))) eq) calls
- | ReturnRhs(Call(addr,m,opt,el)) ->
-   let calls = (trans_call ~mapping ~eq_frame ~tag:tag ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
-   List.map (fun eq -> add_pred (Var(ret 0),Eq,Var(ret(List.length eq.acalls))) eq) calls
+        let p1,p2 = get_split_preds_and_negs p in
+        return_split ~eq_frame ~mapping p1 (int_of_bool true) @
+        return_split ~eq_frame ~mapping p1 (int_of_bool false))
  | Assign(LField(t,n),(Expr e),s) ->
-    let expr = trans_expr ~mapping t e in
+    let out_numb = List.length eq_frame.acalls in
+    let expr = trans_expr ~mapping out_numb t e in
     (match expr with
-    | `Single e -> trans_stm ~eq_frame ~mapping:(assign (mapping.this ^^ n) e ~mapping) tag s    
+    | `Single e ->
+        trans_stm ~eq_frame ~mapping:(assign (mapping.this ^^ n^^"out"^string_of_int out_numb) e ~mapping) tag s    
     | `Split p -> 
-        let p1 = CostEquationsGeneration.compute_pred p in
-        let p2 = (CostEquationsGeneration.neg p1) in
-
-        let eq_f1 = 
-         if List.length p1 >= 1 then
-          let eql_p1 = List.map (fun pl -> add_preds pl ~eq_frame) p1 in
-          List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping:(assign (mapping.this ^^ n) (int_of_bool true) ~mapping) tag s) eql_p1
-         else [] in
-        let eq_f2 = 
-         if List.length p2 >= 1 then
-          let eql_p2 = List.map (fun pl -> add_preds pl ~eq_frame) p2 in
-          List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping:(assign (mapping.this ^^ n) (int_of_bool false) ~mapping) tag s) eql_p2
-         else [] in
-
-        List.flatten (eq_f1)@
-        List.flatten (eq_f2)
-    )
+        let p1,p2 = get_split_preds_and_negs p in
+        trans_preds_assign_stm ~eq_frame ~mapping p1 (mapping.this ^^ n^^"out"^string_of_int out_numb,(int_of_bool true)) tag stm @
+        trans_preds_assign_stm ~eq_frame ~mapping p2 (mapping.this ^^ n^^"out"^string_of_int out_numb,(int_of_bool false)) tag stm)
  | Assign(LVar(t,n),(Expr e),s) ->
-    let expr = trans_expr ~mapping t e in
+    let out_numb = List.length eq_frame.acalls in
+    let expr = trans_expr ~mapping out_numb t e in
     (match expr with
     | `Single e -> trans_stm ~eq_frame ~mapping:(assign n e ~mapping) tag s    
     | `Split p -> 
-        let p1 = CostEquationsGeneration.compute_pred p in
-        let p2 = (CostEquationsGeneration.neg p1) in
-
-        let eq_f1 = 
-         if List.length p1 >= 1 then
-          let eql_p1 = List.map (fun pl -> add_preds pl ~eq_frame) p1 in
-          List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping:(assign (n) (int_of_bool true) ~mapping) tag s) eql_p1
-         else [] in
-        let eq_f2 = 
-         if List.length p2 >= 1 then
-          let eql_p2 = List.map (fun pl -> add_preds pl ~eq_frame) p2 in
-          List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping:(assign (n) (int_of_bool false) ~mapping) tag s) eql_p2
-         else [] in
-
-        List.flatten (eq_f1)@
-        List.flatten (eq_f2)
-    )
-
- | Assign(LDiscard,(Call(addr,((Unit,TCons(Int,TNil),name) as m),opt,el)),s) when (String.equal name "transfer") || (String.equal name "send") ->
-   let calls = (trans_call_transfer ~mapping ~eq_frame ~tag:Unit ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
-   List.flatten (List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping tag s) calls)
- | Assign(LDiscard,(Call(addr,m,opt,el)),s) ->
-   let calls = (trans_call ~mapping ~eq_frame ~tag:Unit ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
-   List.flatten (List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping tag s) calls)
- | Assign((LVar(t,n)),(Call(addr,m,opt,el)),s) ->
-   let calls = (trans_call ~mapping ~eq_frame ~tag:t ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
-   List.flatten (List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping:(assign n (Var(ret(List.length eq.acalls))) ~mapping) tag s) calls)
- | Assign((LField(t,n)),(Call(addr,m,opt,el)),s) ->
-   let calls = (trans_call ~mapping ~eq_frame ~tag:t ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
-   List.flatten (List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping:(assign (mapping.this ^^ n) (Var(ret(List.length eq.acalls))) ~mapping) tag s) calls)
+        let p1,p2 = get_split_preds_and_negs p in
+        trans_preds_assign_stm ~eq_frame ~mapping p1 (n,(int_of_bool true)) tag stm @
+        trans_preds_assign_stm ~eq_frame ~mapping p2 (n,(int_of_bool false)) tag stm)
  | IfThenElse(guard,stm1,stm2,Revert) ->
-    let bpred = bexpr_pred ~mapping guard in
-    let stm1_p = CostEquationsGeneration.compute_pred bpred in
-    let stm2_p = (CostEquationsGeneration.neg stm1_p) in
-    
-    let eq_f1 = 
-     if List.length stm1_p >= 1 then
-      let eql_stm1 = List.map (fun pl -> add_preds pl ~eq_frame) stm1_p in
-      List.fold_left (fun acc eq -> acc@trans_stm ~eq_frame:eq ~mapping tag stm1) [] eql_stm1
-     else [] in
-    let eq_f2 = 
-     if List.length stm2_p >= 1 then
-      let eql_stm2 = List.map (fun pl -> add_preds pl ~eq_frame) stm2_p in
-      List.fold_left (fun acc eq -> acc@trans_stm ~eq_frame:eq ~mapping tag stm2) [] eql_stm2
-     else [] in
-
-    eq_f1@eq_f2
+    let out_numb = List.length eq_frame.acalls in
+    let bpred = bexpr_pred ~mapping out_numb guard in
+    let p1,p2 = get_split_preds_and_negs bpred in    
+    trans_preds_if_stm ~eq_frame ~mapping p1 tag stm1 @
+    trans_preds_if_stm ~eq_frame ~mapping p2 tag stm2
+ | ReturnRhs(Call(addr,m,opt,el)) ->
+   let calls = (trans_call ~mapping ~eq_frame ~tag:tag ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
+   List.flatten (List.map (fun eq -> return_single ~eq_frame:eq ~mapping (Var(ret(List.length eq.acalls)))) calls)
+ | Assign(lhs,(Call(addr,m,opt,el)),s) ->
+   let t = tag_of_lhs lhs in
+   let calls = (trans_call ~mapping ~eq_frame ~tag:t ~addr:addr ~meth:m ~value:opt ~sender:(int_of_address mapping.this) ~params:el) in
+   let fields = List.map (fun eq -> (List.map (fun (b,f) -> f^^"out"^string_of_int(List.length eq.acalls)) mapping.fields)) calls in
+   let x = List.map2 (fun eq f -> 
+    List.fold_left (fun acc field -> (field,(Var field))::acc) mapping.last_assignment f
+   ) (calls) (fields) in
+   let new_mappings = List.map (fun new_assignment -> {mapping with last_assignment = new_assignment}) x in
+   let only_addr_fields = List.filter_map (fun (b,f) -> if b then Some f else None) mapping.fields in
+   let aux2 f = 
+    let x = List.map (fun (c,_) -> f c) mapping.meth_decl_list in
+    x
+   in
+   let rec aux ~mapping ~eq = function
+   | x::tl -> 
+      let out_x = x^^"out"^string_of_int(List.length eq.acalls) in
+      List.flatten (aux2 (fun a -> 
+       let a = int_of_address a in
+       let p = (lookup ~mapping out_x),Eq,a in
+       let t = aux ~mapping:(assign ~mapping out_x a) ~eq tl in
+       List.map (fun eq -> add_pred p ~eq_frame:eq) t))
+   | [] -> 
+       trans_stm 
+      ~eq_frame:eq 
+      ~mapping:(match lhs with 
+               | LDiscard -> mapping 
+               | LVar(_,n) -> (assign n (Var(ret(List.length eq.acalls))) ~mapping:mapping)
+               | LField(_,n) -> (assign (mapping.this ^^ n) (Var(ret(List.length eq.acalls))) ~mapping:mapping))
+      tag s
+   in
+   List.flatten (List.map2 (fun m e -> aux ~mapping:m ~eq:e only_addr_fields) new_mappings calls)
  | _ -> assert false
+and trans_preds_assign_stm: type a b. eq_frame:eq_frame -> mapping:mapping -> Cofloco.pred list list -> (Cofloco.var * Cofloco.expr) -> a tag -> (a,b) stm -> eq_frame list =
+fun ~eq_frame ~mapping preds_l (k,v) tag stm ->
+  if List.length preds_l = 0 then [] else
+    let eql = List.map (fun pl -> add_preds pl ~eq_frame) preds_l in
+    List.flatten (List.map (fun eq -> trans_stm ~eq_frame:eq ~mapping:(assign k v ~mapping) tag stm) eql)
+and trans_preds_if_stm: type a b. eq_frame:eq_frame -> mapping:mapping -> Cofloco.pred list list -> a tag -> (a,b) stm -> eq_frame list =
+fun ~eq_frame ~mapping preds_l tag stm ->
+  if List.length preds_l = 0 then [] else
+    let eql = List.map (fun pl -> add_preds pl ~eq_frame) preds_l in
+    List.fold_left (fun acc eq -> acc@trans_stm ~eq_frame:eq ~mapping tag stm) [] eql
 
 let rec stm_concat: type a b. (a,[`Epsilon]) MicroSolidity.stm -> (a,b) MicroSolidity.stm -> (a,[`Epsilon]) MicroSolidity.stm =
  fun s1 s2 -> match s1 with
@@ -509,7 +472,9 @@ let trans_method ~fields ~meth_decl_list this (AnyMethodDecl(name,block,_payable
      (fun a _ -> 
        let a = int_of_address a in 
        let base_pred = ((lookup ~mapping v),Cofloco.Eq,a) in
-       let t = aux ~mapping:(assign ~mapping v a) tl in
+       let mapping = (assign ~mapping v a) in
+       let mapping = if List.exists (fun f -> f=(true,v)) fields then (assign ~mapping (v^^"out0") a) else mapping in 
+       let t = aux ~mapping:mapping tl in
        base_pred,t
      )
  in
@@ -523,40 +488,28 @@ let get_main ~fields cfg =
  let rec aux2 ~fields pred = function
  | [] -> assert false
  | AContract(addr,ml,fl,_) :: tl ->
-    if List.length ml = 0 && fl = None then aux2 ~fields pred tl else
-    (match (List.nth_opt ml 0),fl with
-    | (Some AnyMethodDecl(m,block,_)),_ ->
+    let len = List.length ml in
+    if len=0 && fl = None then aux2 ~fields pred tl else
       let fields = List.map snd fields in
-      let args,_ = args_of_block block in
-      let other_params = fields @ msg_sender :: msg_value :: (List.map (fun a -> snd a) args)  in
-      let name = (string_of_meth "main" ((),TNil,"")) in
-      let fst_meth = (string_of_meth addr m),(List.map (fun v -> Var v) fields)@(List.map (fun v -> Var v) other_params)@[Var (ret 0)] in
-      [((name, other_params),false,(Cofloco.Rat 0),[fst_meth],pred)]
-    | _,Some block -> 
-      let fields = List.map snd fields in
-      let args,_ = args_of_block block in
-      let other_params = fields @ msg_sender :: msg_value :: (List.map (fun a -> snd a) args)  in
-      let name = (string_of_meth "main" ((),TNil,"")) in
-      let fst_meth = (string_of_meth addr MicroSolidity.fallback),(List.map (fun v -> Var v) fields)@(List.map (fun v -> Var v) other_params)@[Var (ret 0)] in
-      [((name, other_params),false,(Cofloco.Rat 0),[fst_meth],pred)]
-    | _ -> assert false) 
+      let out_fields = List.map (fun f -> f^^"out0") fields in    
+      let name = (string_of_meth "main" ((),TNil,"")) in 
+      if len>0 then 
+          let AnyMethodDecl(m,block,_) = List.nth ml 0 in
+          let args,_ = args_of_block block in
+          let other_params = fields @ msg_sender :: msg_value :: (List.map (fun a -> snd a) args)  in
+          let fst_meth = (string_of_meth addr m),(List.map (fun v -> Var v) (other_params@out_fields@[ret 0])) in
+          [((name, other_params),true,(Minus(Var(addr^^balance^^"out0"),Var(addr^^balance))),[fst_meth],pred)]
+      else if fl<>None then
+          let m,block = fallback,(match fl with Some block -> block | _ -> assert false) in
+          let args,_ = args_of_block block in
+          let other_params = fields @ msg_sender :: msg_value :: (List.map (fun a -> snd a) args)  in
+          let fst_meth = (string_of_meth addr m),(List.map (fun v -> Var v) (other_params@out_fields@[ret 0])) in
+          [((name, other_params),true,(Minus(Var(addr^^balance^^"out0"),Var(addr^^balance))),[fst_meth],pred)] 
+      else
+          assert false
  in
  let pred = aux cfg in
  aux2 ~fields pred cfg
-
-let rec all_fallback_names = function
-| [] -> []
-| (AContract(a,_,fb,_))::tl ->
-   (match fb with 
-   | None -> all_fallback_names tl
-   | Some fb -> 
-     let AnyMethodDecl(m,_,_) = any_method_decl_of_fallback fb in
-     string_of_meth a m :: all_fallback_names tl)
-
-let rec get_main_costEq = function
- | [] -> assert false
- | AContract(_,ml,fl,_) :: tl when List.length ml = 0 && fl = None -> get_main_costEq tl 
- | AContract(addr,_,_,_) :: tl -> Cofloco.Minus(Var(addr^^balance^initial),Var(addr^^balance))
 
 let trans_contract ~fields ~meth_decl_list (AContract(a,meths,fb,_)) =
  List.fold_left (fun acc meth -> trans_method ~fields ~meth_decl_list a meth :: acc) 
@@ -577,15 +530,12 @@ let trans cfg =
   in
   let eql = List.fold_left (fun acc contr -> trans_contract ~fields ~meth_decl_list contr @ acc) [] cfg in 
   
-  let main_costEq = get_main_costEq cfg in
-  let fallbacks = all_fallback_names cfg in
-
   (get_main ~fields cfg) @
   List.rev (List.flatten 
     (List.map (fun (name,var,list) -> (List.map (fun {acalls;preds} -> 
-      (name,var)
+      (name,List.map snd var)
       ,false
-      ,(if List.exists (fun n -> String.equal n name) fallbacks then main_costEq else (Rat 0))
+      ,Rat 0
       ,acalls
       ,preds) 
     list)) 
