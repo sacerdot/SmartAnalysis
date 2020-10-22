@@ -341,6 +341,17 @@ fun ~eq_frame ~mapping preds_l e ->
     let eql = List.map (fun pl -> add_preds pl ~eq_frame) preds_l in
     List.flatten (List.map (fun eq -> return_single ~eq_frame:eq ~mapping e) eql)
 
+(* if all branches are the same, compress to one *)
+let compress l0 =
+  let rec aux acc l =
+    match acc,l with
+      None,[] -> Some([])
+    | Some p,[] -> Some([p])
+    | None,hd::tl -> aux (Some hd) tl
+    | Some hd1,hd2::tl when hd1=hd2 -> aux (Some hd1) tl
+    | _ -> None in
+  aux None l0
+
 let rec trans_stm : type a b. eq_frame:eq_frame -> mapping:mapping -> a tag -> (a,b) stm -> eq_frame list =
 fun ~eq_frame ~mapping tag stm ->
  match stm with
@@ -392,10 +403,8 @@ fun ~eq_frame ~mapping tag stm ->
    ) (calls) (fields) in
    let new_mappings = List.map (fun new_assignment -> {mapping with last_assignment = new_assignment}) x in
    let only_addr_fields = List.filter_map (fun (b,f) -> if b then Some f else None) mapping.fields in
-   let aux2 f = 
-    let x = List.map (fun (c,_) -> f c) mapping.meth_decl_list in
-    x
-   in
+   
+   let aux2 f = List.map (fun (c,_) -> f c) mapping.meth_decl_list in
    let rec aux ~mapping ~eq = function
    | x::tl -> 
       let out_x = x^^"out"^string_of_int(List.length eq.acalls) in
@@ -403,7 +412,9 @@ fun ~eq_frame ~mapping tag stm ->
        let a = int_of_address a in
        let p = (lookup ~mapping out_x),Eq,a in
        let t = aux ~mapping:(assign ~mapping out_x a) ~eq tl in
-       List.map (fun eq -> add_pred p ~eq_frame:eq) t))
+       (match compress t with
+       | None -> List.map (fun eq -> add_pred p ~eq_frame:eq) t
+       | Some x -> x)))
    | [] -> 
        trans_stm 
       ~eq_frame:eq 
@@ -456,8 +467,7 @@ let trans_block ~mapping tag (Block(_,_,stm)) =
 
 let forall_contract ~mapping ~otherwise f =
  let l = List.map (fun (c,ms) -> f c ms) mapping.meth_decl_list in
- let p = List.flatten (List.map (fun (p,prog) -> (List.map (fun e -> add_pred p ~eq_frame:e) prog)) l) in
- p
+ List.flatten (List.map (fun (pred_opt,prog) -> (match pred_opt with | Some p -> (List.map (fun e -> add_pred p ~eq_frame:e) prog)| None -> prog)) l )
  
 let trans_method ~fields ~meth_decl_list this (AnyMethodDecl(name,block,_payable)) = 
  let args,locals = args_of_block block in
@@ -475,7 +485,10 @@ let trans_method ~fields ~meth_decl_list this (AnyMethodDecl(name,block,_payable
        let mapping = (assign ~mapping v a) in
        let mapping = if List.exists (fun f -> f=(true,v)) fields then (assign ~mapping (v^^"out0") a) else mapping in 
        let t = aux ~mapping:mapping tl in
-       base_pred,t
+       (match compress t with
+       | None -> (Some base_pred),t
+       | Some p -> None,p)
+       (*base_pred,t*)
      )
  in
  trans_fst_method ~fields ~meth_decl_list this ~name ~args ~locals ~typ_of:(aux to_sum_on)
