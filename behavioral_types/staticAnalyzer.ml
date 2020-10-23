@@ -207,9 +207,7 @@ let trans_expr :
 (*trans functs*)
 (********************************************)
 let trans_fst_method ~fields ~meth_decl_list this ~name ~args ~locals ~typ_of =
- (*let fields = List.map snd fields in*)
  let out_fields = List.map (fun (b,f) -> b,f^^"out0") fields in
- (*let args   = List.map snd args in*)
  let other_params = fields @ (true,msg_sender) :: (false,msg_value) :: args in
  let last_assignment =
    List.map2 (fun (b1,i) (b2,o) -> o,Cofloco.Var i) fields out_fields @ 
@@ -247,11 +245,16 @@ let trans_call_w: mapping:mapping -> eq_frame:eq_frame -> addr:address -> meth:(
   let in_to_balance = lookup ~mapping (addr^^balance^^"out"^string_of_int f_out_numb) in
   let mapping = 
     if value<>Rat 0 then
-    {mapping with last_assignment=
+      (if in_from_balance<>in_to_balance then
+        {mapping with last_assignment=
           ((from^^balance^^"out"^string_of_int f_out_numb),(Minus(in_from_balance,value)))::
           ((addr^^balance^^"out"^string_of_int f_out_numb),(Plus(in_to_balance,value)))::
-          mapping.last_assignment
-    }
+          mapping.last_assignment}
+      else
+        {mapping with last_assignment=
+          ((from^^balance^^"out"^string_of_int f_out_numb),Plus((Minus(in_from_balance,value)),value))::
+          mapping.last_assignment}
+      )  
     else mapping in
   let input_fields = List.map (fun (b,f) -> lookup ~mapping (f^^"out"^string_of_int f_out_numb)) mapping.fields in
   let output_fields = List.map (fun (b,f) -> Cofloco.Var(f^^"out"^string_of_int ((List.length (eq_frame.acalls)+1)))) mapping.fields in
