@@ -1,7 +1,7 @@
 open StaticAnalyzer
 open Parser
 
-let files = (List.filter (fun x -> (match((String.equal x "transf-example") || (String.equal x "out") || (String.equal x "papero6X.sol")) with | true -> false | false -> true)) (Array.to_list (Sys.readdir "demo")));;
+let files = (List.filter (fun x -> (match((String.equal x "transf-example") || (String.equal x "out")) with | true -> false | false -> true)) (Array.to_list (Sys.readdir "demo")));;
 
 type res = Problem | Ok
 

@@ -47,12 +47,6 @@ if __name__=='__main__':
         address=User2_address,
         abi=User2_contract_interface['abi']
     ))
-   User3_contract_interface = compiled_sol['<stdin>:User3']
-   User3_address = deploy_contract(w3, User3_contract_interface, 100).contractAddress
-   User3_contract = (w3.eth.contract(
-        address=User3_address,
-        abi=User3_contract_interface['abi']
-    ))
    Ponzi_contract_interface = compiled_sol['<stdin>:Ponzi']
    Ponzi_address = deploy_contract(w3, Ponzi_contract_interface, 100).contractAddress
    Ponzi_contract = (w3.eth.contract(
@@ -70,8 +64,6 @@ if __name__=='__main__':
    dump_abi(User1_abi_path, User1_contract_interface['abi'])
    User2_abi_path = 'User2_abi.json'
    dump_abi(User2_abi_path, User2_contract_interface['abi'])
-   User3_abi_path = 'User3_abi.json'
-   dump_abi(User3_abi_path, User3_contract_interface['abi'])
    Ponzi_abi_path = 'Ponzi_abi.json'
    dump_abi(Ponzi_abi_path, Ponzi_contract_interface['abi'])
    Bank_abi_path = 'Bank_abi.json'
@@ -81,8 +73,6 @@ if __name__=='__main__':
    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
    tx_hash = User2_contract.functions._init_(Ponzi_address).transact()
    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
-   tx_hash = User3_contract.functions._init_(Ponzi_address).transact()
-   tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
    tx_hash = Ponzi_contract.functions._init_(Ponzi_address,User1_address,Bank_address).transact()
    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
    tx_hash = Bank_contract.functions._init_().transact()
@@ -90,13 +80,11 @@ if __name__=='__main__':
 
    print('User1 = ' + User1_address)
    print('User2 = ' + User2_address)
-   print('User3 = ' + User3_address)
    print('Ponzi = ' + Ponzi_address)
    print('Bank = ' + Bank_address)
 
    print('User1 abi path = ' + User1_abi_path)
    print('User2 abi path = ' + User2_abi_path)
-   print('User3 abi path = ' + User3_abi_path)
    print('Ponzi abi path = ' + Ponzi_abi_path)
    print('Bank abi path = ' + Bank_abi_path)
 

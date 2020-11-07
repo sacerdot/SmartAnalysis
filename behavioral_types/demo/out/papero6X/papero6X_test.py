@@ -11,8 +11,6 @@ if __name__=='__main__':
    user1_abi_path = 'User1_abi.json'
    user2_address = '<WRITE_HERE>'
    user2_abi_path = 'User2_abi.json'
-   user3_address = '<WRITE_HERE>'
-   user3_abi_path = 'User3_abi.json'
    ponzi_address = '<WRITE_HERE>'
    ponzi_abi_path = 'Ponzi_abi.json'
    bank_address = '<WRITE_HERE>'
@@ -24,9 +22,6 @@ if __name__=='__main__':
    file = open(user2_abi_path,'r')
    user2_abi = json.load(file)
    user2_contract = (w3.eth.contract(address=user2_address, abi=user2_abi))
-   file = open(user3_abi_path,'r')
-   user3_abi = json.load(file)
-   user3_contract = (w3.eth.contract(address=user3_address, abi=user3_abi))
    file = open(ponzi_abi_path,'r')
    ponzi_abi = json.load(file)
    ponzi_contract = (w3.eth.contract(address=ponzi_address, abi=ponzi_abi))
@@ -36,7 +31,6 @@ if __name__=='__main__':
 
    print('User1 balance :',str(w3.eth.getBalance(user1_address)))
    print('User2 balance :',str(w3.eth.getBalance(user2_address)))
-   print('User3 balance :',str(w3.eth.getBalance(user3_address)))
    print('Ponzi balance :',str(w3.eth.getBalance(ponzi_address)))
    print('Bank balance :',str(w3.eth.getBalance(bank_address)))
 
@@ -46,7 +40,6 @@ if __name__=='__main__':
    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
    print('User1 balance :',str(w3.eth.getBalance(user1_address)))
    print('User2 balance :',str(w3.eth.getBalance(user2_address)))
-   print('User3 balance :',str(w3.eth.getBalance(user3_address)))
    print('Ponzi balance :',str(w3.eth.getBalance(ponzi_address)))
    print('Bank balance :',str(w3.eth.getBalance(bank_address)))
 

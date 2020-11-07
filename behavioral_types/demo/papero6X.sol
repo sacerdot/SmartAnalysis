@@ -16,13 +16,13 @@ contract User2 {
     
 }
 
-contract User3 {
+(*contract User3 {
 
     function go() {
         Ponzi.join.value(110)();
     }
     
-}
+}*)
 
 (*contract User4 {
 
@@ -35,7 +35,7 @@ contract User3 {
 contract Ponzi {
     address owner1;
     address owner2;
-    address owner3;
+    (*address owner3;*)
     (*address owner4;*)
     (*address owner5;*)
     int first;
@@ -44,7 +44,7 @@ contract Ponzi {
     function init() {
         owner1 = Ponzi;
         owner2 = Ponzi;
-        owner3 = Ponzi;
+        (*owner3 = Ponzi;*)
         (*owner4 = Ponzi;*)
         (*owner5 = Ponzi;*)
         first = 1;
@@ -59,16 +59,16 @@ contract Ponzi {
         }else{
             if(last == 2){
                owner2 = addr;
-            }else{
+            }(*else{
               if (last == 3){
                 owner3 = addr;
-              }
+              }*)
         (*else if (last == 4) owner4 = addr;*)
         (*else if (last == 5) owner5 = addr;*)
               else{
                 revert();
               }
-            }
+            (*}*)
         }
 
         last = last + 1;
@@ -84,16 +84,16 @@ contract Ponzi {
         }else{
             if (first == 2){
                 res = owner2;
-            }else{
+            }(*else{
                 if (first == 3){ 
                    res = owner3;
-                }
+                }*)
         (*else if (first == 4) res = owner4;*)
         (*else if (first == 5) res = owner5;*)
                 else{ 
                    revert(); 
                 }
-            }
+            (*}*)
         }
         first = first + 1;
         

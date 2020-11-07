@@ -75,38 +75,10 @@ contract User2 {
 
 }
 
-contract User3 {
-   bool _initialized;
-   Interf0 ponzi;
-
-   constructor() public payable {
-      _initialized = false;
-      return;
-   }
-
-
-   function _init_ (address _ponzi) public {
-      if(!_initialized) {
-         ponzi = Interf0(_ponzi);
-         _initialized = true;
-      } else {
-      }
-      return;
-   }
-
-
-   function go () public {
-      ponzi.join{value: uint(110)}();
-      return;
-   }
-
-}
-
 contract Ponzi {
    bool _initialized;
    address owner1;
    address owner2;
-   address owner3;
    int first;
    int last;
    Interf0 ponzi;
@@ -134,7 +106,6 @@ contract Ponzi {
    function init () public {
       owner1 = address(ponzi);
       owner2 = address(ponzi);
-      owner3 = address(ponzi);
       first = 1;
       last = 1;
       user1.go();
@@ -149,12 +120,7 @@ contract Ponzi {
          if((last == 2)) {
             owner2 = addr;
          } else {
-            if((last == 3)) {
-               owner3 = addr;
-            } else {
-               revert();
-            }
-
+            revert();
          }
 
       }
@@ -179,12 +145,7 @@ contract Ponzi {
          if((first == 2)) {
             res = owner2;
          } else {
-            if((first == 3)) {
-               res = owner3;
-            } else {
-               revert();
-            }
-
+            revert();
          }
 
       }

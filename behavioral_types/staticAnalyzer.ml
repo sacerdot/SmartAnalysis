@@ -344,6 +344,34 @@ fun ~eq_frame ~mapping preds_l e ->
     let eql = List.map (fun pl -> add_preds pl ~eq_frame) preds_l in
     List.flatten (List.map (fun eq -> return_single ~eq_frame:eq ~mapping e) eql)
 
+let match_eq eq1 eq2 =
+ let match_expr e1 e2 =
+  match e1,e2 with
+  | Var a,Var b -> String.equal a b
+  | a,b -> a=b in
+ let rec match_exprl el1 el2 =
+  match el1,el2 with
+  | e1::tl1,e2::tl2 -> (match_expr e1 e2)&&match_exprl tl1 tl2
+  | [],[] -> true
+  | _,_ -> false in
+ let rec match_acalls acalls1 acalls2 =
+  match acalls1,acalls2 with
+  | (name1,el1)::tl1, (name2,el2)::tl2 -> (String.equal name1 name2)&&(match_exprl el1 el2)&&(match_acalls tl1 tl2) 
+  | [],[] -> true
+  | _,_ -> false in
+ let rec match_preds preds1 preds2 =
+  match preds1,preds2 with
+  | (e1,p1,e2)::tl1,(e3,p2,e4)::tl2 -> (match_expr e1 e3)&&(match_expr e2 e4)&&(p1=p2)&&(match_preds tl1 tl2)
+  | [],[] -> true
+  | _,_ -> false in
+ (match_acalls eq1.acalls eq2.acalls)&&(match_preds eq1.preds eq2.preds)
+
+let rec match_eql eql1 eql2 = 
+ (match eql1,eql2 with
+ | eq1::tl1,eq2::tl2 -> (match_eq eq1 eq2)&&(match_eql tl1 tl2)
+ | [],[] -> true
+ | _,_ -> false)
+
 (* if all branches are the same, compress to one *)
 let compress l0 =
   let rec aux acc l =
@@ -351,7 +379,7 @@ let compress l0 =
       None,[] -> Some([])
     | Some p,[] -> Some([p])
     | None,hd::tl -> aux (Some hd) tl
-    | Some hd1,hd2::tl when hd1=hd2 -> aux (Some hd1) tl
+    | Some hd1,hd2::tl when (match_eq hd1 hd2) -> aux (Some hd1) tl
     | _ -> None in
   aux None l0
 
@@ -470,7 +498,16 @@ let trans_block ~mapping tag (Block(_,_,stm)) =
 
 let forall_contract ~mapping ~otherwise f =
  let l = List.map (fun (c,ms) -> f c ms) mapping.meth_decl_list in
- List.flatten (List.map (fun (pred_opt,prog) -> (match pred_opt with | Some p -> (List.map (fun e -> add_pred p ~eq_frame:e) prog)| None -> prog)) l )
+ let rec aux acc l =
+  match acc,l with
+    None,[] -> Some([])
+  | Some p,[] -> Some([p])
+  | None,hd::tl -> aux (Some hd) tl
+  | Some hd1,hd2::tl when (match_eql hd1 hd2) -> aux (Some hd1) tl
+  | _ -> None in
+ match (aux None (List.map (fun (p,prog) -> prog) l)) with
+ | Some x -> List.flatten x
+ | _ -> List.flatten (List.map (fun (pred,prog) -> (List.map (fun e -> add_pred pred ~eq_frame:e) prog)) l)
  
 let trans_method ~fields ~meth_decl_list this (AnyMethodDecl(name,block,_payable)) = 
  let args,locals = args_of_block block in
@@ -488,11 +525,10 @@ let trans_method ~fields ~meth_decl_list this (AnyMethodDecl(name,block,_payable
        let mapping = (assign ~mapping v a) in
        let mapping = if List.exists (fun f -> f=(true,v)) fields then (assign ~mapping (v^^"out0") a) else mapping in 
        let t = aux ~mapping:mapping tl in
-       (match compress t with
+       base_pred,t)
+       (*(match compress t with
        | None -> (Some base_pred),t
-       | Some p -> None,p)
-       (*base_pred,t*)
-     )
+       | Some p -> None,p))*)
  in
  trans_fst_method ~fields ~meth_decl_list this ~name ~args ~locals ~typ_of:(aux to_sum_on)
 
