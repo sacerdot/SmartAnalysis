@@ -456,9 +456,15 @@ in Utils.error("# " ^ pp_stm ~indent:0 tag stm ^ " : " ^ pp_typ ~indent:0 res); 
          ; sender
          ; params = args2
          } in
+        let stack_not_full = TEq(lookup ~status (stack ^^ string_of_int (status.k - 2 * status.frame_size + 1)),bottom) in
         let status = push ~status f in
-        type_of_call ~status ~tag:(tag_of_lhs lhs) ~addr:a1 ~meth:m1
-         ~value:val1 ~sender ~params:args1)
+        if status.k = status.frame_size then
+         revert ~status
+        else
+         if_then_else stack_not_full
+          (type_of_call ~status ~tag:(tag_of_lhs lhs) ~addr:a1 ~meth:m1
+            ~value:val1 ~sender ~params:args1)
+          (revert ~status))
   | IfThenElse(guard,stm1,stm2,Revert) ->
      let guard = type_of_pred ~status guard in
      let stm1 = type_of_stm ~status tag stm1 in
