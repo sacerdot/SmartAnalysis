@@ -208,9 +208,13 @@ let maxargs =
      (Option.fold ~none:0 ~some:maxargs_block fallback))) 0
 
 let with_maxargs_and_stack_bound f cfg =
- with_bounds
+ let res =
+  with_bounds
   (fun l ->
     let max_stack =
      List.fold_left (fun m (_,n) -> max m n) 0 l in
     f ~bounds:l ~max_args:(maxargs cfg) ~max_stack)
-  cfg
+  cfg in
+ match get_bounds cfg with
+    Bounds _ -> res
+  | Unbounded _ -> res ^ "\n\n\n" ^ f ~bounds:[] ~max_args:(maxargs cfg) ~max_stack:1
